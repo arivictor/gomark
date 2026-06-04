@@ -9,7 +9,6 @@ import (
 
 func main() {
 	r := runner.NewRunner(
-		runner.WithPort("8081"),
 		runner.WithAuth(protocol.AuthNone, ""),
 		runner.WithTimeout(10),
 	)
