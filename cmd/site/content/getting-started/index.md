@@ -1,27 +1,28 @@
 ---
 title: Getting Started
-description: Clone GoMark, create a content tree, and launch your first markdown-powered website.
+description: Install the GoMark package, create a content tree, and launch your first markdown-powered website.
 ---
 
 # Getting Started
 
-Go from a fresh clone to a running, navigable site in a few minutes. This guide walks the shortest path that still gives you something real.
+Go from an empty directory to a running, navigable site in a few minutes. This guide walks the shortest path that still gives you something real.
 
-## Get the code
+## Install the package
 
-GoMark is a self-hosted app — clone the repository and build from source:
+GoMark is an importable Go package. Create a module for your site and add it:
 
 ```terminal
-git clone https://github.com/arivictor/gomark.git
-cd gomark
+mkdir my-docs && cd my-docs
+go mod init example.com/my-docs
+go get github.com/arivictor/gomark/site
 ```
 
 ## Create a content tree
 
-Your markdown tree is your site. GoMark maps files and folders directly to routes — no config required. The `cmd/site` server reads its content from `cmd/site/content` by default.
+Your markdown tree is your site. GoMark maps files and folders directly to routes — no config required. Point GoMark at any directory; this guide uses `content/`.
 
 ```text
-cmd/site/content/
+content/
   index.md
   guides/
     index.md
@@ -50,9 +51,9 @@ This site is powered by GoMark.
 
 ## Start your site
 
-The `cmd/site` entrypoint wires everything together — the HTTP server is built in. Edit it to point at your content, then run it.
+A few lines of Go is all it takes — the HTTP server is part of the package. Create a `main.go` that points at your content:
 
-```go:title="cmd/site/main.go"
+```go:title="main.go"
 package main
 
 import (
@@ -64,7 +65,7 @@ import (
 func main() {
 	s := site.NewSite(
 		site.WithSiteTitle("My Docs"),
-		site.WithSiteContentDir("cmd/site/content"),
+		site.WithSiteContentDir("content"),
 		site.WithSiteMode(site.PreRender),
 	)
 
@@ -74,10 +75,10 @@ func main() {
 }
 ```
 
-Launch it from the repository root:
+Run it:
 
 ```terminal
-go run ./cmd/site
+go run .
 ```
 
 Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website.

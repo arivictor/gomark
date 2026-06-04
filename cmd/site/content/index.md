@@ -1,16 +1,16 @@
 ---
 title: GoMark
-description: GoMark is a self-hosted Go application for building markdown-powered documentation sites and embeddable Go code runners.
+description: GoMark is a Go package for building markdown-powered documentation sites and embeddable Go code runners.
 nav_title: Home
 ---
 
 # GoMark
 
-GoMark is a self-hosted Go application for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
+GoMark is a Go package for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
 
 **This site is built with GoMark.** Check out the [source code](https://github.com/arivictor/gomark).
 
-Build documentation sites, product handbooks, and developer guides with nothing but markdown. You clone the repo, drop in your content, and run the server. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
+Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. `go get` the package, drop in your content, and run the server. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
 
 ## Why GoMark
 
