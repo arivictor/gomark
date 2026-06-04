@@ -5,11 +5,11 @@ description: Start the GoMark runner with one call and configure its auth and ad
 
 # Runner
 
-The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live playgrounds in your docs — and it's a single function call to stand up.
+The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's a small constructor-based API to stand up.
 
 ## Entry point
 
-`gomark.Start()` is the one public entry point for the runner. Call it with options to configure in code, or call it bare and it reads its address and auth settings from the environment.
+`gomark.NewRunner(...).Start()` is the public entry point for the runner. Call it with options to configure in code, or call it with no options and it reads address and auth settings from the environment.
 
 ## Local development
 
@@ -25,9 +25,11 @@ import (
 )
 
 func main() {
-	if err := gomark.Start(
+	runner := gomark.NewRunner(
 		gomark.WithAuth(gomark.AuthModeNone, ""),
-	); err != nil {
+	)
+
+	if err := runner.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -37,7 +39,7 @@ That's the fastest path to a working runner on your machine.
 
 ## Environment-driven startup
 
-Prefer config outside your code? `gomark.Start()` works with no options at all when the environment supplies the auth configuration.
+Prefer config outside your code? `gomark.NewRunner().Start()` works with no options at all when the environment supplies the auth configuration.
 
 ```terminal
 export RUNNER_AUTH_MODE=bearer_static
@@ -57,10 +59,12 @@ import (
 )
 
 func main() {
-	if err := gomark.Start(
+	runner := gomark.NewRunner(
 		gomark.WithPort("9090"),
 		gomark.WithAuth(gomark.AuthModeBearerStatic, "my-runner-token"),
-	); err != nil {
+	)
+
+	if err := runner.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -90,9 +94,11 @@ When `RUNNER_AUTH_MODE` is unset, the runner resolves to `bearer_static` — so 
 Reserve this for local development or fully trusted networks.
 
 ```go:title="main.go"
-if err := gomark.Start(
+runner := gomark.NewRunner(
 	gomark.WithAuth(gomark.AuthModeNone, ""),
-); err != nil {
+)
+
+if err := runner.Start(); err != nil {
 	log.Fatal(err)
 }
 ```
@@ -102,6 +108,6 @@ if err := gomark.Start(
 - `GET /healthz` — returns `ok`
 - `POST /run` — executes a Go snippet request
 
-## Pairing with site playgrounds
+## Pairing with site runners
 
-The runner really shines when you wire it up to a docs site with playground execution enabled. See [Playground](/guides/playground) for the site-side settings.
+The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner](/guides/runner) for the site-side settings.

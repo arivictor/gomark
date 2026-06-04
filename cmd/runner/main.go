@@ -7,11 +7,11 @@ import (
 )
 
 func main() {
-	options := []gomark.Option{
-		gomark.WithPort("8080"),
+	runner := gomark.NewRunner(
+		gomark.WithPort("8081"),
 		gomark.WithAuth(gomark.AuthModeNone, ""),
-	}
-	if err := gomark.Start(options...); err != nil {
+	)
+	if err := runner.Start(); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -13,25 +13,25 @@ import (
 	"time"
 )
 
-const defaultPlaygroundRunTimeout = 3 * time.Second
+const defaultRunnerRunTimeout = 3 * time.Second
 
-type PlaygroundAuthMode string
+type RunnerAuthMode string
 
 const (
-	PlaygroundAuthBearerStatic PlaygroundAuthMode = "bearer_static"
-	PlaygroundAuthNone         PlaygroundAuthMode = "none"
+	RunnerAuthBearerStatic RunnerAuthMode = "bearer_static"
+	RunnerAuthNone         RunnerAuthMode = "none"
 )
 
-type PlaygroundAuthConfig struct {
-	Mode        PlaygroundAuthMode
+type RunnerAuthConfig struct {
+	Mode        RunnerAuthMode
 	BearerToken string
 }
 
-type PlaygroundRunRequest struct {
+type RunnerRunRequest struct {
 	Code string `json:"code"`
 }
 
-type PlaygroundRunResponse struct {
+type RunnerRunResponse struct {
 	OK         bool   `json:"ok"`
 	Output     string `json:"output,omitempty"`
 	Error      string `json:"error,omitempty"`
@@ -51,87 +51,87 @@ type runnerRunResponse struct {
 	DurationMS int64  `json:"durationMs"`
 }
 
-type PlaygroundClient struct {
+type RunnerClient struct {
 	runnerURL string
-	authMode  PlaygroundAuthMode
+	authMode  RunnerAuthMode
 	authToken string
 	http      *http.Client
 }
 
-func NewPlaygroundClient(runnerURL string, authConfig PlaygroundAuthConfig) (*PlaygroundClient, error) {
+func NewRunnerClient(runnerURL string, authConfig RunnerAuthConfig) (*RunnerClient, error) {
 	cleanURL := strings.TrimRight(strings.TrimSpace(runnerURL), "/")
 	if cleanURL == "" {
-		return nil, fmt.Errorf("playground runner URL is required")
+		return nil, fmt.Errorf("runner URL is required")
 	}
 	if _, err := url.ParseRequestURI(cleanURL); err != nil {
-		return nil, fmt.Errorf("invalid playground runner URL: %w", err)
+		return nil, fmt.Errorf("invalid runner URL: %w", err)
 	}
 
-	mode := PlaygroundAuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
+	mode := RunnerAuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
 	if mode == "" {
-		mode = PlaygroundAuthBearerStatic
+		mode = RunnerAuthBearerStatic
 	}
 
 	token := strings.TrimSpace(authConfig.BearerToken)
-	if mode == PlaygroundAuthBearerStatic && token == "" {
-		return nil, fmt.Errorf("playground bearer auth token is required")
+	if mode == RunnerAuthBearerStatic && token == "" {
+		return nil, fmt.Errorf("runner bearer auth token is required")
 	}
-	if mode != PlaygroundAuthBearerStatic && mode != PlaygroundAuthNone {
-		return nil, fmt.Errorf("unsupported playground auth mode %q", mode)
+	if mode != RunnerAuthBearerStatic && mode != RunnerAuthNone {
+		return nil, fmt.Errorf("unsupported runner auth mode %q", mode)
 	}
 
-	return &PlaygroundClient{
+	return &RunnerClient{
 		runnerURL: cleanURL,
 		authMode:  mode,
 		authToken: token,
-		http:      &http.Client{Timeout: defaultPlaygroundRunTimeout},
+		http:      &http.Client{Timeout: defaultRunnerRunTimeout},
 	}, nil
 }
 
-func (c *PlaygroundClient) Run(ctx context.Context, req PlaygroundRunRequest) (PlaygroundRunResponse, error) {
+func (c *RunnerClient) Run(ctx context.Context, req RunnerRunRequest) (RunnerRunResponse, error) {
 	if c == nil {
-		return PlaygroundRunResponse{}, fmt.Errorf("playground client is not configured")
+		return RunnerRunResponse{}, fmt.Errorf("runner client is not configured")
 	}
 
 	payload, err := json.Marshal(runnerRunRequest{Code: req.Code})
 	if err != nil {
-		return PlaygroundRunResponse{}, err
+		return RunnerRunResponse{}, err
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.runnerURL+"/run", bytes.NewReader(payload))
 	if err != nil {
-		return PlaygroundRunResponse{}, err
+		return RunnerRunResponse{}, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	if c.authMode == PlaygroundAuthBearerStatic {
+	if c.authMode == RunnerAuthBearerStatic {
 		httpReq.Header.Set("Authorization", "Bearer "+c.authToken)
 	}
 
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
-		return PlaygroundRunResponse{}, err
+		return RunnerRunResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return PlaygroundRunResponse{}, err
+		return RunnerRunResponse{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return PlaygroundRunResponse{OK: false, Error: "cannot run"}, nil
+		return RunnerRunResponse{OK: false, Error: "cannot run"}, nil
 	}
 
 	var decoded runnerRunResponse
 	if err := json.Unmarshal(body, &decoded); err != nil {
-		return PlaygroundRunResponse{}, err
+		return RunnerRunResponse{}, err
 	}
 
 	if !decoded.OK && strings.TrimSpace(decoded.Error) == "" {
 		decoded.Error = "cannot run"
 	}
 
-	return PlaygroundRunResponse{
+	return RunnerRunResponse{
 		OK:         decoded.OK,
 		Output:     decoded.Output,
 		Error:      decoded.Error,

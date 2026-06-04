@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
 )
 
-
 type Option func(*config)
+
+type Runner struct {
+	options []Option
+}
 
 type config struct {
 	addr      string
@@ -18,8 +20,23 @@ type config struct {
 	authToken string
 }
 
-func Start(options ...Option) error {
-	cfg := resolveConfig(options...)
+func NewRunner(options ...Option) *Runner {
+	copied := make([]Option, 0, len(options))
+	for _, option := range options {
+		if option == nil {
+			continue
+		}
+		copied = append(copied, option)
+	}
+	return &Runner{options: copied}
+}
+
+func (r *Runner) Start() error {
+	if r == nil {
+		return NewRunner().Start()
+	}
+
+	cfg := resolveConfig(r.options...)
 
 	h, err := NewHandler(AuthConfig{
 		Mode:        AuthMode(cfg.authMode),

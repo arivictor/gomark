@@ -27,11 +27,11 @@ Use `gomark.LiveRender` for local development. `gomark.PreRender` takes a snapsh
 
 Make sure your content exists under the configured `ContentDir` and that the site started successfully. The search index is built from the same content tree.
 
-## The playground run button does not appear
+## The runner run button does not appear
 
 Check all of the following:
 
-1. `PlaygroundEnabled` is `true`
+1. `RunnerEnabled` is `true`
 2. The code fence language is `go`
 3. The fence includes `run=true` or `editable=true`
 4. The runner URL and auth settings are valid

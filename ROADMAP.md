@@ -9,3 +9,5 @@
 - Support running other languages in the runner.
 - Improve runner security
 - Improve configurability
+- Logging
+- Better error handling and reporting

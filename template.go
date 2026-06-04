@@ -27,7 +27,7 @@ type PageData struct {
 	CanonicalURL      string
 	OGImageURL        string
 	TwitterImageURL   string
-	PlaygroundEnabled bool
+	RunnerEnabled bool
 	Robots            string
 	Time              string
 	MarkdownFile      string

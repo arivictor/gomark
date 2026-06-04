@@ -61,13 +61,13 @@ import (
 )
 
 func main() {
-	app := gomark.App{
-		Title:      "My Docs",
-		ContentDir: "content",
-		Mode:       gomark.PreRender,
-	}
+	site := gomark.NewSite(
+		gomark.WithSiteTitle("My Docs"),
+		gomark.WithSiteContentDir("content"),
+		gomark.WithSiteMode(gomark.PreRender),
+	)
 
-	if err := app.Run(":8080"); err != nil {
+	if err := site.Start(); err != nil {
 		log.Fatal(err)
 	}
 }

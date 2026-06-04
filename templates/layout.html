@@ -724,14 +724,14 @@
       color: var(--heading);
       border-color: var(--accent);
     }
-    .prose .playground-panel {
+    .prose .runner-panel {
       border-top: 1px solid var(--border);
       background: color-mix(in srgb, var(--background) 90%, var(--surface));
       padding: 12px;
       display: grid;
       gap: 10px;
     }
-    .prose .playground-editor {
+    .prose .runner-editor {
       width: 100%;
       min-height: 140px;
       resize: vertical;
@@ -744,17 +744,17 @@
       line-height: 1.6;
       padding: 10px 12px;
     }
-    .prose .playground-toolbar {
+    .prose .runner-toolbar {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .prose .playground-toolbar .status {
+    .prose .runner-toolbar .status {
       margin-left: auto;
       font-size: 12px;
       color: var(--muted);
     }
-    .prose .playground-output {
+    .prose .runner-output {
       margin: 0;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -1002,7 +1002,7 @@
     }
   </style>
 </head>
-<body data-current-path="{{.CurrentPath}}" data-playground-enabled="{{if .PlaygroundEnabled}}true{{else}}false{{end}}">
+<body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}">
   <div class="scroll-progress" aria-hidden="true">
     <div class="scroll-progress__bar" data-scroll-progress></div>
   </div>
@@ -1583,9 +1583,6 @@
 
         var frames = Array.prototype.slice.call(document.querySelectorAll('.code-frame[data-code-editable="true"]'));
         frames.forEach(function (frame) {
-          if (frame.getAttribute('data-playground-run') === 'true') {
-            return;
-          }
           if (frame.getAttribute('data-editable-bound') === 'true') {
             return;
           }
@@ -1626,9 +1623,9 @@
         });
       }
 
-      function setupPlaygroundRunButtons() {
-        var playgroundEnabled = document.body.getAttribute('data-playground-enabled') === 'true';
-        if (!playgroundEnabled) {
+      function setupRunnerRunButtons() {
+        var RunnerEnabled = document.body.getAttribute('data-runner-enabled') === 'true';
+        if (!RunnerEnabled) {
           return;
         }
 
@@ -1644,8 +1641,6 @@
             return;
           }
 
-          var editable = frame.getAttribute('data-playground-editable') === 'true';
-          var original = codeNode.textContent || '';
           var panel = null;
 
           function ensurePanel() {
@@ -1653,83 +1648,25 @@
               return panel;
             }
 
-            panel = document.createElement('div');
-            panel.className = 'playground-panel';
+            panel = frame.querySelector('.runner-panel');
+            if (panel) {
+              return panel;
+            }
 
-            var editor = document.createElement('textarea');
-            editor.className = 'playground-editor';
-            editor.value = original;
-            editor.readOnly = !editable;
+            panel = document.createElement('div');
+            panel.className = 'runner-panel';
 
             var toolbar = document.createElement('div');
-            toolbar.className = 'playground-toolbar';
-
-            var run = document.createElement('button');
-            run.type = 'button';
-            run.className = 'code-run';
-            run.textContent = 'Run';
-
-            var reset = document.createElement('button');
-            reset.type = 'button';
-            reset.className = 'code-run';
-            reset.textContent = 'Reset';
+            toolbar.className = 'runner-toolbar';
 
             var status = document.createElement('span');
             status.className = 'status';
-
-            var output = document.createElement('pre');
-            output.className = 'playground-output';
-            output.textContent = '';
-
-            reset.addEventListener('click', function () {
-              editor.value = original;
-              output.textContent = '';
-              status.textContent = '';
-            });
-
-            run.addEventListener('click', function () {
-              var source = editable ? editor.value : original;
-              run.disabled = true;
-              status.textContent = 'Running...';
-
-              window.fetch('/api/playground/run', {
-                method: 'POST',
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code: source })
-              }).then(function (response) {
-                return response.json().catch(function () { return {}; }).then(function (payload) {
-                  return { status: response.status, payload: payload };
-                });
-              }).then(function (result) {
-                var payload = result.payload || {};
-                if (result.status !== 200 || payload.ok === false) {
-                  output.textContent = 'cannot run';
-                  status.textContent = 'Failed';
-                  return;
-                }
-
-                output.textContent = payload.output || '';
-                var suffix = '';
-                if (typeof payload.durationMs === 'number') {
-                  suffix = ' (' + payload.durationMs + 'ms)';
-                }
-                status.textContent = payload.exitCode === 0 ? 'Completed' + suffix : 'Failed' + suffix;
-              }).catch(function () {
-                output.textContent = 'cannot run';
-                status.textContent = 'Failed';
-              }).finally(function () {
-                run.disabled = false;
-              });
-            });
-
-            toolbar.appendChild(run);
-            toolbar.appendChild(reset);
             toolbar.appendChild(status);
 
-            panel.appendChild(editor);
+            var output = document.createElement('pre');
+            output.className = 'runner-output';
+            output.textContent = '';
+
             panel.appendChild(toolbar);
             panel.appendChild(output);
             frame.appendChild(panel);
@@ -1739,13 +1676,50 @@
 
           button.setAttribute('data-run-bound', 'true');
           button.addEventListener('click', function () {
-            ensurePanel();
+            var panelNode = ensurePanel();
+            var statusNode = panelNode.querySelector('.status');
+            var outputNode = panelNode.querySelector('.runner-output');
+            var source = codeNode.textContent || '';
+            button.disabled = true;
+            statusNode.textContent = 'Running...';
+
+            window.fetch('/api/runner/run', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ code: source })
+            }).then(function (response) {
+              return response.json().catch(function () { return {}; }).then(function (payload) {
+                return { status: response.status, payload: payload };
+              });
+            }).then(function (result) {
+              var payload = result.payload || {};
+              if (result.status !== 200 || payload.ok === false) {
+                outputNode.textContent = payload.error || 'cannot run';
+                statusNode.textContent = 'Failed';
+                return;
+              }
+
+              outputNode.textContent = payload.output || '';
+              var suffix = '';
+              if (typeof payload.durationMs === 'number') {
+                suffix = ' (' + payload.durationMs + 'ms)';
+              }
+              statusNode.textContent = payload.exitCode === 0 ? 'Completed' + suffix : 'Failed' + suffix;
+            }).catch(function () {
+              outputNode.textContent = 'cannot run';
+              statusNode.textContent = 'Failed';
+            }).finally(function () {
+              button.disabled = false;
+            });
           });
         });
       }
 
       setupEditableCodeFramesGlobal();
-      setupPlaygroundRunButtons();
+      setupRunnerRunButtons();
 
       var navFolders = Array.prototype.slice.call(document.querySelectorAll('[data-nav-folder]'));
       navFolders.forEach(function (trigger) {

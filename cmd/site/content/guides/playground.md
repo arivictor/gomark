@@ -1,23 +1,20 @@
 ---
-title: Playground
+title: Runner
 description: Enable runnable Go code blocks in your docs by connecting a site to the GoMark runner.
 ---
 
-# Playground
+# Runner
 
 Turn static code samples into live ones. GoMark can attach run controls to your Go code fences and send execution requests to a GoMark runner, so readers run and edit examples without ever leaving the page.
 
 ## Enable the feature
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir:               "content",
-	Mode:                     gomark.PreRender,
-	PlaygroundEnabled:        true,
-	PlaygroundRunnerURL:      "http://localhost:8081",
-	PlaygroundRunnerAuthMode: "bearer_static",
-	PlaygroundRunnerAuthToken: "my-runner-token",
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteMode(gomark.PreRender),
+	gomark.WithSiteRunner("http://localhost:8081", gomark.RunnerAuthBearerStatic, "my-runner-token"),
+)
 ```
 
 ## Mark runnable code fences
@@ -36,7 +33,7 @@ func main() {
 ```
 ~~~
 
-When playground support is enabled, GoMark can render run controls for Go code blocks marked as runnable or editable.
+When runner support is enabled, GoMark can render run controls for Go code blocks marked as runnable or editable.
 
 ## Recommended setup
 

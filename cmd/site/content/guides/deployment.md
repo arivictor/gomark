@@ -5,17 +5,17 @@ description: Prepare a GoMark site for production with prerendering, a stable Si
 
 # Deployment
 
-Shipping to production comes down to three things: predictable output, correct canonical URLs, and a locked-down runner if you've enabled playground execution. GoMark makes all three a matter of setting a couple of fields.
+Shipping to production comes down to three things: predictable output, correct canonical URLs, and a locked-down runner if you've enabled runner execution. GoMark makes all three a matter of setting a couple of fields.
 
 ## Recommended production app
 
 ```go:title="main.go"
-app := gomark.App{
-	Title:      "My Docs",
-	ContentDir: "content",
-	SiteURL:    "https://docs.example.com",
-	Mode:       gomark.PreRender,
-}
+site := gomark.NewSite(
+	gomark.WithSiteTitle("My Docs"),
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteURL("https://docs.example.com"),
+	gomark.WithSiteMode(gomark.PreRender),
+)
 ```
 
 ## Why `SiteURL` matters
@@ -35,7 +35,7 @@ Run through this before you go live:
 2. Set `SiteURL` to your public origin
 3. Provide `PublicDir` if you need custom branding
 4. Add custom templates only when you need them
-5. Keep the runner behind auth if playground execution is enabled
+5. Keep the runner behind auth if runner execution is enabled
 
 ## Publishing the module
 

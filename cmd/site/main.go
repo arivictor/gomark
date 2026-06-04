@@ -6,12 +6,15 @@ import (
 	"github.com/arivictor/gomark"
 )
 
+
 func main() {
-	app := gomark.App{
-		ContentDir: "cmd/site/content",
-		Mode:       gomark.PreRender,
-	}
-	if err := app.Run(":8080"); err != nil {
+	site := gomark.NewSite(
+		gomark.WithSiteAddress(":8080"),
+		gomark.WithSiteContentDir("cmd/site/content"),
+		gomark.WithSiteMode(gomark.PreRender),
+		gomark.WithSiteRunner("http://localhost:8081", gomark.RunnerAuthNone, ""),
+	)
+	if err := site.Start(); err != nil {
 		log.Fatal(err)
 	}
 }

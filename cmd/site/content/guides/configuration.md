@@ -1,42 +1,42 @@
 ---
 title: Configuration
-description: Configure GoMark with App fields, environment-driven behavior, and feature toggles.
+description: Configure GoMark with Site options, environment-driven behavior, and feature toggles.
 ---
 
 # Configuration
 
-`gomark.App` is the single configuration surface for the site server. Every knob lives in one struct — set the fields you need, leave the rest to sensible defaults.
+`gomark.NewSite(...)` with `WithSite...` options is the single configuration surface for the site server. Set the options you need, leave the rest to sensible defaults.
 
 ## Core fields
 
 ```go:title="main.go"
-app := gomark.App{
-	Title:      "My Docs",
-	Logo:       "/logo.svg",
-	ContentDir: "content",
-	SiteURL:    "https://docs.example.com",
-	Mode:       gomark.PreRender,
-}
+site := gomark.NewSite(
+	gomark.WithSiteTitle("My Docs"),
+	gomark.WithSiteLogo("/logo.svg"),
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteURL("https://docs.example.com"),
+	gomark.WithSiteMode(gomark.PreRender),
+)
 ```
 
-## App fields
+## Site options
 
-Every field you can set on `gomark.App`:
+Common options you can set on `gomark.NewSite(...)`:
 
-- `Title` — site name used in layout and metadata
-- `Logo` — optional logo URL shown in the header
-- `ContentDir` — markdown content root, default `content`
-- `TemplatesDir` — directory containing `layout.html` and page templates
-- `LayoutPath` — explicit path to a layout template
-- `TemplateGlob` — explicit glob for page templates
-- `PublicDir` — static asset directory that overrides embedded defaults
-- `SidebarDepth` — max sidebar depth, default `2`
-- `SiteURL` — base URL used for sitemap and canonical URLs
-- `Mode` — `gomark.LiveRender` or `gomark.PreRender`
-- `PlaygroundEnabled` — enables runner UI for compatible Go code fences
-- `PlaygroundRunnerURL` — runner base URL for playground execution
-- `PlaygroundRunnerAuthMode` — auth mode sent to the runner client
-- `PlaygroundRunnerAuthToken` — auth token sent to the runner client
+- `WithSiteTitle` — site name used in layout and metadata
+- `WithSiteLogo` — optional logo URL shown in the header
+- `WithSiteContentDir` — markdown content root, default `content`
+- `WithSiteTemplatesDir` — directory containing `layout.html` and page templates
+- `WithSiteLayoutPath` — explicit path to a layout template
+- `WithSiteTemplateGlob` — explicit glob for page templates
+- `WithSitePublicDir` — static asset directory that overrides embedded defaults
+- `WithSiteSidebarDepth` — max sidebar depth, default `2`
+- `WithSiteURL` — base URL used for sitemap and canonical URLs
+- `WithSiteMode` — `gomark.LiveRender` or `gomark.PreRender`
+- `WithSiteRunnerEnabled` — enables runner UI for compatible Go code fences
+- `WithSiteRunnerURL` — runner base URL for runner execution
+- `WithSiteRunnerAuth` — auth mode and token sent to the runner client
+- `WithSiteRunner` — enable + URL + auth in one option
 
 ## Render modes
 
@@ -63,19 +63,19 @@ Two starting points that cover most projects.
 For local work:
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir: "content",
-	Mode:       gomark.LiveRender,
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteMode(gomark.LiveRender),
+)
 ```
 
 For deployment:
 
 ```go:title="main.go"
-app := gomark.App{
-	Title:      "My Docs",
-	ContentDir: "content",
-	SiteURL:    "https://docs.example.com",
-	Mode:       gomark.PreRender,
-}
+site := gomark.NewSite(
+	gomark.WithSiteTitle("My Docs"),
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteURL("https://docs.example.com"),
+	gomark.WithSiteMode(gomark.PreRender),
+)
 ```

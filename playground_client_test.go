@@ -8,14 +8,14 @@ import (
 	"testing"
 )
 
-func TestNewPlaygroundClientRequiresBearerToken(t *testing.T) {
-	_, err := NewPlaygroundClient("http://example.com", PlaygroundAuthConfig{Mode: PlaygroundAuthBearerStatic})
+func TestNewRunnerClientRequiresBearerToken(t *testing.T) {
+	_, err := NewRunnerClient("http://example.com", RunnerAuthConfig{Mode: RunnerAuthBearerStatic})
 	if err == nil {
 		t.Fatalf("expected error when bearer token is missing")
 	}
 }
 
-func TestPlaygroundClientRunBearerStaticSetsAuthorization(t *testing.T) {
+func TestRunnerClientRunBearerStaticSetsAuthorization(t *testing.T) {
 	var authHeader string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader = r.Header.Get("Authorization")
@@ -23,14 +23,14 @@ func TestPlaygroundClientRunBearerStaticSetsAuthorization(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewPlaygroundClient(server.URL, PlaygroundAuthConfig{Mode: PlaygroundAuthBearerStatic, BearerToken: "secret-token"})
+	client, err := NewRunnerClient(server.URL, RunnerAuthConfig{Mode: RunnerAuthBearerStatic, BearerToken: "secret-token"})
 	if err != nil {
-		t.Fatalf("new playground client: %v", err)
+		t.Fatalf("new runner client: %v", err)
 	}
 
-	_, err = client.Run(context.Background(), PlaygroundRunRequest{Code: "package main"})
+	_, err = client.Run(context.Background(), RunnerRunRequest{Code: "package main"})
 	if err != nil {
-		t.Fatalf("run playground client: %v", err)
+		t.Fatalf("run runner client: %v", err)
 	}
 
 	if authHeader != "Bearer secret-token" {
@@ -38,7 +38,7 @@ func TestPlaygroundClientRunBearerStaticSetsAuthorization(t *testing.T) {
 	}
 }
 
-func TestPlaygroundClientRunNoneAuthSkipsAuthorization(t *testing.T) {
+func TestRunnerClientRunNoneAuthSkipsAuthorization(t *testing.T) {
 	var authHeader string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader = r.Header.Get("Authorization")
@@ -46,14 +46,14 @@ func TestPlaygroundClientRunNoneAuthSkipsAuthorization(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewPlaygroundClient(server.URL, PlaygroundAuthConfig{Mode: PlaygroundAuthNone})
+	client, err := NewRunnerClient(server.URL, RunnerAuthConfig{Mode: RunnerAuthNone})
 	if err != nil {
-		t.Fatalf("new playground client: %v", err)
+		t.Fatalf("new runner client: %v", err)
 	}
 
-	_, err = client.Run(context.Background(), PlaygroundRunRequest{Code: "package main"})
+	_, err = client.Run(context.Background(), RunnerRunRequest{Code: "package main"})
 	if err != nil {
-		t.Fatalf("run playground client: %v", err)
+		t.Fatalf("run runner client: %v", err)
 	}
 
 	if authHeader != "" {

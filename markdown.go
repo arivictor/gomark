@@ -33,7 +33,7 @@ type MarkdownRenderer interface {
 }
 
 type StdlibMarkdownRenderer struct {
-	PlaygroundEnabled bool
+	RunnerEnabled bool
 }
 
 type MarkdownService struct {
@@ -326,7 +326,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			classAttr = ` class="language-` + html.EscapeString(codeLang) + `"`
 		}
 
-		allowRun := s.PlaygroundEnabled && strings.EqualFold(codeLang, "go") && (codeRun || codeEditable)
+		allowRun := s.RunnerEnabled && strings.EqualFold(codeLang, "go") && (codeRun || codeEditable)
 		editableAttr := "false"
 		if codeEditable {
 			editableAttr = "true"
@@ -337,7 +337,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			out.WriteString(" data-code-editable=\"true\"")
 		}
 		if allowRun {
-			out.WriteString(" data-playground-run=\"true\" data-playground-editable=\"")
+			out.WriteString(" data-runner-run=\"true\" data-runner-editable=\"")
 			out.WriteString(editableAttr)
 			out.WriteString("\"")
 		}
@@ -348,7 +348,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		out.WriteString("</span>")
 		out.WriteString("<div class=\"code-frame-actions\">")
 		if allowRun {
-			out.WriteString("<button type=\"button\" class=\"code-run\" data-run-code=\"\" aria-label=\"Run code block\" title=\"Run in playground\">Run</button>")
+			out.WriteString("<button type=\"button\" class=\"code-run\" data-run-code=\"\" aria-label=\"Run code block\" title=\"Run in runner\">Run</button>")
 		}
 		out.WriteString("<button type=\"button\" class=\"code-copy\" data-copy-code=\"\" aria-label=\"Copy code block\" title=\"Copy code\">")
 		out.WriteString("<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>")

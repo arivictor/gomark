@@ -31,7 +31,7 @@ curl "http://localhost:8080/api/search?q=render&limit=5"
     {
       "title": "Configuration",
       "path": "/guides/configuration",
-      "snippet": "...Configure GoMark with App fields, environment-driven behavior, and feature toggles..."
+      "snippet": "...Configure GoMark with Site options, environment-driven behavior, and feature toggles..."
     }
   ]
 }

@@ -23,20 +23,20 @@ const defaultOGImagePath = "/gomark-og-1200x630.png"
 const defaultTwitterImagePath = "/gomark-twitter-1200x628.png"
 
 type App struct {
-	Title                     string
-	Logo                      string
-	ContentDir                string
-	TemplatesDir              string
-	LayoutPath                string
-	TemplateGlob              string
-	PublicDir                 string
-	SidebarDepth              int
-	SiteURL                   string
-	Mode                      RenderMode
-	PlaygroundEnabled         bool
-	PlaygroundRunnerURL       string
-	PlaygroundRunnerAuthMode  string
-	PlaygroundRunnerAuthToken string
+	Title           string
+	Logo            string
+	ContentDir      string
+	TemplatesDir    string
+	LayoutPath      string
+	TemplateGlob    string
+	PublicDir       string
+	SidebarDepth    int
+	SiteURL         string
+	Mode            RenderMode
+	RunnerEnabled   bool
+	RunnerURL       string
+	RunnerAuthMode  RunnerAuthMode
+	RunnerAuthToken string
 }
 
 type RenderMode string
@@ -46,7 +46,138 @@ const (
 	PreRender  RenderMode = "pre_render"
 )
 
-func (a *App) Run(addr string) error {
+type SiteOption func(*Site)
+
+type Site struct {
+	App  App
+	addr string
+}
+
+func NewSite(options ...SiteOption) *Site {
+	s := &Site{}
+	for _, option := range options {
+		if option == nil {
+			continue
+		}
+		option(s)
+	}
+	return s
+}
+
+func (s *Site) Start() error {
+	if s == nil {
+		return fmt.Errorf("site is nil")
+	}
+
+	addr := strings.TrimSpace(s.addr)
+	if addr == "" {
+		port := strings.TrimSpace(os.Getenv("PORT"))
+		if port == "" {
+			port = "8080"
+		}
+		addr = ":" + port
+	}
+
+	return s.run(addr)
+}
+
+func WithSiteAddress(addr string) SiteOption {
+	return func(s *Site) {
+		s.addr = strings.TrimSpace(addr)
+	}
+}
+
+func WithSiteTitle(title string) SiteOption {
+	return func(s *Site) {
+		s.App.Title = strings.TrimSpace(title)
+	}
+}
+
+func WithSiteLogo(logoURL string) SiteOption {
+	return func(s *Site) {
+		s.App.Logo = strings.TrimSpace(logoURL)
+	}
+}
+
+func WithSiteContentDir(dir string) SiteOption {
+	return func(s *Site) {
+		s.App.ContentDir = strings.TrimSpace(dir)
+	}
+}
+
+func WithSiteTemplatesDir(dir string) SiteOption {
+	return func(s *Site) {
+		s.App.TemplatesDir = strings.TrimSpace(dir)
+	}
+}
+
+func WithSiteLayoutPath(path string) SiteOption {
+	return func(s *Site) {
+		s.App.LayoutPath = strings.TrimSpace(path)
+	}
+}
+
+func WithSiteTemplateGlob(glob string) SiteOption {
+	return func(s *Site) {
+		s.App.TemplateGlob = strings.TrimSpace(glob)
+	}
+}
+
+func WithSitePublicDir(dir string) SiteOption {
+	return func(s *Site) {
+		s.App.PublicDir = strings.TrimSpace(dir)
+	}
+}
+
+func WithSiteSidebarDepth(depth int) SiteOption {
+	return func(s *Site) {
+		s.App.SidebarDepth = depth
+	}
+}
+
+func WithSiteURL(siteURL string) SiteOption {
+	return func(s *Site) {
+		s.App.SiteURL = strings.TrimSpace(siteURL)
+	}
+}
+
+func WithSiteMode(mode RenderMode) SiteOption {
+	return func(s *Site) {
+		s.App.Mode = mode
+	}
+}
+
+func WithSiteRunnerEnabled(enabled bool) SiteOption {
+	return func(s *Site) {
+		s.App.RunnerEnabled = enabled
+	}
+}
+
+func WithSiteRunnerURL(url string) SiteOption {
+	return func(s *Site) {
+		s.App.RunnerURL = strings.TrimSpace(url)
+	}
+}
+
+func WithSiteRunnerAuth(mode RunnerAuthMode, token string) SiteOption {
+	return func(s *Site) {
+		s.App.RunnerAuthMode = mode
+		s.App.RunnerAuthToken = strings.TrimSpace(token)
+	}
+}
+
+func WithSiteRunner(url string, mode RunnerAuthMode, token string) SiteOption {
+	return func(s *Site) {
+		s.App.RunnerEnabled = true
+		s.App.RunnerURL = strings.TrimSpace(url)
+		s.App.RunnerAuthMode = mode
+		s.App.RunnerAuthToken = strings.TrimSpace(token)
+	}
+}
+
+func (s *Site) run(addr string) error {
+	a := &s.App
+
 	dir := a.contentDir()
 	layoutPath, templateGlob := a.templatePaths()
 	renderer, err := NewFileTemplateRenderer(layoutPath, templateGlob)
@@ -61,15 +192,15 @@ func (a *App) Run(addr string) error {
 	appTitle := a.siteTitle()
 	appLogo := a.logoURL()
 	siteURL := a.siteURL()
-	playgroundEnabled := a.playgroundEnabled()
-	playgroundRunnerURL := a.playgroundRunnerURL()
-	playgroundRunnerAuthMode := a.playgroundRunnerAuthMode()
-	playgroundRunnerAuthToken := a.playgroundRunnerAuthToken()
-	var playgroundClient *PlaygroundClient
-	if playgroundEnabled {
-		playgroundClient, err = NewPlaygroundClient(playgroundRunnerURL, PlaygroundAuthConfig{
-			Mode:        PlaygroundAuthMode(playgroundRunnerAuthMode),
-			BearerToken: playgroundRunnerAuthToken,
+	RunnerEnabled := a.GetRunnerEnabled()
+	RunnerURL := a.GetRunnerURL()
+	RunnerAuthMode := a.GetRunnerAuthMode()
+	RunnerAuthToken := a.GetRunnerAuthToken()
+	var RunnerClient *RunnerClient
+	if RunnerEnabled {
+		RunnerClient, err = NewRunnerClient(RunnerURL, RunnerAuthConfig{
+			Mode:        RunnerAuthMode,
+			BearerToken: RunnerAuthToken,
 		})
 		if err != nil {
 			return err
@@ -124,18 +255,18 @@ func (a *App) Run(addr string) error {
 		results := searchIndex.Query(q, limit)
 		return json.NewEncoder(w).Encode(map[string]any{"query": q, "results": results})
 	})
-	if playgroundEnabled {
-		httpApp.Handle("POST", "/api/playground/run", func(w http.ResponseWriter, r *http.Request) error {
-			var req PlaygroundRunRequest
+	if RunnerEnabled {
+		httpApp.Handle("POST", "/api/runner/run", func(w http.ResponseWriter, r *http.Request) error {
+			var req RunnerRunRequest
 			if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<10)).Decode(&req); err != nil {
 				return &BadRequestError{Message: "invalid run request"}
 			}
 
-			resp, runErr := playgroundClient.Run(r.Context(), req)
+			resp, runErr := RunnerClient.Run(r.Context(), req)
 			if runErr != nil {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(http.StatusBadGateway)
-				return json.NewEncoder(w).Encode(PlaygroundRunResponse{OK: false, Error: "cannot run"})
+				return json.NewEncoder(w).Encode(RunnerRunResponse{OK: false, Error: "cannot run"})
 			}
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -143,7 +274,7 @@ func (a *App) Run(addr string) error {
 		})
 	}
 
-	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, StdlibMarkdownRenderer{PlaygroundEnabled: playgroundEnabled}, playgroundEnabled)
+	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, StdlibMarkdownRenderer{RunnerEnabled: RunnerEnabled}, RunnerEnabled)
 	if err != nil {
 		return err
 	}
@@ -202,7 +333,7 @@ func (a *App) Run(addr string) error {
 	return httpApp.Run(addr)
 }
 
-func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL string, markdownRenderer MarkdownRenderer, playgroundEnabled bool) (string, error) {
+func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL string, markdownRenderer MarkdownRenderer, RunnerEnabled bool) (string, error) {
 	cleanDir := filepath.Clean(dir)
 	provider, err := a.newContentPageProvider(cleanDir, markdownRenderer)
 	if err != nil {
@@ -265,23 +396,23 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 			baseURL := requestBaseURL(r, siteURL)
 
 			return renderer.Render(w, "markdown", PageData{
-				Title:             title,
-				Description:       page.Description,
-				SiteName:          siteName,
-				LogoURL:           logoURL,
-				CanonicalURL:      joinAbsoluteURL(baseURL, pageRoute),
-				OGImageURL:        joinAbsoluteURL(baseURL, defaultOGImagePath),
-				TwitterImageURL:   joinAbsoluteURL(baseURL, defaultTwitterImagePath),
-				PlaygroundEnabled: playgroundEnabled,
-				Robots:            "index,follow",
-				Time:              time.Now().UTC().Format(time.RFC3339),
-				MarkdownFile:      page.Path,
-				BodyHTML:          template.HTML(page.HTML),
-				Headings:          page.Headings,
-				NavTitle:          navTitle,
-				Nav:               nav,
-				TopNav:            topNav,
-				CurrentPath:       pageRoute,
+				Title:           title,
+				Description:     page.Description,
+				SiteName:        siteName,
+				LogoURL:         logoURL,
+				CanonicalURL:    joinAbsoluteURL(baseURL, pageRoute),
+				OGImageURL:      joinAbsoluteURL(baseURL, defaultOGImagePath),
+				TwitterImageURL: joinAbsoluteURL(baseURL, defaultTwitterImagePath),
+				RunnerEnabled:   RunnerEnabled,
+				Robots:          "index,follow",
+				Time:            time.Now().UTC().Format(time.RFC3339),
+				MarkdownFile:    page.Path,
+				BodyHTML:        template.HTML(page.HTML),
+				Headings:        page.Headings,
+				NavTitle:        navTitle,
+				Nav:             nav,
+				TopNav:          topNav,
+				CurrentPath:     pageRoute,
 			})
 		})
 
@@ -318,31 +449,31 @@ func (a *App) newContentPageProvider(contentDir string, renderer MarkdownRendere
 	}
 }
 
-func (a *App) playgroundEnabled() bool {
-	if a.PlaygroundEnabled {
+func (a *App) GetRunnerEnabled() bool {
+	if a.RunnerEnabled {
 		return true
 	}
 	raw := strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_ENABLED")))
 	return raw == "1" || raw == "true" || raw == "yes" || raw == "on"
 }
 
-func (a *App) playgroundRunnerURL() string {
-	if strings.TrimSpace(a.PlaygroundRunnerURL) != "" {
-		return strings.TrimSpace(a.PlaygroundRunnerURL)
+func (a *App) GetRunnerURL() string {
+	if strings.TrimSpace(a.RunnerURL) != "" {
+		return strings.TrimSpace(a.RunnerURL)
 	}
 	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_URL"))
 }
 
-func (a *App) playgroundRunnerAuthMode() string {
-	if strings.TrimSpace(a.PlaygroundRunnerAuthMode) != "" {
-		return strings.TrimSpace(a.PlaygroundRunnerAuthMode)
+func (a *App) GetRunnerAuthMode() RunnerAuthMode {
+	if strings.TrimSpace(string(a.RunnerAuthMode)) != "" {
+		return RunnerAuthMode(strings.ToLower(strings.TrimSpace(string(a.RunnerAuthMode))))
 	}
-	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_MODE"))
+	return RunnerAuthMode(strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_MODE"))))
 }
 
-func (a *App) playgroundRunnerAuthToken() string {
-	if strings.TrimSpace(a.PlaygroundRunnerAuthToken) != "" {
-		return strings.TrimSpace(a.PlaygroundRunnerAuthToken)
+func (a *App) GetRunnerAuthToken() string {
+	if strings.TrimSpace(a.RunnerAuthToken) != "" {
+		return strings.TrimSpace(a.RunnerAuthToken)
 	}
 	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_TOKEN"))
 }

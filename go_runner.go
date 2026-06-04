@@ -15,8 +15,6 @@ import (
 	"time"
 )
 
-var errCannotRun = errors.New("cannot run")
-
 type RunResult struct {
 	OK         bool
 	Output     string
@@ -37,7 +35,7 @@ func (GoRunner) Run(ctx context.Context, code string) RunResult {
 		return failure(start)
 	}
 
-	dir, err := os.MkdirTemp("", "go-playground-*")
+	dir, err := os.MkdirTemp("", "go-runner-*")
 	if err != nil {
 		return failure(start)
 	}

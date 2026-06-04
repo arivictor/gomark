@@ -30,10 +30,10 @@ You keep the full page title while showing a cleaner label in navigation.
 Keep the sidebar tidy by capping how deep it nests with `SidebarDepth`.
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir:   "content",
-	SidebarDepth: 3,
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteSidebarDepth(3),
+)
 ```
 
 Use a smaller depth when your content tree is broad and you want a simpler sidebar.

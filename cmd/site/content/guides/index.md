@@ -1,6 +1,6 @@
 ---
 title: Guides
-description: Guides for structuring content, configuring GoMark, and enabling features like search and playground execution.
+description: Guides for structuring content, configuring GoMark, and enabling features like search and runner execution.
 ---
 
 # Guides
@@ -12,5 +12,5 @@ You have a site running. Now shape it. These guides cover everything from struct
 - [Customization](/guides/customization) — bring your own templates and branding
 - [Navigation](/guides/navigation) — shape the sidebar and top-level nav
 - [Search](/guides/search) — the built-in search endpoint and index
-- [Playground](/guides/playground) — runnable Go code blocks in your docs
+- [Runner](/guides/runner) — runnable Go code blocks in your docs
 - [Deployment](/guides/deployment) — ship to production with confidence

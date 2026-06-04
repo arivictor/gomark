@@ -22,7 +22,7 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 - **Search out of the box** — a ready-to-query endpoint at `/api/search`
 - **SEO on by default** — generated `sitemap.xml` and `robots.txt`
 - **Embedded templates and assets** — a presentable site before you touch a single template
-- **Runnable Go examples** — optional playground integration for live code
+- **Runnable Go examples** — optional runner integration for live code
 
 ## Start here
 
@@ -39,7 +39,7 @@ GoMark gives you two ways in, depending on what you're building.
 
 ### Build a site
 
-Reach for `gomark.App` when you want GoMark to serve a content directory as a complete website.
+Reach for `gomark.NewSite(...)` when you want GoMark to serve a content directory as a complete website.
 
 ```go:title="main.go"
 package main
@@ -51,13 +51,13 @@ import (
 )
 
 func main() {
-	app := gomark.App{
-		Title:      "GoMark Docs",
-		ContentDir: "content",
-		Mode:       gomark.PreRender,
-	}
+	site := gomark.NewSite(
+		gomark.WithSiteTitle("GoMark Docs"),
+		gomark.WithSiteContentDir("content"),
+		gomark.WithSiteMode(gomark.PreRender),
+	)
 
-	if err := app.Run(":8080"); err != nil {
+	if err := site.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -67,7 +67,7 @@ func main() {
 
 > Currently supports `go` code fences. More languages may follow.
 
-Reach for `gomark.Start()` when you want the standalone Go runner server.
+Reach for `gomark.NewRunner(...)` when you want the standalone Go runner server.
 
 ```go:title="main.go"
 package main
@@ -79,16 +79,18 @@ import (
 )
 
 func main() {
-	if err := gomark.Start(
+	runner := gomark.NewRunner(
 		gomark.WithPort("8080"),
 		gomark.WithAuth(gomark.AuthModeNone, ""),
-	); err != nil {
+	)
+
+	if err := runner.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
 ```
 
-## [What the site generates for you](#what-the-site-generates-for-you)
+## What the site generates for you
 
 Point GoMark at a content tree and it does the rest:
 

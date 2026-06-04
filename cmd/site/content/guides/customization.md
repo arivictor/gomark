@@ -12,21 +12,21 @@ GoMark ships with embedded templates and public assets, so you get a presentable
 The simplest override is a directory holding `layout.html` and the page templates GoMark expects.
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir:   "content",
-	TemplatesDir: "templates",
-	Mode:         gomark.PreRender,
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteTemplatesDir("templates"),
+	gomark.WithSiteMode(gomark.PreRender),
+)
 ```
 
 If you need explicit paths instead of a directory convention, use `LayoutPath` and `TemplateGlob`.
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir:   "content",
-	LayoutPath:   "templates/layout.html",
-	TemplateGlob: "templates/*.html",
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteLayoutPath("templates/layout.html"),
+	gomark.WithSiteTemplateGlob("templates/*.html"),
+)
 ```
 
 ## Custom public assets
@@ -34,10 +34,10 @@ app := gomark.App{
 Set `PublicDir` to serve your own favicons, OG images, or any additional static files.
 
 ```go:title="main.go"
-app := gomark.App{
-	ContentDir: "content",
-	PublicDir:  "public",
-}
+site := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSitePublicDir("public"),
+)
 ```
 
 If `PublicDir` is empty, GoMark serves embedded defaults from the package.

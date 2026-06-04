@@ -104,14 +104,14 @@ func TestStdlibMarkdownRendererRendersCodeFenceTitleMetadata(t *testing.T) {
 	}
 }
 
-func TestStdlibMarkdownRendererPlaygroundRunButtonEnabledForGoFence(t *testing.T) {
-	renderer := StdlibMarkdownRenderer{PlaygroundEnabled: true}
+func TestStdlibMarkdownRendererRunnerRunButtonEnabledForGoFence(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
 	output, _ := renderer.Render("```go run=true editable=true\npackage main\nfunc main(){}\n```")
 
-	if !strings.Contains(output, `data-playground-run="true"`) {
-		t.Fatalf("expected playground run metadata in output: %s", output)
+	if !strings.Contains(output, `data-runner-run="true"`) {
+		t.Fatalf("expected runner run metadata in output: %s", output)
 	}
-	if !strings.Contains(output, `data-playground-editable="true"`) {
+	if !strings.Contains(output, `data-runner-editable="true"`) {
 		t.Fatalf("expected editable metadata in output: %s", output)
 	}
 	if !strings.Contains(output, `class="code-run"`) {
@@ -119,38 +119,38 @@ func TestStdlibMarkdownRendererPlaygroundRunButtonEnabledForGoFence(t *testing.T
 	}
 }
 
-func TestStdlibMarkdownRendererPlaygroundRunButtonRequiresFeatureFlag(t *testing.T) {
-	renderer := StdlibMarkdownRenderer{PlaygroundEnabled: false}
+func TestStdlibMarkdownRendererRunnerRunButtonRequiresFeatureFlag(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: false}
 	output, _ := renderer.Render("```go run=true\npackage main\nfunc main(){}\n```")
 
-	if strings.Contains(output, `data-playground-run="true"`) {
-		t.Fatalf("did not expect playground metadata when feature disabled: %s", output)
+	if strings.Contains(output, `data-runner-run="true"`) {
+		t.Fatalf("did not expect runner metadata when feature disabled: %s", output)
 	}
 	if strings.Contains(output, `class="code-run"`) {
 		t.Fatalf("did not expect run button when feature disabled: %s", output)
 	}
 }
 
-func TestStdlibMarkdownRendererEditableMetadataWithoutPlayground(t *testing.T) {
-	renderer := StdlibMarkdownRenderer{PlaygroundEnabled: false}
+func TestStdlibMarkdownRendererEditableMetadataWithoutRunner(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: false}
 	output, _ := renderer.Render("```go:title=\"Example\":editable=true\npackage main\nfunc main(){}\n```")
 
 	if !strings.Contains(output, `data-code-editable="true"`) {
-		t.Fatalf("expected editable metadata even when playground is disabled: %s", output)
+		t.Fatalf("expected editable metadata even when runner is disabled: %s", output)
 	}
-	if strings.Contains(output, `data-playground-run="true"`) {
-		t.Fatalf("did not expect runner metadata when playground is disabled: %s", output)
+	if strings.Contains(output, `data-runner-run="true"`) {
+		t.Fatalf("did not expect runner metadata when runner is disabled: %s", output)
 	}
 }
 
-func TestStdlibMarkdownRendererPlaygroundEditableEnablesRunnerUI(t *testing.T) {
-	renderer := StdlibMarkdownRenderer{PlaygroundEnabled: true}
+func TestStdlibMarkdownRendererRunnerEditableEnablesRunnerUI(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
 	output, _ := renderer.Render("```go:title=\"Example\":editable=true\npackage main\nfunc main(){}\n```")
 
-	if !strings.Contains(output, `data-playground-run="true"`) {
-		t.Fatalf("expected playground metadata for editable block: %s", output)
+	if !strings.Contains(output, `data-runner-run="true"`) {
+		t.Fatalf("expected runner metadata for editable block: %s", output)
 	}
-	if !strings.Contains(output, `data-playground-editable="true"`) {
+	if !strings.Contains(output, `data-runner-editable="true"`) {
 		t.Fatalf("expected editable metadata for editable block: %s", output)
 	}
 	if !strings.Contains(output, `class="code-run"`) {
