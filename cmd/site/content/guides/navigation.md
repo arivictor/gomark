@@ -1,6 +1,7 @@
 ---
 title: Navigation
 description: Use folders, index pages, and nav_title to shape the sidebar and top-level navigation.
+order: 5
 ---
 
 # Navigation

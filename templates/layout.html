@@ -52,8 +52,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)" />
+  <link id="hljs-theme-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" media="all" />
+  <link id="hljs-theme-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" media="all" disabled />
   <style>
     :root {
       color-scheme: light dark;
@@ -606,7 +606,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
-      background: var(--code-bg);
+      background: var(--surface);
       box-shadow: var(--shadow);
     }
     .prose .code-frame-header {
@@ -664,9 +664,8 @@
     }
     .prose .code-frame pre {
       margin: 0;
-      padding: 16px 18px;
-      background: transparent;
-      color: var(--code-fg);
+      padding: 10px 12px;
+      padding: 0px;
       overflow-x: auto;
       font-size: 13.5px;
       line-height: 1.65;
@@ -675,13 +674,10 @@
     .prose .code-frame pre code {
       font-family: var(--font-mono);
       font-size: inherit;
-      background: none;
       border: 0;
-      padding: 0;
-      color: inherit;
+      padding: 10px;
+      display: block;
     }
-    /* highlight.js: keep our container, let it color only the tokens */
-    .prose .code-frame pre code.hljs { background: transparent; padding: 0; }
     .prose .code-frame[data-code-editable="true"] pre code[contenteditable="true"] {
       cursor: text;
       outline: none;
@@ -1133,6 +1129,13 @@
 
       function syncThemeUI(theme) {
         if (!themeButton) { return; }
+        var highlightLight = document.getElementById('hljs-theme-light');
+        var highlightDark = document.getElementById('hljs-theme-dark');
+        if (highlightLight && highlightDark) {
+          var useDark = theme === 'dark';
+          highlightLight.disabled = useDark;
+          highlightDark.disabled = !useDark;
+        }
         var next = theme === 'dark' ? 'light' : 'dark';
         themeButton.setAttribute('aria-label', 'Switch to ' + next + ' mode');
         themeButton.setAttribute('title', 'Switch to ' + next + ' mode');

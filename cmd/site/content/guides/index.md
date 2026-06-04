@@ -1,6 +1,7 @@
 ---
 title: Guides
 description: Guides for structuring content, configuring GoMark, and enabling features like search and runner execution.
+order: 3
 ---
 
 # Guides

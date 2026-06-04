@@ -1,33 +1,44 @@
 ---
-title: Runner
-description: Start the GoMark runner with one call and configure its auth and address behavior.
+title: Runner Server
+description: Start the GoMark runner HTTP server and configure its auth, address, and execution limits.
+order: 4
 ---
 
-# Runner
+# Runner Server
 
-The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's the importable `runner` package, run as the `cmd/runner` binary.
+The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It powers live code execution in your docs, but this page is specifically about the runner service itself: how to start it, configure it, and secure it.
+
+## What this page covers
+
+Use this page when you are working on the runner process itself.
+
+- Start the runner locally
+- Configure auth and listen address
+- Tune execution timeout
+- Understand the runner HTTP endpoints
+
+If you are wiring a docs site to a runner, use [Runner Guide](/guides/playground) instead.
 
 ## Entry point
 
-`runner.NewRunner(...).Start()` is the entry point for the runner, wired up in `cmd/runner/main.go`. Call it with options to configure in code, or call it with no options and it reads address and auth settings from the environment.
+`runner.NewRunner(...).Start()` is the entry point for the runner, wired up in `cmd/runner/main.go`. Call it with options to configure in code, or call it with no options and let the environment provide address and auth settings.
 
 ## Local development
 
 Get a runner going locally with auth turned off:
 
 ```go:title="cmd/runner/main.go"
-package gomark
+package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark/protocol"
-	"github.com/arivictor/gomark/runner"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	r := runner.NewRunner(
-		runner.WithAuth(AuthNone, ""),
+	r := gm.NewRunner(
+		gm.WithAuth(gm.AuthNone, ""),
 	)
 
 	if err := r.Start(); err != nil {
@@ -51,20 +62,19 @@ go run ./cmd/runner
 ## Configure in code
 
 ```go:title="cmd/runner/main.go"
-package gomark
+package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark/protocol"
-	"github.com/arivictor/gomark/runner"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	r := runner.NewRunner(
-		runner.WithPort("9090"),
-		runner.WithAuth(AuthBearerStatic, "my-runner-token"),
-		runner.WithTimeout(30),
+	r := gm.NewRunner(
+		gm.WithPort("9090"),
+		gm.WithAuth(gm.AuthBearerStatic, "my-runner-token"),
+		gm.WithTimeout(30),
 	)
 
 	if err := r.Start(); err != nil {
@@ -78,9 +88,9 @@ func main() {
 Each `/run` request is capped by an execution timeout. By default the runner allows 2 seconds per snippet; raise or lower it with `WithTimeout`, which takes a whole number of seconds.
 
 ```go:title="cmd/runner/main.go"
-r := runner.NewRunner(
-	runner.WithAuth(AuthNone, ""),
-	runner.WithTimeout(10), // give snippets up to 10 seconds
+r := gm.NewRunner(
+	gm.WithAuth(gm.AuthNone, ""),
+	gm.WithTimeout(10), // give snippets up to 10 seconds
 )
 ```
 
@@ -124,6 +134,6 @@ if err := r.Start(); err != nil {
 - `GET /healthz` — returns `ok`
 - `POST /run` — executes a Go snippet request
 
-## Pairing with site runners
+## Pairing with a docs site
 
-The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner](/guides/playground) for the site-side settings.
+The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner Guide](/guides/playground) for the site-side configuration and runnable code fences.

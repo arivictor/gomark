@@ -1,6 +1,7 @@
 ---
 title: Getting Started
 description: Install the GoMark package, create a content tree, and launch your first markdown-powered website.
+order: 2
 ---
 
 # Getting Started

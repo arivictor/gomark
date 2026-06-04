@@ -1,6 +1,7 @@
 ---
 title: Search
 description: Understand the built-in search endpoint and how GoMark indexes markdown content.
+order: 6
 ---
 
 # Search

@@ -119,15 +119,38 @@ func BuildContentIndex(dir string) (*ContentIndex, error) {
 // top-level folder that has an index.md plus any root-level pages. The root
 // index.md itself is omitted (it's the brand/home link).
 func (idx *ContentIndex) TopNav() []NavLink {
-	var links []NavLink
+	type ordered struct {
+		order int
+		title string
+		link  NavLink
+	}
+	var entries []ordered
 	for _, dir := range idx.childDirs(nil) {
 		if dir.Route == "" {
 			continue
 		}
-		links = append(links, NavLink{Title: dir.Title, Path: dir.Route})
+		entries = append(entries, ordered{
+			order: dir.Order,
+			title: dir.Title,
+			link:  NavLink{Title: dir.Title, Path: dir.Route},
+		})
 	}
 	for _, p := range idx.childPages(nil) {
-		links = append(links, NavLink{Title: p.NavTitle, Path: p.Route})
+		entries = append(entries, ordered{
+			order: p.Order,
+			title: p.NavTitle,
+			link:  NavLink{Title: p.NavTitle, Path: p.Route},
+		})
+	}
+	sort.SliceStable(entries, func(i, j int) bool {
+		if entries[i].order != entries[j].order {
+			return entries[i].order < entries[j].order
+		}
+		return entries[i].title < entries[j].title
+	})
+	links := make([]NavLink, 0, len(entries))
+	for _, e := range entries {
+		links = append(links, e.link)
 	}
 	return links
 }
@@ -145,7 +168,8 @@ func (idx *ContentIndex) Sidebar(currentRoute string, depth int) (string, []NavN
 }
 
 // buildNodes returns the nav nodes for the children of prefix: sub-folders
-// (expanded only when on the current path) and pages.
+// (expanded only when on the current path) and pages, interleaved by order then
+// title so a page and a folder compete for position on equal footing.
 func (idx *ContentIndex) buildNodes(prefix, curParts []string, cur string, depth int) []NavNode {
 	var nodes []NavNode
 	if len(prefix) == 0 {
@@ -154,24 +178,47 @@ func (idx *ContentIndex) buildNodes(prefix, curParts []string, cur string, depth
 		}
 	}
 
+	type ordered struct {
+		order int
+		title string
+		node  NavNode
+	}
+	var entries []ordered
+
 	for _, dir := range idx.childDirs(prefix) {
 		childPrefix := append(append([]string{}, prefix...), dir.Name)
 		onPath := hasPrefix(curParts, childPrefix)
 		children := idx.buildNodes(childPrefix, curParts, cur, depth)
 
-		node := NavNode{
-			Title:    dir.Title,
-			Path:     dir.Route,
-			NodeID:   navNodeID(childPrefix),
-			Folder:   true,
-			Active:   dir.Route == cur,
-			Open:     onPath,
-			Children: children,
-		}
-		nodes = append(nodes, node)
+		entries = append(entries, ordered{
+			order: dir.Order,
+			title: dir.Title,
+			node: NavNode{
+				Title:    dir.Title,
+				Path:     dir.Route,
+				NodeID:   navNodeID(childPrefix),
+				Folder:   true,
+				Active:   dir.Route == cur,
+				Open:     onPath,
+				Children: children,
+			},
+		})
 	}
 	for _, p := range idx.childPages(prefix) {
-		nodes = append(nodes, NavNode{Title: p.NavTitle, Path: p.Route, Active: p.Route == cur})
+		entries = append(entries, ordered{
+			order: p.Order,
+			title: p.NavTitle,
+			node:  NavNode{Title: p.NavTitle, Path: p.Route, Active: p.Route == cur},
+		})
+	}
+	sort.SliceStable(entries, func(i, j int) bool {
+		if entries[i].order != entries[j].order {
+			return entries[i].order < entries[j].order
+		}
+		return entries[i].title < entries[j].title
+	})
+	for _, e := range entries {
+		nodes = append(nodes, e.node)
 	}
 	return nodes
 }

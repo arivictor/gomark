@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -74,14 +75,13 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	runCtx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 
-	var stdout, stderr cappedBuffer
-	stdout.max = MaxOutputBytes
-	stderr.max = MaxOutputBytes
+	var output cappedBuffer
+	output.max = MaxOutputBytes
 
 	cmd := exec.CommandContext(runCtx, "go", "run", "main.go")
 	cmd.Dir = dir
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stdout = &output
+	cmd.Stderr = &output
 	cmd.Env = append(os.Environ(),
 		"GOMOD=off",
 		"GOPROXY=off",
@@ -91,7 +91,7 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	duration := time.Since(start)
 
 	if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
-		return failureWithOutput(start, combineOutput(stdout.String(), stderr.String()), 124, "execution timed out")
+		return failureWithOutput(start, output.String(), 124, "execution timed out")
 	}
 
 	if err != nil {
@@ -101,14 +101,14 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 		if errors.As(err, &exitErr) {
 			exitCode = exitErr.ExitCode()
 		}
-		output := combineOutput(stdout.String(), stderr.String())
+		runOutput := output.String()
 		errorMessage := fmt.Sprintf("execution failed (exit code %d)", exitCode)
-		if strings.TrimSpace(output) == "" {
+		if strings.TrimSpace(runOutput) == "" {
 			errorMessage = fmt.Sprintf("execution failed: %v", err)
 		}
 		return RunResponse{
 			OK:         false,
-			Output:     output,
+			Output:     runOutput,
 			Error:      errorMessage,
 			ExitCode:   exitCode,
 			DurationMS: duration.Milliseconds(),
@@ -117,7 +117,7 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 
 	return RunResponse{
 		OK:         true,
-		Output:     combineOutput(stdout.String(), stderr.String()),
+		Output:     output.String(),
 		Error:      "",
 		ExitCode:   0,
 		DurationMS: duration.Milliseconds(),
@@ -233,11 +233,15 @@ func combineOutput(stdout, stderr string) string {
 }
 
 type cappedBuffer struct {
+	mu  sync.Mutex
 	buf bytes.Buffer
 	max int
 }
 
 func (c *cappedBuffer) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.max <= 0 {
 		return len(p), nil
 	}
@@ -257,5 +261,7 @@ func (c *cappedBuffer) Write(p []byte) (int, error) {
 }
 
 func (c *cappedBuffer) String() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.buf.String()
 }

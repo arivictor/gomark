@@ -1,6 +1,7 @@
 ---
 title: Project Layout
 description: Organize content, templates, and public assets for a GoMark site.
+order: 2
 ---
 
 # Project Layout

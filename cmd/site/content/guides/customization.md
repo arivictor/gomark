@@ -1,6 +1,7 @@
 ---
 title: Customization
 description: Override GoMark templates and public assets while keeping the built-in defaults as a fallback.
+order: 4
 ---
 
 # Customization

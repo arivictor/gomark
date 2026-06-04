@@ -39,6 +39,19 @@ func TestGoExecutorRunSuccess(t *testing.T) {
 	}
 }
 
+func TestGoExecutorRunPreservesMixedPrintOrder(t *testing.T) {
+	r := GoExecutor{}
+	result := r.Run(context.Background(), "package main\nimport \"fmt\"\nfunc main(){println(\"1\");println(\"2\");fmt.Println(\"3\")}")
+	if !result.OK {
+		t.Fatalf("expected success, got error: %#v", result)
+	}
+
+	output := strings.TrimSpace(result.Output)
+	if output != "1\n2\n3" {
+		t.Fatalf("expected mixed print order to be preserved, got %q", output)
+	}
+}
+
 func TestGoExecutorRunEmptySourceHasSpecificError(t *testing.T) {
 	r := GoExecutor{}
 	result := r.Run(context.Background(), "   ")

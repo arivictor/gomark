@@ -274,6 +274,8 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 	codeTitle := ""
 	codeRun := false
 	codeEditable := false
+	codeFenceChar := ""
+	codeFenceLen := 0
 
 	flushParagraph := func() {
 		if len(paragraph) == 0 {
@@ -374,6 +376,31 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		codeTitle = ""
 		codeRun = false
 		codeEditable = false
+		codeFenceChar = ""
+		codeFenceLen = 0
+	}
+
+	parseFence := func(line string) (string, int, string, bool) {
+		if line == "" {
+			return "", 0, "", false
+		}
+		var fenceChar byte
+		switch line[0] {
+		case '`', '~':
+			fenceChar = line[0]
+		default:
+			return "", 0, "", false
+		}
+
+		count := 0
+		for count < len(line) && line[count] == fenceChar {
+			count++
+		}
+		if count < 3 {
+			return "", 0, "", false
+		}
+
+		return string(fenceChar), count, strings.TrimSpace(line[count:]), true
 	}
 
 	parseFenceInfo := func(info string) (string, string, bool, bool) {
@@ -414,7 +441,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		trimmed := strings.TrimSpace(line)
 
 		if inCode {
-			if strings.HasPrefix(trimmed, "```") {
+			if fenceChar, fenceLen, _, ok := parseFence(trimmed); ok && fenceChar == codeFenceChar && fenceLen >= codeFenceLen {
 				inCode = false
 				flushCode()
 				continue
@@ -423,12 +450,14 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			continue
 		}
 
-		if strings.HasPrefix(trimmed, "```") {
+		if fenceChar, fenceLen, info, ok := parseFence(trimmed); ok {
 			flushParagraph()
 			flushQuote()
 			flushList()
 			inCode = true
-			codeLang, codeTitle, codeRun, codeEditable = parseFenceInfo(strings.TrimSpace(strings.TrimPrefix(trimmed, "```")))
+			codeFenceChar = fenceChar
+			codeFenceLen = fenceLen
+			codeLang, codeTitle, codeRun, codeEditable = parseFenceInfo(info)
 			codeLines = nil
 			continue
 		}

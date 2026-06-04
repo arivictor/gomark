@@ -119,6 +119,33 @@ func TestStdlibMarkdownRendererRendersCompactColonFenceMetadata(t *testing.T) {
 	}
 }
 
+func TestStdlibMarkdownRendererSupportsTildeFences(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{}
+	output, _ := renderer.Render("~~~md\n# Sample\n\n```go\nfmt.Println(\"hi\")\n```\n~~~")
+
+	if !strings.Contains(output, `<span class="code-frame-title">md</span>`) {
+		t.Fatalf("expected tilde fence title in output: %s", output)
+	}
+	if !strings.Contains(output, "```go") || !strings.Contains(output, "fmt.Println(&#34;hi&#34;)") {
+		t.Fatalf("expected nested markdown content to be preserved literally in tilde fence: %s", output)
+	}
+}
+
+func TestStdlibMarkdownRendererSupportsTildeFenceMetadataForGo(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
+	output, _ := renderer.Render("~~~go:title=\"example.go\":run=true:editable=true\npackage gomark\nfunc main(){}\n~~~")
+
+	if !strings.Contains(output, `class="language-go"`) {
+		t.Fatalf("expected language class for tilde fence: %s", output)
+	}
+	if !strings.Contains(output, `<span class="code-frame-title">example.go</span>`) {
+		t.Fatalf("expected title metadata for tilde fence: %s", output)
+	}
+	if !strings.Contains(output, `data-runner-run="true"`) || !strings.Contains(output, `data-runner-editable="true"`) {
+		t.Fatalf("expected runner metadata for tilde fence: %s", output)
+	}
+}
+
 func TestStdlibMarkdownRendererRunnerRunButtonEnabledForGoFence(t *testing.T) {
 	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
 	output, _ := renderer.Render("```go run=true editable=true\npackage gomark\nfunc main(){}\n```")

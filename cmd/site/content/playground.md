@@ -1,6 +1,7 @@
 ---
 title: "Playground"
 description: "Run Go code snippets in your site with the playground."
+order: 1
 ---
 
 # Playground

@@ -1,6 +1,7 @@
 ---
 title: Deployment
 description: Prepare a GoMark site for production with prerendering, a stable SiteURL, and deployable asset defaults.
+order: 7
 ---
 
 # Deployment

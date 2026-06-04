@@ -1,6 +1,7 @@
 ---
 title: Configuration
 description: Configure GoMark with Site options, environment-driven behavior, and feature toggles.
+order: 3
 ---
 
 # Configuration

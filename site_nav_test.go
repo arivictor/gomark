@@ -162,6 +162,113 @@ func TestSidebarUsesNavTitleWhenProvided(t *testing.T) {
 	}
 }
 
+func TestChildPagesSortByOrder(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "second.md", "---\ntitle: Second\norder: 2\n---\n")
+	writeMarkdown(t, contentDir, "first.md", "---\ntitle: First\norder: 1\n---\n")
+	writeMarkdown(t, contentDir, "last.md", "---\ntitle: Last\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+
+	got := navTitlesInOrder(nodes)
+	want := []string{"First", "Second", "Last"}
+	if !equalStrings(got, want) {
+		t.Fatalf("expected sidebar order %v, got %v", want, got)
+	}
+}
+
+func TestUnorderedPagesSortLastThenByTitle(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "ordered.md", "---\ntitle: Ordered\norder: 1\n---\n")
+	writeMarkdown(t, contentDir, "banana.md", "---\ntitle: Banana\n---\n")
+	writeMarkdown(t, contentDir, "apple.md", "---\ntitle: Apple\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+
+	got := navTitlesInOrder(nodes)
+	want := []string{"Ordered", "Apple", "Banana"}
+	if !equalStrings(got, want) {
+		t.Fatalf("expected unordered pages last, alphabetized: %v, got %v", want, got)
+	}
+}
+
+func TestChildDirsSortByIndexOrder(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "zebra/index.md", "---\ntitle: Zebra\norder: 1\n---\n")
+	writeMarkdown(t, contentDir, "alpha/index.md", "---\ntitle: Alpha\norder: 2\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+
+	got := navTitlesInOrder(nodes)
+	want := []string{"Zebra", "Alpha"}
+	if !equalStrings(got, want) {
+		t.Fatalf("expected folders ordered by index.md order %v, got %v", want, got)
+	}
+}
+
+func TestDirOrderInferredFromChildrenWhenNoIndex(t *testing.T) {
+	contentDir := t.TempDir()
+	// Folder without index.md whose only page has a low order.
+	writeMarkdown(t, contentDir, "noindex/page.md", "---\ntitle: Page\norder: 1\n---\n")
+	// Indexed folder with a higher order.
+	writeMarkdown(t, contentDir, "indexed/index.md", "---\ntitle: Indexed\norder: 5\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+
+	got := navTitlesInOrder(nodes)
+	want := []string{"Noindex", "Indexed"}
+	if !equalStrings(got, want) {
+		t.Fatalf("expected folder order inferred from children %v, got %v", want, got)
+	}
+}
+
+func TestPagesAndDirsInterleaveByOrder(t *testing.T) {
+	contentDir := t.TempDir()
+	// A low-order root page should sort above higher-order folders.
+	writeMarkdown(t, contentDir, "playground.md", "---\ntitle: Playground\norder: 1\n---\n")
+	writeMarkdown(t, contentDir, "guides/index.md", "---\ntitle: Guides\norder: 2\n---\n")
+	writeMarkdown(t, contentDir, "guides/page.md", "# Guide Page\n")
+	writeMarkdown(t, contentDir, "reference/index.md", "---\ntitle: Reference\norder: 3\n---\n")
+	writeMarkdown(t, contentDir, "reference/page.md", "# Reference Page\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+	got := navTitlesInOrder(nodes)
+	want := []string{"Playground", "Guides", "Reference"}
+	if !equalStrings(got, want) {
+		t.Fatalf("expected pages and dirs interleaved by order %v, got %v", want, got)
+	}
+
+	topGot := navLinkTitlesInOrder(idx.TopNav())
+	if !equalStrings(topGot, want) {
+		t.Fatalf("expected top nav interleaved by order %v, got %v", want, topGot)
+	}
+}
+
 func writeMarkdown(t *testing.T, root, relPath, content string) {
 	t.Helper()
 	fullPath := filepath.Join(root, relPath)
@@ -171,6 +278,34 @@ func writeMarkdown(t *testing.T, root, relPath, content string) {
 	if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
 		t.Fatalf("write file %s: %v", relPath, err)
 	}
+}
+
+func navTitlesInOrder(nodes []NavNode) []string {
+	titles := make([]string, 0, len(nodes))
+	for _, node := range nodes {
+		titles = append(titles, node.Title)
+	}
+	return titles
+}
+
+func navLinkTitlesInOrder(links []NavLink) []string {
+	titles := make([]string, 0, len(links))
+	for _, link := range links {
+		titles = append(titles, link.Title)
+	}
+	return titles
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func findNavNode(nodes []NavNode, title string) (NavNode, bool) {
