@@ -80,7 +80,7 @@ Sets the listen port.
 
 Sets the full listen address.
 
-### `func runner.WithAuth(mode protocol.AuthMode, token string) Option`
+### `func runner.WithAuth(mode AuthMode, token string) Option`
 
 Sets runner auth mode and token.
 
@@ -90,16 +90,16 @@ Sets the per-`/run` execution timeout in whole seconds. Defaults to 2 seconds; v
 
 ## Shared types
 
-### `type protocol.AuthMode string`
+### `type AuthMode string`
 
-- `protocol.AuthBearerStatic`
-- `protocol.AuthNone`
+- `AuthBearerStatic`
+- `AuthNone`
 
-### `type protocol.RunRequest`
+### `type RunRequest`
 
 The body sent to the runner's `/run` endpoint (`{"code": "..."}`).
 
-### `type protocol.RunResponse`
+### `type RunResponse`
 
 The runner's reply: `ok`, `output`, `error`, `exitCode`, and `durationMs`.
 
@@ -126,7 +126,7 @@ if err := s.Start(); err != nil {
 ```go:title="cmd/runner/main.go"
 r := runner.NewRunner(
 	runner.WithPort("8081"),
-	runner.WithAuth(protocol.AuthBearerStatic, "secret"),
+	runner.WithAuth(AuthBearerStatic, "secret"),
 	runner.WithTimeout(30),
 )
 

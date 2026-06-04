@@ -13,7 +13,7 @@ Turn static code samples into live ones. GoMark can attach run controls to your 
 s := site.NewSite(
 	site.WithSiteContentDir("cmd/site/content"),
 	site.WithSiteMode(site.PreRender),
-	site.WithSiteRunner("http://localhost:8081", protocol.AuthBearerStatic, "my-runner-token"),
+	site.WithSiteRunner("http://localhost:8081", AuthBearerStatic, "my-runner-token"),
 )
 ```
 

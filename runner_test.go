@@ -3,8 +3,6 @@ package gomark
 import (
 	"testing"
 	"time"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 func TestResolveConfigUsesDefaults(t *testing.T) {
@@ -32,7 +30,7 @@ func TestResolveConfigUsesEnvironment(t *testing.T) {
 	if cfg.addr != "127.0.0.1:9999" {
 		t.Fatalf("expected env addr, got %q", cfg.addr)
 	}
-	if cfg.authMode != protocol.AuthNone {
+	if cfg.authMode != AuthNone {
 		t.Fatalf("expected auth mode none, got %q", cfg.authMode)
 	}
 }
@@ -45,13 +43,13 @@ func TestResolveConfigOptionsOverrideEnvironment(t *testing.T) {
 
 	cfg := resolveConfig(
 		WithPort("7000"),
-		WithAuth(protocol.AuthBearerStatic, "abc123"),
+		WithAuth(AuthBearerStatic, "abc123"),
 	)
 
 	if cfg.addr != ":7000" {
 		t.Fatalf("expected addr from WithPort, got %q", cfg.addr)
 	}
-	if cfg.authMode != protocol.AuthBearerStatic {
+	if cfg.authMode != AuthBearerStatic {
 		t.Fatalf("expected bearer static auth mode, got %q", cfg.authMode)
 	}
 	if cfg.authToken != "abc123" {

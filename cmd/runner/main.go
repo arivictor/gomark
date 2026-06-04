@@ -1,16 +1,15 @@
-package gomark
+package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark/protocol"
-	"github.com/arivictor/gomark/runner"
+	"github.com/arivictor/gomark"
 )
 
 func main() {
-	r := runner.NewRunner(
-		runner.WithAuth(protocol.AuthNone, ""),
-		runner.WithTimeout(30),
+	r := gomark.NewRunner(
+		gomark.WithAuth(gomark.AuthNone, ""),
+		gomark.WithTimeout(30),
 	)
 	if err := r.Start(); err != nil {
 		log.Fatal(err)

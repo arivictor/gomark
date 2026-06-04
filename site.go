@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 const defaultSiteName = "GoMark"
@@ -77,7 +75,7 @@ func (s *Site) run(addr string) error {
 	RunnerAuthToken := a.GetRunnerAuthToken()
 	var runnerClient *RunnerClient
 	if RunnerEnabled {
-		runnerClient, err = NewRunnerClient(RunnerURL, protocol.AuthConfig{
+		runnerClient, err = NewRunnerClient(RunnerURL, AuthConfig{
 			Mode:        RunnerAuthMode,
 			BearerToken: RunnerAuthToken,
 		})
@@ -136,7 +134,7 @@ func (s *Site) run(addr string) error {
 	})
 	if RunnerEnabled {
 		httpApp.Handle("POST", "/api/runner/run", func(w http.ResponseWriter, r *http.Request) error {
-			var req protocol.RunRequest
+			var req RunRequest
 			if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<10)).Decode(&req); err != nil {
 				return &BadRequestError{Message: "invalid run request"}
 			}
@@ -145,7 +143,7 @@ func (s *Site) run(addr string) error {
 			if runErr != nil {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(http.StatusBadGateway)
-				return json.NewEncoder(w).Encode(protocol.RunResponse{OK: false, Error: "cannot run"})
+				return json.NewEncoder(w).Encode(RunResponse{OK: false, Error: "cannot run"})
 			}
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")

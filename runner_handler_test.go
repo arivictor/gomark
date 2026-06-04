@@ -3,19 +3,17 @@ package gomark
 import (
 	"net/http/httptest"
 	"testing"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 func TestNewHandlerRequiresTokenForBearerStatic(t *testing.T) {
-	_, err := NewHandler(protocol.AuthConfig{Mode: protocol.AuthBearerStatic})
+	_, err := NewHandler(AuthConfig{Mode: AuthBearerStatic})
 	if err == nil {
 		t.Fatalf("expected missing token error")
 	}
 }
 
 func TestAllowRequestBearerStatic(t *testing.T) {
-	h, err := NewHandler(protocol.AuthConfig{Mode: protocol.AuthBearerStatic, BearerToken: "secret"})
+	h, err := NewHandler(AuthConfig{Mode: AuthBearerStatic, BearerToken: "secret"})
 	if err != nil {
 		t.Fatalf("new handler: %v", err)
 	}
@@ -34,7 +32,7 @@ func TestAllowRequestBearerStatic(t *testing.T) {
 }
 
 func TestAllowRequestNoneMode(t *testing.T) {
-	h, err := NewHandler(protocol.AuthConfig{Mode: protocol.AuthNone})
+	h, err := NewHandler(AuthConfig{Mode: AuthNone})
 	if err != nil {
 		t.Fatalf("new handler: %v", err)
 	}

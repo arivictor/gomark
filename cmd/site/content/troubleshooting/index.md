@@ -38,4 +38,4 @@ Check all of the following:
 
 ## Runner requests return unauthorized
 
-If you use `protocol.AuthBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.
+If you use `AuthBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.

@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 type Option func(*config)
@@ -19,7 +17,7 @@ type Runner struct {
 type config struct {
 	addr      string
 	port      string
-	authMode  protocol.AuthMode
+	authMode  AuthMode
 	authToken string
 	timeout   time.Duration
 }
@@ -42,7 +40,7 @@ func (r *Runner) Start() error {
 
 	cfg := resolveConfig(r.options...)
 
-	h, err := NewHandler(protocol.AuthConfig{
+	h, err := NewHandler(AuthConfig{
 		Mode:        cfg.authMode,
 		BearerToken: cfg.authToken,
 	})
@@ -79,9 +77,9 @@ func WithAddress(addr string) Option {
 	}
 }
 
-func WithAuth(mode protocol.AuthMode, token string) Option {
+func WithAuth(mode AuthMode, token string) Option {
 	return func(c *config) {
-		c.authMode = protocol.AuthMode(strings.TrimSpace(string(mode)))
+		c.authMode = AuthMode(strings.TrimSpace(string(mode)))
 		c.authToken = strings.TrimSpace(token)
 	}
 }
@@ -111,7 +109,7 @@ func resolveConfig(options ...Option) config {
 	cfg := config{
 		addr:      addr,
 		port:      port,
-		authMode:  protocol.AuthMode(strings.TrimSpace(os.Getenv("RUNNER_AUTH_MODE"))),
+		authMode:  AuthMode(strings.TrimSpace(os.Getenv("RUNNER_AUTH_MODE"))),
 		authToken: strings.TrimSpace(os.Getenv("RUNNER_AUTH_TOKEN")),
 		timeout:   RunTimeout,
 	}

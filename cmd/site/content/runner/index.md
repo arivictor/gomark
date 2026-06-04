@@ -27,7 +27,7 @@ import (
 
 func main() {
 	r := runner.NewRunner(
-		runner.WithAuth(protocol.AuthNone, ""),
+		runner.WithAuth(AuthNone, ""),
 	)
 
 	if err := r.Start(); err != nil {
@@ -63,7 +63,7 @@ import (
 func main() {
 	r := runner.NewRunner(
 		runner.WithPort("9090"),
-		runner.WithAuth(protocol.AuthBearerStatic, "my-runner-token"),
+		runner.WithAuth(AuthBearerStatic, "my-runner-token"),
 		runner.WithTimeout(30),
 	)
 
@@ -79,7 +79,7 @@ Each `/run` request is capped by an execution timeout. By default the runner all
 
 ```go:title="cmd/runner/main.go"
 r := runner.NewRunner(
-	runner.WithAuth(protocol.AuthNone, ""),
+	runner.WithAuth(AuthNone, ""),
 	runner.WithTimeout(10), // give snippets up to 10 seconds
 )
 ```
@@ -111,7 +111,7 @@ Reserve this for local development or fully trusted networks.
 
 ```go:title="cmd/runner/main.go"
 r := runner.NewRunner(
-	runner.WithAuth(protocol.AuthNone, ""),
+	runner.WithAuth(AuthNone, ""),
 )
 
 if err := r.Start(); err != nil {

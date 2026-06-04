@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 type App struct {
@@ -21,7 +19,7 @@ type App struct {
 	Mode            RenderMode
 	RunnerEnabled   bool
 	RunnerURL       string
-	RunnerAuthMode  protocol.AuthMode
+	RunnerAuthMode  AuthMode
 	RunnerAuthToken string
 }
 
@@ -110,14 +108,14 @@ func WithSiteRunnerURL(url string) SiteOption {
 	}
 }
 
-func WithSiteRunnerAuth(mode protocol.AuthMode, token string) SiteOption {
+func WithSiteRunnerAuth(mode AuthMode, token string) SiteOption {
 	return func(s *Site) {
 		s.App.RunnerAuthMode = mode
 		s.App.RunnerAuthToken = strings.TrimSpace(token)
 	}
 }
 
-func WithSiteRunner(url string, mode protocol.AuthMode, token string) SiteOption {
+func WithSiteRunner(url string, mode AuthMode, token string) SiteOption {
 	return func(s *Site) {
 		s.App.RunnerEnabled = true
 		s.App.RunnerURL = strings.TrimSpace(url)
@@ -141,11 +139,11 @@ func (a *App) GetRunnerURL() string {
 	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_URL"))
 }
 
-func (a *App) GetRunnerAuthMode() protocol.AuthMode {
+func (a *App) GetRunnerAuthMode() AuthMode {
 	if strings.TrimSpace(string(a.RunnerAuthMode)) != "" {
-		return protocol.AuthMode(strings.ToLower(strings.TrimSpace(string(a.RunnerAuthMode))))
+		return AuthMode(strings.ToLower(strings.TrimSpace(string(a.RunnerAuthMode))))
 	}
-	return protocol.AuthMode(strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_MODE"))))
+	return AuthMode(strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_MODE"))))
 }
 
 func (a *App) GetRunnerAuthToken() string {

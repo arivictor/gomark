@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arivictor/gomark/protocol"
+
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 // Executor runs untrusted Go source and reports the result. The Handler depends
 // on this interface so it can be tested against a fake executor.
 type Executor interface {
-	Run(ctx context.Context, code string) protocol.RunResponse
+	Run(ctx context.Context, code string) RunResponse
 }
 
 // GoExecutor compiles and runs Go source in an isolated temp directory using
@@ -42,7 +42,7 @@ func (e GoExecutor) timeout() time.Duration {
 	return e.Timeout
 }
 
-func (e GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
+func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	start := time.Now()
 
 	if len(strings.TrimSpace(code)) == 0 || len(code) > MaxSourceBytes {
@@ -93,7 +93,7 @@ func (e GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
 			exitCode = exitErr.ExitCode()
 		}
 		output := combineOutput(stdout.String(), stderr.String())
-		return protocol.RunResponse{
+		return RunResponse{
 			OK:         false,
 			Output:     output,
 			Error:      "execution failed",
@@ -102,7 +102,7 @@ func (e GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
 		}
 	}
 
-	return protocol.RunResponse{
+	return RunResponse{
 		OK:         true,
 		Output:     combineOutput(stdout.String(), stderr.String()),
 		Error:      "",
@@ -111,12 +111,12 @@ func (e GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
 	}
 }
 
-func failure(start time.Time) protocol.RunResponse {
-	return protocol.RunResponse{OK: false, Error: "cannot run", ExitCode: 1, DurationMS: time.Since(start).Milliseconds()}
+func failure(start time.Time) RunResponse {
+	return RunResponse{OK: false, Error: "cannot run", ExitCode: 1, DurationMS: time.Since(start).Milliseconds()}
 }
 
-func failureWithOutput(start time.Time, output string, code int) protocol.RunResponse {
-	return protocol.RunResponse{OK: false, Output: output, Error: "cannot run", ExitCode: code, DurationMS: time.Since(start).Milliseconds()}
+func failureWithOutput(start time.Time, output string, code int) RunResponse {
+	return RunResponse{OK: false, Output: output, Error: "cannot run", ExitCode: code, DurationMS: time.Since(start).Milliseconds()}
 }
 
 func usesOnlyAllowedImports(src string) bool {

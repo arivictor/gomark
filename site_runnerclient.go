@@ -9,19 +9,17 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 // RunnerClient is the Site's HTTP client to the Runner service.
 type RunnerClient struct {
 	runnerURL string
-	authMode  protocol.AuthMode
+	authMode  AuthMode
 	authToken string
 	http      *http.Client
 }
 
-func NewRunnerClient(runnerURL string, authConfig protocol.AuthConfig) (*RunnerClient, error) {
+func NewRunnerClient(runnerURL string, authConfig AuthConfig) (*RunnerClient, error) {
 	cleanURL := strings.TrimRight(strings.TrimSpace(runnerURL), "/")
 	if cleanURL == "" {
 		return nil, fmt.Errorf("runner URL is required")
@@ -30,16 +28,16 @@ func NewRunnerClient(runnerURL string, authConfig protocol.AuthConfig) (*RunnerC
 		return nil, fmt.Errorf("invalid runner URL: %w", err)
 	}
 
-	mode := protocol.AuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
+	mode := AuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
 	if mode == "" {
-		mode = protocol.AuthBearerStatic
+		mode = AuthBearerStatic
 	}
 
 	token := strings.TrimSpace(authConfig.BearerToken)
-	if mode == protocol.AuthBearerStatic && token == "" {
+	if mode == AuthBearerStatic && token == "" {
 		return nil, fmt.Errorf("runner bearer auth token is required")
 	}
-	if mode != protocol.AuthBearerStatic && mode != protocol.AuthNone {
+	if mode != AuthBearerStatic && mode != AuthNone {
 		return nil, fmt.Errorf("unsupported runner auth mode %q", mode)
 	}
 
@@ -52,43 +50,43 @@ func NewRunnerClient(runnerURL string, authConfig protocol.AuthConfig) (*RunnerC
 	}, nil
 }
 
-func (c *RunnerClient) Run(ctx context.Context, req protocol.RunRequest) (protocol.RunResponse, error) {
+func (c *RunnerClient) Run(ctx context.Context, req RunRequest) (RunResponse, error) {
 	if c == nil {
-		return protocol.RunResponse{}, fmt.Errorf("runner client is not configured")
+		return RunResponse{}, fmt.Errorf("runner client is not configured")
 	}
 
 	payload, err := json.Marshal(req)
 	if err != nil {
-		return protocol.RunResponse{}, err
+		return RunResponse{}, err
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.runnerURL+"/run", bytes.NewReader(payload))
 	if err != nil {
-		return protocol.RunResponse{}, err
+		return RunResponse{}, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	if c.authMode == protocol.AuthBearerStatic {
+	if c.authMode == AuthBearerStatic {
 		httpReq.Header.Set("Authorization", "Bearer "+c.authToken)
 	}
 
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
-		return protocol.RunResponse{}, err
+		return RunResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return protocol.RunResponse{}, err
+		return RunResponse{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return protocol.RunResponse{OK: false, Error: "cannot run"}, nil
+		return RunResponse{OK: false, Error: "cannot run"}, nil
 	}
 
-	var decoded protocol.RunResponse
+	var decoded RunResponse
 	if err := json.Unmarshal(body, &decoded); err != nil {
-		return protocol.RunResponse{}, err
+		return RunResponse{}, err
 	}
 
 	if !decoded.OK && strings.TrimSpace(decoded.Error) == "" {

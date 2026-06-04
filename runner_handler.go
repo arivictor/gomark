@@ -6,27 +6,25 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/arivictor/gomark/protocol"
 )
 
 type Handler struct {
 	runner    Executor
-	authMode  protocol.AuthMode
+	authMode  AuthMode
 	authToken string
 }
 
-func NewHandler(authConfig protocol.AuthConfig) (Handler, error) {
-	mode := protocol.AuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
+func NewHandler(authConfig AuthConfig) (Handler, error) {
+	mode := AuthMode(strings.ToLower(strings.TrimSpace(string(authConfig.Mode))))
 	if mode == "" {
-		mode = protocol.AuthBearerStatic
+		mode = AuthBearerStatic
 	}
 	token := strings.TrimSpace(authConfig.BearerToken)
 
-	if mode == protocol.AuthBearerStatic && token == "" {
+	if mode == AuthBearerStatic && token == "" {
 		return Handler{}, fmt.Errorf("runner bearer auth token is required")
 	}
-	if mode != protocol.AuthBearerStatic && mode != protocol.AuthNone {
+	if mode != AuthBearerStatic && mode != AuthNone {
 		return Handler{}, fmt.Errorf("unsupported runner auth mode %q", mode)
 	}
 
@@ -51,9 +49,9 @@ func (h Handler) handleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req protocol.RunRequest
+	var req RunRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, MaxSourceBytes+1024)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, protocol.RunResponse{OK: false, Error: "cannot run", ExitCode: 1})
+		writeJSON(w, http.StatusBadRequest, RunResponse{OK: false, Error: "cannot run", ExitCode: 1})
 		return
 	}
 
@@ -66,7 +64,7 @@ func (h Handler) handleRun(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) allowRequest(r *http.Request) bool {
-	if h.authMode == protocol.AuthNone {
+	if h.authMode == AuthNone {
 		return true
 	}
 
@@ -82,7 +80,7 @@ func (h Handler) allowRequest(r *http.Request) bool {
 	return subtle.ConstantTimeCompare([]byte(token), []byte(h.authToken)) == 1
 }
 
-func writeJSON(w http.ResponseWriter, status int, payload protocol.RunResponse) {
+func writeJSON(w http.ResponseWriter, status int, payload RunResponse) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
