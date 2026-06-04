@@ -19,10 +19,11 @@ type App struct {
 	SidebarDepth     int
 	SiteURL          string
 	Mode             RenderMode
-	RunnerEnabled    bool
-	RunnerURL        string
-	RunnerAuthMode   AuthMode
-	RunnerAuthToken  string
+	// DisableRunner turns off the in-browser Go runner. Execution is
+	// client-side (a WebAssembly build of the yaegi interpreter), so the
+	// runner is on by default and needs no external service; set this to hide
+	// the "Run" controls entirely.
+	DisableRunner bool
 }
 
 type RenderMode string
@@ -110,61 +111,25 @@ func WithSiteMode(mode RenderMode) SiteOption {
 	}
 }
 
+// WithSiteRunnerEnabled toggles the in-browser Go runner. It is enabled by
+// default; pass false to hide the "Run" controls across the site.
 func WithSiteRunnerEnabled(enabled bool) SiteOption {
 	return func(s *Site) {
-		s.App.RunnerEnabled = enabled
+		s.App.DisableRunner = !enabled
 	}
 }
 
-func WithSiteRunnerURL(url string) SiteOption {
-	return func(s *Site) {
-		s.App.RunnerURL = strings.TrimSpace(url)
-	}
-}
-
-func WithSiteRunnerAuth(mode AuthMode, token string) SiteOption {
-	return func(s *Site) {
-		s.App.RunnerAuthMode = mode
-		s.App.RunnerAuthToken = strings.TrimSpace(token)
-	}
-}
-
-func WithSiteRunner(url string, mode AuthMode, token string) SiteOption {
-	return func(s *Site) {
-		s.App.RunnerEnabled = true
-		s.App.RunnerURL = strings.TrimSpace(url)
-		s.App.RunnerAuthMode = mode
-		s.App.RunnerAuthToken = strings.TrimSpace(token)
-	}
-}
-
+// GetRunnerEnabled reports whether the client-side runner should be active.
+// It defaults to on (execution is client-side, so there is nothing to provision)
+// and can be turned off via WithSiteRunnerEnabled(false) or PLAYGROUND_ENABLED.
 func (a *App) GetRunnerEnabled() bool {
-	if a.RunnerEnabled {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_ENABLED"))) {
+	case "0", "false", "no", "off":
+		return false
+	case "1", "true", "yes", "on":
 		return true
 	}
-	raw := strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_ENABLED")))
-	return raw == "1" || raw == "true" || raw == "yes" || raw == "on"
-}
-
-func (a *App) GetRunnerURL() string {
-	if strings.TrimSpace(a.RunnerURL) != "" {
-		return strings.TrimSpace(a.RunnerURL)
-	}
-	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_URL"))
-}
-
-func (a *App) GetRunnerAuthMode() AuthMode {
-	if strings.TrimSpace(string(a.RunnerAuthMode)) != "" {
-		return AuthMode(strings.ToLower(strings.TrimSpace(string(a.RunnerAuthMode))))
-	}
-	return AuthMode(strings.ToLower(strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_MODE"))))
-}
-
-func (a *App) GetRunnerAuthToken() string {
-	if strings.TrimSpace(a.RunnerAuthToken) != "" {
-		return strings.TrimSpace(a.RunnerAuthToken)
-	}
-	return strings.TrimSpace(os.Getenv("PLAYGROUND_RUNNER_AUTH_TOKEN"))
+	return !a.DisableRunner
 }
 
 func (a *App) mode() RenderMode {

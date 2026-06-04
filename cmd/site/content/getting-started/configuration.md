@@ -34,10 +34,7 @@ Common options you can set on `gomark.NewSite(...)`:
 - `WithSiteSidebarDepth` — max sidebar depth, default `2`
 - `WithSiteURL` — base URL used for sitemap and canonical URLs
 - `WithSiteMode` — `gomark.LiveRender` or `gomark.PreRender`
-- `WithSiteRunnerEnabled` — enables runner UI for compatible Go code fences
-- `WithSiteRunnerURL` — runner base URL for runner execution
-- `WithSiteRunnerAuth` — auth mode and token sent to the runner client
-- `WithSiteRunner` — enable + URL + auth in one option
+- `WithSiteRunnerEnabled` — toggles the in-browser Go runner UI (on by default)
 
 ## Render modes
 

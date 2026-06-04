@@ -63,7 +63,7 @@ func TestCSRFProtectionMiddlewareAllowsSameOriginRequest(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
-	req := httptest.NewRequest(http.MethodPost, "http://example.com/api/runner/run", strings.NewReader(`{"code":"package main"}`))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/submit", strings.NewReader(`{"code":"package main"}`))
 	req.Header.Set("Origin", "http://example.com")
 	req.Header.Set(csrfHeaderName, "secret-token")
 	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "secret-token"})
@@ -85,7 +85,7 @@ func TestCSRFProtectionMiddlewareRejectsMissingOrInvalidRequests(t *testing.T) {
 		{
 			name: "missing token",
 			req: func() *http.Request {
-				r := httptest.NewRequest(http.MethodPost, "http://example.com/api/runner/run", nil)
+				r := httptest.NewRequest(http.MethodPost, "http://example.com/submit", nil)
 				r.Header.Set("Origin", "http://example.com")
 				return r
 			},
@@ -94,7 +94,7 @@ func TestCSRFProtectionMiddlewareRejectsMissingOrInvalidRequests(t *testing.T) {
 		{
 			name: "wrong token",
 			req: func() *http.Request {
-				r := httptest.NewRequest(http.MethodPost, "http://example.com/api/runner/run", nil)
+				r := httptest.NewRequest(http.MethodPost, "http://example.com/submit", nil)
 				r.Header.Set("Origin", "http://example.com")
 				r.Header.Set(csrfHeaderName, "wrong-token")
 				r.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "secret-token"})
@@ -105,7 +105,7 @@ func TestCSRFProtectionMiddlewareRejectsMissingOrInvalidRequests(t *testing.T) {
 		{
 			name: "cross-site origin",
 			req: func() *http.Request {
-				r := httptest.NewRequest(http.MethodPost, "http://example.com/api/runner/run", nil)
+				r := httptest.NewRequest(http.MethodPost, "http://example.com/submit", nil)
 				r.Header.Set("Origin", "http://evil.example")
 				r.Header.Set(csrfHeaderName, "secret-token")
 				r.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "secret-token"})

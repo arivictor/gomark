@@ -1,139 +1,59 @@
 ---
-title: Runner Server
-description: Start the GoMark runner HTTP server and configure its auth, address, and execution limits.
+title: How the Runner Works
+description: GoMark runs Go snippets entirely in the reader's browser using a WebAssembly build of the yaegi interpreter — no server, no auth, no code execution on your infrastructure.
 order: 3
 ---
 
-# Runner Server
+# How the Runner Works
 
-The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It powers live code execution in your docs, but this page is specifically about the runner service itself: how to start it, configure it, and secure it.
+The runner is GoMark's code-execution engine. It powers live, editable Go examples in your docs — and it runs **entirely in the reader's browser**. There is no execution server, no endpoint to secure, and no Go code ever runs on your infrastructure.
 
-## What this page covers
+## The model
 
-Use this page when you are working on the runner process itself.
+When a reader clicks **Run** on a code fence, GoMark lazy-loads a WebAssembly module and executes the snippet locally in the page:
 
-- Start the runner locally
-- Configure auth and listen address
-- Tune execution timeout
-- Understand the runner HTTP endpoints
+1. On the first run, the browser fetches `runner.wasm` (~8 MB gzipped, served with long-lived immutable caching) and `wasm_exec.js`.
+2. The module — a [yaegi](https://github.com/traefik/yaegi) Go interpreter compiled to `GOOS=js GOARCH=wasm` — registers a `runGo(source)` function.
+3. Each run creates a fresh interpreter, executes the snippet, and returns its combined output. Nothing leaves the browser.
 
-If you are wiring a docs site to a runner, use [Runner Guide](/guides/playground) instead.
+Because execution is client-side, the blast radius of any snippet is the reader's own tab. There is no server-side remote-code-execution surface to defend.
 
-## Entry point
+## What it can run
 
-`runner.NewRunner(...).Start()` is the entry point for the runner, wired up in `cmd/runner/main.go`. Call it with options to configure in code, or call it with no options and let the environment provide address and auth settings.
+yaegi interprets a large subset of Go: the standard library, generics, goroutines, structs, slices, and maps all work, which covers the vast majority of documentation examples.
 
-## Local development
+A snippet must declare `package main` and a `func main()`. The interpreter runs `main` automatically.
 
-Get a runner going locally with auth turned off:
-
-```go:title="cmd/runner/main.go"
+```go:title="hello.go":run=true:editable=true
 package main
 
-import (
-	"log"
-
-	gm gm "github.com/arivictor/gomark"
-)
+import "fmt"
 
 func main() {
-	r := gm.NewRunner(
-		gm.WithAuth(gm.AuthNone, ""),
-	)
-
-	if err := r.Start(); err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println("Hello from your browser")
 }
 ```
 
-That's the fastest path to a working runner on your machine.
+## Known limitations
 
-## Environment-driven startup
+Because this is an interpreter compiled to WebAssembly rather than the `gc` toolchain, a few things differ from `go run`:
 
-Prefer config outside your code? `runner.NewRunner().Start()` works with no options at all when the environment supplies the auth configuration.
+- **Not 100% of Go.** Some reflection-heavy code, `unsafe`, `cgo`, and a handful of stdlib corners are unsupported. Most teaching snippets are unaffected.
+- **No filesystem or network.** The browser sandbox has neither; snippets that need them won't work.
+- **Single-threaded, main-thread execution.** A deliberate infinite loop (`for {}`) will freeze the reader's own tab until they close it. Output is capped to protect browser memory.
+- **First-run download.** The module is fetched once on first use, then cached.
 
-```terminal
-export RUNNER_AUTH_MODE=bearer_static
-export RUNNER_AUTH_TOKEN=my-runner-token
-go run ./cmd/runner
-```
+## Enabling and disabling
 
-## Configure in code
+The runner is **on by default** — there is nothing to provision. To turn the run controls off across the site:
 
-```go:title="cmd/runner/main.go"
-package main
-
-import (
-	"log"
-
-	gm gm "github.com/arivictor/gomark"
-)
-
-func main() {
-	r := gm.NewRunner(
-		gm.WithPort("9090"),
-		gm.WithAuth(gm.AuthBearerStatic, "my-runner-token"),
-		gm.WithTimeout(30),
-	)
-
-	if err := r.Start(); err != nil {
-		log.Fatal(err)
-	}
-}
-```
-
-## Execution timeout
-
-Each `/run` request is capped by an execution timeout. By default the runner allows 2 seconds per snippet; raise or lower it with `WithTimeout`, which takes a whole number of seconds.
-
-```go:title="cmd/runner/main.go"
-r := gm.NewRunner(
-	gm.WithAuth(gm.AuthNone, ""),
-	gm.WithTimeout(10), // give snippets up to 10 seconds
+```go:title="cmd/site/main.go"
+s := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteRunnerEnabled(false),
 )
 ```
 
-Values of `0` or less are ignored and the default timeout stays in effect.
+You can also disable it from the environment with `PLAYGROUND_ENABLED=false`.
 
-## Environment variables
-
-Configure the runner without touching code:
-
-- `PORT` — listen port, default `8080`
-- `RUNNER_ADDR` — full listen address; overrides `PORT`
-- `RUNNER_AUTH_MODE` — `bearer_static` or `none`
-- `RUNNER_AUTH_TOKEN` — required when auth resolves to `bearer_static`
-
-## Auth modes
-
-The runner executes code, so it ships secure by default. Choose the mode that fits where it's running.
-
-### `bearer_static`
-
-The safe default for any runner exposed outside local development. Clients must send an `Authorization: Bearer ...` header.
-
-When `RUNNER_AUTH_MODE` is unset, the runner resolves to `bearer_static` — so you'll either provide a token or explicitly opt into `none`. No accidental open endpoints.
-
-### `none`
-
-Reserve this for local development or fully trusted networks.
-
-```go:title="cmd/runner/main.go"
-r := runner.NewRunner(
-	runner.WithAuth(AuthNone, ""),
-)
-
-if err := r.Start(); err != nil {
-	log.Fatal(err)
-}
-```
-
-## Endpoints
-
-- `GET /healthz` — returns `ok`
-- `POST /run` — executes a Go snippet request
-
-## Pairing with a docs site
-
-The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner Guide](/guides/playground) for the site-side configuration and runnable code fences.
+To mark individual code fences as runnable or editable, see the [Runner Guide](/getting-started/runner).

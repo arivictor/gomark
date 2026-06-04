@@ -3,7 +3,8 @@
 ![GoMark splash](site/public/gomark-twitter-1200x628.png)
 
 Build a markdown-powered website in Go with batteries included: routing, rendering,
-navigation, search, sitemap, robots, and static site assets.
+navigation, search, sitemap, robots, static site assets, and runnable Go examples
+that execute right in the reader's browser.
 
 Read the docs at [gomark.dev](https://gomark.dev).
 
@@ -13,16 +14,14 @@ Read the docs at [gomark.dev](https://gomark.dev).
 go get github.com/arivictor/gomark@latest
 ```
 
-GoMark is published as importable packages: `github.com/arivictor/gomark`
-(the site server), `github.com/arivictor/gomark/runner` (the Go code runner), and
-`github.com/arivictor/gomark/protocol` (the shared wire contract).
+GoMark is a single importable package: `github.com/arivictor/gomark`.
 
 ## Quick Start
 
 Create `main.go` in your project:
 
 ```go
-package gomark
+package main
 
 import (
 	"log"

@@ -72,19 +72,6 @@ func (s *Site) run(addr string) error {
 	twitterImagePath := a.twitterImagePath()
 	siteURL := a.siteURL()
 	RunnerEnabled := a.GetRunnerEnabled()
-	RunnerURL := a.GetRunnerURL()
-	RunnerAuthMode := a.GetRunnerAuthMode()
-	RunnerAuthToken := a.GetRunnerAuthToken()
-	var runnerClient *RunnerClient
-	if RunnerEnabled {
-		runnerClient, err = NewRunnerClient(RunnerURL, AuthConfig{
-			Mode:        RunnerAuthMode,
-			BearerToken: RunnerAuthToken,
-		})
-		if err != nil {
-			return err
-		}
-	}
 	searchIndex, err := BuildSearchIndex(dir)
 	if err != nil {
 		return err
@@ -136,22 +123,20 @@ func (s *Site) run(addr string) error {
 		return json.NewEncoder(w).Encode(map[string]any{"query": q, "results": results})
 	})
 	if RunnerEnabled {
-		httpApp.Handle("POST", "/api/runner/run", func(w http.ResponseWriter, r *http.Request) error {
-			var req RunRequest
-			if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<10)).Decode(&req); err != nil {
-				return &BadRequestError{Message: "invalid run request"}
+		// The runner executes entirely in the browser via a WebAssembly build
+		// of the yaegi interpreter. The module is committed gzipped and served
+		// with Content-Encoding: gzip so the browser decompresses it
+		// transparently; wasm_exec.js is served as a normal static asset.
+		httpApp.Handle("GET", "/runner.wasm", func(w http.ResponseWriter, r *http.Request) error {
+			data, readErr := wasmModuleGz()
+			if readErr != nil {
+				return readErr
 			}
-
-			resp, runErr := runnerClient.Run(r.Context(), req)
-			if runErr != nil {
-				log.Printf("runner proxy error: %v", runErr)
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(http.StatusBadGateway)
-				return json.NewEncoder(w).Encode(RunResponse{OK: false, Error: "runner error: " + runErr.Error()})
-			}
-
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			return json.NewEncoder(w).Encode(resp)
+			w.Header().Set("Content-Type", "application/wasm")
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			_, writeErr := w.Write(data)
+			return writeErr
 		})
 	}
 
