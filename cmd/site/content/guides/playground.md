@@ -17,12 +17,12 @@ s := site.NewSite(
 )
 ```
 
-The auth mode comes from the shared `internal/protocol` package, so add it to your imports:
+The auth mode comes from the shared `protocol` package, so add it to your imports:
 
 ```go
 import (
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/site"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/site"
 )
 ```
 

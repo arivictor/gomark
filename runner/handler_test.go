@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/protocol"
 )
 
 func TestNewHandlerRequiresTokenForBearerStatic(t *testing.T) {

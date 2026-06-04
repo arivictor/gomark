@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/site"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/site"
 )
 
 func main() {

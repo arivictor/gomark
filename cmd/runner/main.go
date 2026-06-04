@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/runner"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/runner"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/protocol"
 )
 
 type Option func(*config)

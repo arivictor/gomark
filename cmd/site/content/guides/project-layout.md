@@ -9,26 +9,25 @@ GoMark needs just one thing to render a site: a content directory. Custom templa
 
 ## Repository structure
 
-GoMark is organized as two command binaries and three internal packages:
+GoMark is organized as three importable packages, plus two reference binaries under `cmd/`:
 
 ```text
 gomark/
+  site/                # markdown-to-HTML site service (+ embedded templates/ and public/)
+  runner/              # Go code executor service
+  protocol/            # shared site<->runner wire contract (RunRequest, RunResponse, AuthMode)
   cmd/
     site/
-      main.go          # site server entrypoint
+      main.go          # site server entrypoint (reference consumer)
       content/         # your markdown lives here by default
         index.md
         guides/
           index.md
     runner/
-      main.go          # runner server entrypoint
-  internal/
-    site/              # markdown-to-HTML site service (+ embedded templates/ and public/)
-    runner/            # Go code executor service
-    protocol/          # shared site<->runner wire contract (RunRequest, RunResponse, AuthMode)
+      main.go          # runner server entrypoint (reference consumer)
 ```
 
-The `site` and `runner` packages each back one binary; `protocol` holds the request, response, and auth types both sides share. Templates and public assets are embedded inside `internal/site`, so the binaries are self-contained.
+The `site` and `runner` packages are the public API; `protocol` holds the request, response, and auth types both sides share. Templates and public assets are embedded inside the `site` package, so the binaries are self-contained.
 
 ## Your content directory
 

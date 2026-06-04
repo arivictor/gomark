@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/protocol"
 )
 
 type App struct {

@@ -9,11 +9,11 @@ The configuration surface of GoMark, in one place. Two small package APIs — on
 
 ## Packages
 
-- `github.com/arivictor/gomark/internal/site` — the site server
-- `github.com/arivictor/gomark/internal/runner` — the runner server
-- `github.com/arivictor/gomark/internal/protocol` — shared wire types (`AuthMode`, `RunRequest`, `RunResponse`)
+- `github.com/arivictor/gomark/site` — the site server
+- `github.com/arivictor/gomark/runner` — the runner server
+- `github.com/arivictor/gomark/protocol` — shared wire types (`AuthMode`, `RunRequest`, `RunResponse`)
 
-These are internal packages consumed by the `cmd/site` and `cmd/runner` binaries in this repository.
+These are public, importable packages. The `cmd/site` and `cmd/runner` binaries in this repository are reference consumers of them.
 
 ## Site API
 

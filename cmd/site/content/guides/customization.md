@@ -40,7 +40,7 @@ s := site.NewSite(
 )
 ```
 
-If `PublicDir` is empty, GoMark serves embedded defaults baked into the `internal/site` package.
+If `PublicDir` is empty, GoMark serves embedded defaults baked into the `site` package.
 
 ## What embedded defaults cover
 

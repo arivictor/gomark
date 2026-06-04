@@ -58,7 +58,7 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/site"
+	"github.com/arivictor/gomark/site"
 )
 
 func main() {

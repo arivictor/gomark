@@ -5,7 +5,7 @@ description: Start the GoMark runner with one call and configure its auth and ad
 
 # Runner
 
-The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's the `cmd/runner` binary, backed by the `internal/runner` package.
+The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's the importable `runner` package, run as the `cmd/runner` binary.
 
 ## Entry point
 
@@ -21,8 +21,8 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/runner"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/runner"
 )
 
 func main() {
@@ -56,8 +56,8 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/runner"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/runner"
 )
 
 func main() {

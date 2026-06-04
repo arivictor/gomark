@@ -35,7 +35,7 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 
 ## Two commands
 
-GoMark ships as two binaries under `cmd/`, each backed by its own package: the **site** server (`cmd/site`, package `internal/site`) and the **runner** server (`cmd/runner`, package `internal/runner`). They share a small wire contract in `internal/protocol`.
+GoMark ships as two importable packages, each with a reference binary under `cmd/`: the **site** server (package `site`, run via `cmd/site`) and the **runner** server (package `runner`, run via `cmd/runner`). They share a small wire contract in the `protocol` package.
 
 ### Build a site
 
@@ -47,7 +47,7 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/site"
+	"github.com/arivictor/gomark/site"
 )
 
 func main() {
@@ -77,8 +77,8 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark/internal/protocol"
-	"github.com/arivictor/gomark/internal/runner"
+	"github.com/arivictor/gomark/protocol"
+	"github.com/arivictor/gomark/runner"
 )
 
 func main() {

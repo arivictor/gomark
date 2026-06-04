@@ -9,12 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
-	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/protocol"
 )
-
-const defaultRunnerRunTimeout = 3 * time.Second
 
 // RunnerClient is the Site's HTTP client to the Runner service.
 type RunnerClient struct {
@@ -50,7 +47,8 @@ func NewRunnerClient(runnerURL string, authConfig protocol.AuthConfig) (*RunnerC
 		runnerURL: cleanURL,
 		authMode:  mode,
 		authToken: token,
-		http:      &http.Client{Timeout: defaultRunnerRunTimeout},
+		// No fixed client timeout here; request lifetime is controlled by context.
+		http: &http.Client{},
 	}, nil
 }
 

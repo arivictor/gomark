@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/protocol"
 )
 
 func TestResolveConfigUsesDefaults(t *testing.T) {

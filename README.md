@@ -1,6 +1,6 @@
 # gomark
 
-![GoMark splash](internal/site/public/gomark-twitter-1200x628.png)
+![GoMark splash](site/public/gomark-twitter-1200x628.png)
 
 Build a markdown-powered website in Go with batteries included: routing, rendering,
 navigation, search, sitemap, robots, and static site assets.
@@ -10,8 +10,12 @@ Read the docs at [gomark.dev](https://gomark.dev).
 ## Install
 
 ```bash
-go get github.com/arivictor/gomark@latest
+go get github.com/arivictor/gomark/site@latest
 ```
+
+GoMark is published as importable packages: `github.com/arivictor/gomark/site`
+(the site server), `github.com/arivictor/gomark/runner` (the Go code runner), and
+`github.com/arivictor/gomark/protocol` (the shared wire contract).
 
 ## Quick Start
 
@@ -23,17 +27,17 @@ package main
 import (
 	"log"
 
-	"github.com/arivictor/gomark"
+	"github.com/arivictor/gomark/site"
 )
 
 func main() {
-	site := gomark.NewSite(
-		gomark.WithSiteTitle("My Docs"),
-		gomark.WithSiteContentDir("content"),
-		gomark.WithSiteMode(gomark.PreRender),
+	s := site.NewSite(
+		site.WithSiteTitle("My Docs"),
+		site.WithSiteContentDir("content"),
+		site.WithSiteMode(site.PreRender),
 	)
 
-	if err := site.Start(); err != nil {
+	if err := s.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
