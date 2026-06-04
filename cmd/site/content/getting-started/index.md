@@ -1,12 +1,12 @@
 ---
 title: Getting Started
-description: Install the GoMark package, create a content tree, and launch your first markdown-powered webgm.
+description: Install the GoMark package, create a content tree, and launch your first markdown-powered website.
 order: 2
 ---
 
 # Getting Started
 
-GoMark turns a folder of markdown into a real webgm. This guide walks through the basics: installing the package, creating a content tree, and launching your first markdown-powered gm.
+GoMark turns a folder of markdown into a real website. This guide walks through the basics: installing the package, creating a content tree, and launching your first markdown-powered site.
 
 ## Install the package
 
@@ -18,7 +18,7 @@ go get github.com/arivictor/gomark
 
 ## Create a content tree
 
-Your markdown tree is your gm. GoMark maps files and folders directly to routes — no config required. Point GoMark at any directory; this guide uses `content/`.
+Your markdown tree is your site. GoMark maps files and folders directly to routes — no config required. Point GoMark at any directory; this guide uses `content/`.
 
 ```text
 content/
@@ -39,7 +39,7 @@ Add frontmatter to give each page a title, description, and navigation label.
 ```markdown:title="content/index.md"
 ---
 title: My Docs # Shows in the page header and meta tags
-description: The home page for my GoMark gm. # Optional: shows in search results and meta tags.
+description: The home page for my GoMark site. # Optional: shows in search results and meta tags.
 nav_title: Home # Optional: controls sidebar label
 order: 0 # Optional: controls sidebar order
 ---
@@ -54,7 +54,7 @@ This site is powered by GoMark.
 A few lines of Go is all it takes — the HTTP server is part of the package. Create a `main.go` that points at your content:
 
 ```go:title="main.go"
-package gomark
+package main
 
 import (
 	"log"
@@ -81,7 +81,7 @@ Run it:
 go run main.go
 ```
 
-Visit `http://localhost:8080` and GoMark renders your markdown tree as a live webgm.
+Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website.
 
 ## Opinionated features out of the box
 

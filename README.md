@@ -53,7 +53,7 @@ the URL structure. For example, `content/docs/hello.md` is served at `/docs/hell
 ```markdown:title="content/docs/hello.md"
 # Hello, World!
 
-Welcome to my docs gm.
+Welcome to my docs site.
 ```
 
 You can create index pages with `index.md` files. For example, `content/docs/index.md` is served at `/docs/`.

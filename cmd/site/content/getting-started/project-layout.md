@@ -1,6 +1,6 @@
 ---
 title: Project Layout
-description: Organize content, templates, and public assets for a GoMark gm.
+description: Organize content, templates, and public assets for a GoMark site.
 order: 4
 ---
 
