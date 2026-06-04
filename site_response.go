@@ -71,7 +71,7 @@ func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err
 		description = "The requested page could not be served."
 	}
 
-	renderErr := r.Renderer.RenderStatus(w, status, "error", PageData{
+	renderErr := r.Renderer.RenderStatus(w, status, "error", withCSRFToken(w, req, PageData{
 		StatusCode:  status,
 		Title:       title,
 		Description: description,
@@ -87,7 +87,7 @@ func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err
 		TopNav:          r.TopNav,
 		CurrentPath:     req.URL.Path,
 		Time:            time.Now().UTC().Format(time.RFC3339),
-	})
+	}))
 	if renderErr != nil {
 		r.Logger.Printf("error rendering error page: %v", renderErr)
 		http.Error(w, http.StatusText(status), status)

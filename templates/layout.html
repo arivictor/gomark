@@ -7,6 +7,7 @@
   <title>{{if .Title}}{{.Title}} — {{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}</title>
   <meta name="description" content="{{if .Description}}{{.Description}}{{else}}The patterns and principles that make Go code easier to read, test, and change.{{end}}" />
   <meta name="robots" content="{{if .Robots}}{{.Robots}}{{else}}index,follow{{end}}" />
+  {{if .CSRFToken}}<meta name="csrf-token" content="{{.CSRFToken}}" />{{end}}
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
 
@@ -1708,6 +1709,11 @@
           return;
         }
 
+        function getCSRFToken() {
+          var meta = document.querySelector('meta[name="csrf-token"]');
+          return meta ? (meta.getAttribute('content') || '') : '';
+        }
+
         var runButtons = Array.prototype.slice.call(document.querySelectorAll('[data-run-code]'));
         runButtons.forEach(function (button) {
           if (button.getAttribute('data-run-bound') === 'true') {
@@ -1764,16 +1770,27 @@
             var statusNode = panelNode.querySelector('.status');
             var outputNode = panelNode.querySelector('.runner-output');
             var source = codeNode.textContent || '';
+            var csrfToken = getCSRFToken();
             button.disabled = true;
             panelNode.setAttribute('data-state', 'running');
             statusNode.textContent = 'Running…';
+
+            if (!csrfToken) {
+              outputNode.textContent = 'cannot run';
+              panelNode.setAttribute('data-state', 'error');
+              statusNode.textContent = 'Failed';
+              button.disabled = false;
+              return;
+            }
 
             window.fetch('/api/runner/run', {
               method: 'POST',
               headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
               },
+              credentials: 'same-origin',
               body: JSON.stringify({ code: source })
             }).then(function (response) {
               return response.json().catch(function () { return {}; }).then(function (payload) {

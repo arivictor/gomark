@@ -30,6 +30,7 @@ type PageData struct {
 	RunnerEnabled   bool
 	Robots          string
 	Time            string
+	CSRFToken       string
 	MarkdownFile    string
 	BodyHTML        template.HTML
 	Headings        []Heading

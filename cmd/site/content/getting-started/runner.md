@@ -24,7 +24,9 @@ s := gomark.NewSite(
 
 With that in place, the site proxies execution requests to the runner.
 
-Use `gomark.AuthNone` only for local development. For anything shared or public, use bearer auth with `gomark.AuthBearerStatic` and a secret token.
+The browser-facing proxy is protected with a CSRF token and same-origin check, so only requests that originate from your GoMark pages can hit `/api/runner/run`.
+
+Use `gomark.AuthNone` only for local development. For anything shared or public, use bearer auth with `gomark.AuthBearerStatic` and a secret token. The runner bearer token protects the runner itself; the site proxy is protected separately by CSRF validation.
 
 ## Mark runnable code fences
 

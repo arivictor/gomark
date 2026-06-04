@@ -99,6 +99,7 @@ func (s *Site) run(addr string) error {
 
 	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
 	httpApp.Use(LoggingMiddleware)
+	httpApp.Use(CSRFProtectionMiddleware(siteURL))
 	log.Printf("seo sitemap generated with %d routes", len(sitemapRoutes))
 	httpApp.Handle("GET", "/sitemap.xml", func(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Content-Type", "application/xml; charset=utf-8")

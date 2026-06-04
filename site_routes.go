@@ -74,7 +74,7 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 			navTitle, nav := index.Sidebar(pageRoute, depth)
 			baseURL := requestBaseURL(r, siteURL)
 
-			return renderer.Render(w, "markdown", PageData{
+			return renderer.Render(w, "markdown", withCSRFToken(w, r, PageData{
 				Title:           title,
 				Description:     page.Description,
 				SiteName:        siteName,
@@ -92,7 +92,7 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 				Nav:             nav,
 				TopNav:          topNav,
 				CurrentPath:     pageRoute,
-			})
+			}))
 		})
 
 		return nil

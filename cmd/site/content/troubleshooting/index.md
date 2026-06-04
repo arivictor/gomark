@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 description: Fix common GoMark setup issues around content discovery, routes, rendering modes, and runner auth.
-order: 4
+order: 5
 ---
 
 # Troubleshooting
@@ -32,11 +32,15 @@ Make sure your content exists under the configured `ContentDir` and that the sit
 
 Check all of the following:
 
-1. `RunnerEnabled` is `true`
+1. `gomark.WithSiteRunner` is set in your site configuration
 2. The code fence language is `go`
-3. The fence includes `run=true` or `editable=true`
+3. The fence includes `run=true`
 4. The runner URL and auth settings are valid
 
 ## Runner requests return unauthorized
 
 If you use `AuthBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.
+
+## The runner proxy returns forbidden
+
+The site proxy now requires a CSRF token and a same-origin browser request. Make sure the request comes from a GoMark page, that the browser still has the CSRF cookie, and that the run button is sending the `X-CSRF-Token` header.
