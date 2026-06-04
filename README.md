@@ -10,10 +10,10 @@ Read the docs at [gomark.dev](https://gomark.dev).
 ## Install
 
 ```bash
-go get github.com/arivictor/gomark/site@latest
+go get github.com/arivictor/gomark@latest
 ```
 
-GoMark is published as importable packages: `github.com/arivictor/gomark/site`
+GoMark is published as importable packages: `github.com/arivictor/gomark`
 (the site server), `github.com/arivictor/gomark/runner` (the Go code runner), and
 `github.com/arivictor/gomark/protocol` (the shared wire contract).
 
@@ -27,14 +27,14 @@ package gomark
 import (
 	"log"
 
-	"github.com/arivictor/gomark/site"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	s := site.NewSite(
-		site.WithSiteTitle("My Docs"),
-		site.WithSiteContentDir("content"),
-		site.WithSiteMode(site.PreRender),
+	s := gm.NewSite(
+		gm.WithSiteTitle("My Docs"),
+		gm.WithSiteContentDir("content"),
+		gm.WithSiteMode(gm.PreRender),
 	)
 
 	if err := s.Start(); err != nil {
@@ -54,7 +54,7 @@ the URL structure. For example, `content/docs/hello.md` is served at `/docs/hell
 ```markdown:title="content/docs/hello.md"
 # Hello, World!
 
-Welcome to my docs site.
+Welcome to my docs gm.
 ```
 
 You can create index pages with `index.md` files. For example, `content/docs/index.md` is served at `/docs/`.

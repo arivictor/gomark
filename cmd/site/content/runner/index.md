@@ -1,7 +1,7 @@
 ---
 title: Runner Server
 description: Start the GoMark runner HTTP server and configure its auth, address, and execution limits.
-order: 4
+order: 2
 ---
 
 # Runner Server
@@ -33,7 +33,7 @@ package main
 import (
 	"log"
 
-	gm "github.com/arivictor/gomark"
+	gm gm "github.com/arivictor/gomark"
 )
 
 func main() {
@@ -67,7 +67,7 @@ package main
 import (
 	"log"
 
-	gm "github.com/arivictor/gomark"
+	gm gm "github.com/arivictor/gomark"
 )
 
 func main() {

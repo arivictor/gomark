@@ -6,7 +6,7 @@ order: 5
 
 # Navigation
 
-You don't build navigation in GoMark — you grow it. The sidebar and top-level nav are generated straight from your content tree, so adding a page is all it takes to add a link.
+The sidebar and top-level nav are generated straight from your content tree, so adding a  markdown file is all it takes to add a link.
 
 ## Sidebar behavior
 
@@ -30,10 +30,10 @@ You keep the full page title while showing a cleaner label in navigation.
 
 Keep the sidebar tidy by capping how deep it nests with `SidebarDepth`.
 
-```go:title="cmd/site/main.go"
-s := site.NewSite(
-	site.WithSiteContentDir("cmd/site/content"),
-	site.WithSiteSidebarDepth(3),
+```go:title="main.go"
+s := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteSidebarDepth(3),
 )
 ```
 

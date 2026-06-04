@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 description: Fix common GoMark setup issues around content discovery, routes, rendering modes, and runner auth.
-order: 6
+order: 3
 ---
 
 # Troubleshooting
@@ -22,7 +22,7 @@ Set `nav_title` in frontmatter when the navigation label should be shorter than 
 
 ## Content changes do not appear immediately
 
-Use `site.LiveRender` for local development. `site.PreRender` takes a snapshot at startup.
+Use `gm.LiveRender` for local development. `gm.PreRender` takes a snapshot at startup.
 
 ## Search returns no results
 

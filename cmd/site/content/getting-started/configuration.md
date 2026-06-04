@@ -1,28 +1,28 @@
 ---
 title: Configuration
 description: Configure GoMark with Site options, environment-driven behavior, and feature toggles.
-order: 3
+order: 2
 ---
 
 # Configuration
 
-`site.NewSite(...)` with `WithSite...` options is the single configuration surface for the site server. Set the options you need in `cmd/site/main.go`, leave the rest to sensible defaults.
+`gomark.NewSite(...)` with `gomark.With...` options is the single configuration surface for the site server. Set the options you need in `main.go`, and focus on writing content instead of wiring up features.
 
 ## Core fields
 
-```go:title="cmd/site/main.go"
-s := site.NewSite(
-	site.WithSiteTitle("My Docs"),
-	site.WithSiteLogo("/logo.svg"),
-	site.WithSiteContentDir("cmd/site/content"),
-	site.WithSiteURL("https://docs.example.com"),
-	site.WithSiteMode(site.PreRender),
+```go:title="main.go"
+s := gomark.NewSite(
+	gomark.WithSiteTitle("My Docs"),
+	gomark.WithSiteLogo("/logo.svg"),
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteURL("https://docs.example.com"),
+	gomark.WithSiteMode(gomark.PreRender),
 )
 ```
 
 ## Site options
 
-Common options you can set on `site.NewSite(...)`:
+Common options you can set on `gomark.NewSite(...)`:
 
 - `WithSiteTitle` — site name used in layout and metadata
 - `WithSiteLogo` — optional logo URL shown in the header
@@ -33,7 +33,7 @@ Common options you can set on `site.NewSite(...)`:
 - `WithSitePublicDir` — static asset directory that overrides embedded defaults
 - `WithSiteSidebarDepth` — max sidebar depth, default `2`
 - `WithSiteURL` — base URL used for sitemap and canonical URLs
-- `WithSiteMode` — `site.LiveRender` or `site.PreRender`
+- `WithSiteMode` — `gomark.LiveRender` or `gomark.PreRender`
 - `WithSiteRunnerEnabled` — enables runner UI for compatible Go code fences
 - `WithSiteRunnerURL` — runner base URL for runner execution
 - `WithSiteRunnerAuth` — auth mode and token sent to the runner client
@@ -43,13 +43,13 @@ Common options you can set on `site.NewSite(...)`:
 
 GoMark renders one of two ways. Pick the one that matches what you're doing.
 
-### `site.LiveRender`
+### `gomark.LiveRender`
 
 - Reads markdown from disk on each request
 - Best for local development
 - Reflects file edits without restart
 
-### `site.PreRender`
+### `gomark.PreRender`
 
 - Builds markdown output up front at startup
 - Best for production or stable content
@@ -63,20 +63,20 @@ Two starting points that cover most projects.
 
 For local work:
 
-```go:title="cmd/site/main.go"
-s := site.NewSite(
-	site.WithSiteContentDir("cmd/site/content"),
-	site.WithSiteMode(site.LiveRender),
+```go:title="main.go"
+s := gomark.NewSite(
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteMode(gomark.LiveRender),
 )
 ```
 
 For deployment:
 
-```go:title="cmd/site/main.go"
-s := site.NewSite(
-	site.WithSiteTitle("My Docs"),
-	site.WithSiteContentDir("cmd/site/content"),
-	site.WithSiteURL("https://docs.example.com"),
-	site.WithSiteMode(site.PreRender),
+```go:title="main.go"
+s := gomark.NewSite(
+	gomark.WithSiteTitle("My Docs"),
+	gomark.WithSiteContentDir("content"),
+	gomark.WithSiteURL("https://docs.example.com"),
+	gomark.WithSiteMode(gomark.PreRender),
 )
 ```

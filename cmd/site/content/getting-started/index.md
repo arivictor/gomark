@@ -1,26 +1,24 @@
 ---
 title: Getting Started
-description: Install the GoMark package, create a content tree, and launch your first markdown-powered website.
-order: 2
+description: Install the GoMark package, create a content tree, and launch your first markdown-powered webgm.
+order: 1
 ---
 
 # Getting Started
 
-Go from an empty directory to a running, navigable site in a few minutes. This guide walks the shortest path that still gives you something real.
+GoMark turns a folder of markdown into a real webgm. This guide walks through the basics: installing the package, creating a content tree, and launching your first markdown-powered gm.
 
 ## Install the package
 
 GoMark is an importable Go package. Create a module for your site and add it:
 
-```terminal
-mkdir my-docs && cd my-docs
-go mod init example.com/my-docs
-go get github.com/arivictor/gomark/site
+```shell
+go get github.com/arivictor/gomark
 ```
 
 ## Create a content tree
 
-Your markdown tree is your site. GoMark maps files and folders directly to routes — no config required. Point GoMark at any directory; this guide uses `content/`.
+Your markdown tree is your gm. GoMark maps files and folders directly to routes — no config required. Point GoMark at any directory; this guide uses `content/`.
 
 ```text
 content/
@@ -38,11 +36,12 @@ content/
 
 Add frontmatter to give each page a title, description, and navigation label.
 
-```md:title="content/index.md"
+```markdown:title="content/index.md"
 ---
-title: My Docs
-description: The home page for my GoMark site.
-nav_title: Home
+title: My Docs # Shows in the page header and meta tags
+description: The home page for my GoMark gm. # Optional: shows in search results and meta tags.
+nav_title: Home # Optional: controls sidebar label
+order: 0 # Optional: controls sidebar order
 ---
 
 # My Docs
@@ -60,14 +59,14 @@ package gomark
 import (
 	"log"
 
-	"github.com/arivictor/gomark/site"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	s := site.NewSite(
-		site.WithSiteTitle("My Docs"),
-		site.WithSiteContentDir("content"),
-		site.WithSiteMode(site.PreRender),
+	s := gm.NewSite(
+		gm.WithSiteTitle("My Docs"),
+		gm.WithSiteContentDir("content"),
+		gm.WithSiteMode(gm.PreRender), // Use LiveRender for local development to see changes immediately
 	)
 
 	if err := s.Start(); err != nil {
@@ -78,13 +77,13 @@ func main() {
 
 Run it:
 
-```terminal
-go run .
+```shell
+go run main.go
 ```
 
-Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website.
+Visit `http://localhost:8080` and GoMark renders your markdown tree as a live webgm.
 
-## What you get immediately
+## Opinionated features out of the box
 
 No extra setup, no plugins — the moment your site boots, you have:
 
