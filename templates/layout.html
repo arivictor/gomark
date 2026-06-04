@@ -829,6 +829,33 @@
     .prose blockquote p { margin: 0; }
     .prose blockquote strong { color: var(--heading); }
 
+    /* GitHub-style callouts / admonitions */
+    .prose .callout {
+      margin: 24px 0;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--callout-accent, var(--border-strong));
+      border-radius: var(--radius);
+      color: var(--muted-strong);
+    }
+    .prose .callout p { margin: 0; }
+    .prose .callout p + p { margin-top: 8px; }
+    .prose .callout strong { color: var(--heading); }
+    .prose .callout-title {
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      color: var(--callout-accent, var(--heading));
+      margin-bottom: 6px !important;
+    }
+    .prose .callout-note      { --callout-accent: #3b82f6; }
+    .prose .callout-tip       { --callout-accent: #22c55e; }
+    .prose .callout-important { --callout-accent: #a855f7; }
+    .prose .callout-warning   { --callout-accent: #f59e0b; }
+    .prose .callout-caution   { --callout-accent: #ef4444; }
+
     .prose img { max-width: 100%; height: auto; border-radius: var(--radius); }
 
     .prose table {

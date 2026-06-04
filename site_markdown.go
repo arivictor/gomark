@@ -20,6 +20,22 @@ var italicRe = regexp.MustCompile(`\*([^*]+)\*`)
 var orderedListRe = regexp.MustCompile(`^(\d+)\.\s+(.+)$`)
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
 
+// calloutRe matches a GitHub-style admonition marker (`[!NOTE]`, `[!TIP]`, …) as the
+// first line of a blockquote, capturing the kind and any trailing inline text.
+var calloutRe = regexp.MustCompile(`(?i)^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$`)
+
+// tableSepCellRe matches a single GFM table delimiter cell (e.g. `---`, `:--`, `--:`,
+// `:-:`), used to confirm that a `|`-bearing line is a real table header.
+var tableSepCellRe = regexp.MustCompile(`^:?-+:?$`)
+
+// listItem is one collected list entry. depth is the nesting level derived from leading
+// indentation (two spaces per level); ordered distinguishes <ol> from <ul>.
+type listItem struct {
+	depth   int
+	ordered bool
+	text    string
+}
+
 // Heading is a single in-page heading collected during rendering, used to build
 // the on-page table of contents.
 type Heading struct {
@@ -266,8 +282,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 	}
 	var paragraph []string
 	var quote []string
-	var listItems []string
-	listType := ""
+	var listItems []listItem
 	var codeLines []string
 	inCode := false
 	codeLang := ""
@@ -291,6 +306,24 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		if len(quote) == 0 {
 			return
 		}
+		if m := calloutRe.FindStringSubmatch(quote[0]); m != nil {
+			kind := strings.ToLower(m[1])
+			body := make([]string, 0, len(quote))
+			if rest := strings.TrimSpace(m[2]); rest != "" {
+				body = append(body, rest)
+			}
+			body = append(body, quote[1:]...)
+			out.WriteString(`<div class="callout callout-` + kind + `">`)
+			out.WriteString(`<p class="callout-title">` + calloutLabel(kind) + `</p>`)
+			if len(body) > 0 {
+				out.WriteString("<p>")
+				out.WriteString(renderInline(strings.Join(body, " ")))
+				out.WriteString("</p>")
+			}
+			out.WriteString("</div>\n")
+			quote = nil
+			return
+		}
 		out.WriteString("<blockquote><p>")
 		out.WriteString(renderInline(strings.Join(quote, " ")))
 		out.WriteString("</p></blockquote>\n")
@@ -298,22 +331,13 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 	}
 
 	flushList := func() {
-		if len(listItems) == 0 || listType == "" {
+		if len(listItems) == 0 {
 			return
 		}
-		out.WriteString("<")
-		out.WriteString(listType)
-		out.WriteString(">\n")
-		for _, item := range listItems {
-			out.WriteString("  <li>")
-			out.WriteString(renderInline(item))
-			out.WriteString("</li>\n")
+		for i := 0; i < len(listItems); {
+			i = emitList(&out, listItems, i, listItems[0].depth)
 		}
-		out.WriteString("</")
-		out.WriteString(listType)
-		out.WriteString(">\n")
 		listItems = nil
-		listType = ""
 	}
 
 	flushCode := func() {
@@ -436,9 +460,11 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		return lang, title, run, editable
 	}
 
-	for _, raw := range lines {
+	for i := 0; i < len(lines); i++ {
+		raw := lines[i]
 		line := strings.TrimRight(raw, "\r")
 		trimmed := strings.TrimSpace(line)
+		depth := (len(line) - len(strings.TrimLeft(line, " "))) / 2
 
 		if inCode {
 			if fenceChar, fenceLen, _, ok := parseFence(trimmed); ok && fenceChar == codeFenceChar && fenceLen >= codeFenceLen {
@@ -485,36 +511,83 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			continue
 		}
 
+		// GFM table: a `|`-bearing line immediately followed by a delimiter row.
+		if strings.Contains(trimmed, "|") && i+1 < len(lines) {
+			nextTrim := strings.TrimSpace(strings.TrimRight(lines[i+1], "\r"))
+			if aligns, ok := parseTableSeparator(nextTrim); ok {
+				flushParagraph()
+				flushQuote()
+				flushList()
+
+				header := splitTableRow(trimmed)
+				out.WriteString("<table>\n<thead>\n<tr>")
+				for c, cell := range header {
+					al := ""
+					if c < len(aligns) {
+						al = aligns[c]
+					}
+					out.WriteString("<th")
+					if al != "" {
+						out.WriteString(` style="text-align:` + al + `"`)
+					}
+					out.WriteString(">")
+					out.WriteString(renderInline(cell))
+					out.WriteString("</th>")
+				}
+				out.WriteString("</tr>\n</thead>\n<tbody>\n")
+
+				j := i + 2
+				for j < len(lines) {
+					rowTrim := strings.TrimSpace(strings.TrimRight(lines[j], "\r"))
+					if rowTrim == "" || !strings.Contains(rowTrim, "|") {
+						break
+					}
+					cells := splitTableRow(rowTrim)
+					out.WriteString("<tr>")
+					for c := 0; c < len(header); c++ {
+						val := ""
+						if c < len(cells) {
+							val = cells[c]
+						}
+						al := ""
+						if c < len(aligns) {
+							al = aligns[c]
+						}
+						out.WriteString("<td")
+						if al != "" {
+							out.WriteString(` style="text-align:` + al + `"`)
+						}
+						out.WriteString(">")
+						out.WriteString(renderInline(val))
+						out.WriteString("</td>")
+					}
+					out.WriteString("</tr>\n")
+					j++
+				}
+				out.WriteString("</tbody>\n</table>\n")
+				i = j - 1
+				continue
+			}
+		}
+
 		if strings.HasPrefix(trimmed, "- ") {
 			flushParagraph()
 			flushQuote()
-			if listType != "" && listType != "ul" {
-				flushList()
-			}
-			listType = "ul"
-			listItems = append(listItems, strings.TrimSpace(trimmed[2:]))
+			listItems = append(listItems, listItem{depth: depth, ordered: false, text: strings.TrimSpace(trimmed[2:])})
 			continue
 		}
 
 		if strings.HasPrefix(trimmed, "* ") {
 			flushParagraph()
 			flushQuote()
-			if listType != "" && listType != "ul" {
-				flushList()
-			}
-			listType = "ul"
-			listItems = append(listItems, strings.TrimSpace(trimmed[2:]))
+			listItems = append(listItems, listItem{depth: depth, ordered: false, text: strings.TrimSpace(trimmed[2:])})
 			continue
 		}
 
 		if matches := orderedListRe.FindStringSubmatch(trimmed); len(matches) == 3 {
 			flushParagraph()
 			flushQuote()
-			if listType != "" && listType != "ol" {
-				flushList()
-			}
-			listType = "ol"
-			listItems = append(listItems, strings.TrimSpace(matches[2]))
+			listItems = append(listItems, listItem{depth: depth, ordered: true, text: strings.TrimSpace(matches[2])})
 			continue
 		}
 
@@ -637,15 +710,15 @@ func renderInlineText(input string) string {
 	linkIndex := 0
 
 	for len(remaining) > 0 {
+		imgAt := strings.Index(remaining, "![")
 		wikiAt := strings.Index(remaining, "[[")
 		mdAt := strings.Index(remaining, "[")
 
 		next := -1
-		if wikiAt >= 0 {
-			next = wikiAt
-		}
-		if mdAt >= 0 && (next == -1 || mdAt < next) {
-			next = mdAt
+		for _, p := range []int{imgAt, wikiAt, mdAt} {
+			if p >= 0 && (next == -1 || p < next) {
+				next = p
+			}
 		}
 
 		if next == -1 {
@@ -656,6 +729,43 @@ func renderInlineText(input string) string {
 		if next > 0 {
 			out.WriteString(remaining[:next])
 			remaining = remaining[next:]
+			continue
+		}
+
+		if strings.HasPrefix(remaining, "![") {
+			altEnd := strings.Index(remaining[2:], "]")
+			if altEnd == -1 || altEnd+3 >= len(remaining) || remaining[altEnd+3] != '(' {
+				// Not a complete image: emit the literal "!" and reprocess the "[".
+				out.WriteString(remaining[:1])
+				remaining = remaining[1:]
+				continue
+			}
+			altEnd += 2 // index of the closing "]" within remaining
+
+			hrefEnd := findMatchingParen(remaining, altEnd+1)
+			if hrefEnd == -1 {
+				out.WriteString(remaining[:1])
+				remaining = remaining[1:]
+				continue
+			}
+
+			altText := remaining[2:altEnd]
+			src := normalizeLinkTarget(strings.TrimSpace(remaining[altEnd+2 : hrefEnd]))
+			if src == "" {
+				out.WriteString(remaining[:hrefEnd+1])
+			} else {
+				token := fmt.Sprintf("@@LINK%d@@", linkIndex)
+				linkIndex++
+				links = append(links, struct {
+					token string
+					html  string
+				}{
+					token: token,
+					html:  `<img src="` + html.EscapeString(src) + `" alt="` + html.EscapeString(altText) + `" loading="lazy" />`,
+				})
+				out.WriteString(token)
+			}
+			remaining = remaining[hrefEnd+1:]
 			continue
 		}
 
@@ -857,4 +967,119 @@ func findMatchingParen(input string, openIdx int) int {
 func applyEmphasis(input string) string {
 	withBold := boldRe.ReplaceAllString(input, "<strong>$1</strong>")
 	return italicRe.ReplaceAllString(withBold, "<em>$1</em>")
+}
+
+// calloutLabel returns the human-readable title for an admonition kind.
+func calloutLabel(kind string) string {
+	if kind == "" {
+		return ""
+	}
+	return strings.ToUpper(kind[:1]) + strings.ToLower(kind[1:])
+}
+
+// splitTableRow splits a single GFM table row into trimmed cell values, dropping one
+// optional leading/trailing pipe and honoring backslash-escaped `\|`.
+func splitTableRow(line string) []string {
+	line = strings.TrimSpace(line)
+	line = strings.TrimPrefix(line, "|")
+	line = strings.TrimSuffix(line, "|")
+
+	var cells []string
+	var cur strings.Builder
+	for i := 0; i < len(line); i++ {
+		c := line[i]
+		if c == '\\' && i+1 < len(line) && line[i+1] == '|' {
+			cur.WriteByte('|')
+			i++
+			continue
+		}
+		if c == '|' {
+			cells = append(cells, strings.TrimSpace(cur.String()))
+			cur.Reset()
+			continue
+		}
+		cur.WriteByte(c)
+	}
+	cells = append(cells, strings.TrimSpace(cur.String()))
+	return cells
+}
+
+// parseTableSeparator reports whether line is a GFM delimiter row and, if so, returns
+// the per-column alignment ("left", "right", "center", or "" for none).
+func parseTableSeparator(line string) ([]string, bool) {
+	line = strings.TrimSpace(line)
+	if !strings.Contains(line, "-") || !strings.Contains(line, "|") {
+		return nil, false
+	}
+
+	cells := splitTableRow(line)
+	if len(cells) == 0 {
+		return nil, false
+	}
+
+	aligns := make([]string, len(cells))
+	for i, cell := range cells {
+		cell = strings.TrimSpace(cell)
+		if !tableSepCellRe.MatchString(cell) {
+			return nil, false
+		}
+		left := strings.HasPrefix(cell, ":")
+		right := strings.HasSuffix(cell, ":")
+		switch {
+		case left && right:
+			aligns[i] = "center"
+		case right:
+			aligns[i] = "right"
+		case left:
+			aligns[i] = "left"
+		default:
+			aligns[i] = ""
+		}
+	}
+	return aligns, true
+}
+
+// emitList writes one list (and any deeper nested lists) starting at items[start], whose
+// nesting level is depth. It returns the index of the first item it did not consume, so
+// the caller can resume. Flat lists (all depth 0) render identically to the pre-nesting
+// output: one <ul>/<ol> with <li> children, splitting on a same-depth type change.
+func emitList(out *strings.Builder, items []listItem, start, depth int) int {
+	ordered := items[start].ordered
+	tag := "ul"
+	if ordered {
+		tag = "ol"
+	}
+
+	out.WriteString("<")
+	out.WriteString(tag)
+	out.WriteString(">\n")
+
+	i := start
+	for i < len(items) && items[i].depth >= depth {
+		if items[i].depth > depth {
+			// A deeper item with no parent at this position: nest it directly.
+			i = emitList(out, items, i, items[i].depth)
+			continue
+		}
+		if items[i].ordered != ordered {
+			// Same depth, different list type: close this list and let the caller
+			// open a new one.
+			break
+		}
+
+		out.WriteString("  <li>")
+		out.WriteString(renderInline(items[i].text))
+		if i+1 < len(items) && items[i+1].depth > depth {
+			i = emitList(out, items, i+1, items[i+1].depth)
+			out.WriteString("</li>\n")
+			continue
+		}
+		out.WriteString("</li>\n")
+		i++
+	}
+
+	out.WriteString("</")
+	out.WriteString(tag)
+	out.WriteString(">\n")
+	return i
 }
