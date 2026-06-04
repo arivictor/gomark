@@ -14,14 +14,14 @@ FROM gcr.io/distroless/static-debian12:nonroot AS site
 
 WORKDIR /app
 
-COPY --from=builder /out/site /app/site
+COPY --from=builder /out/site /app/bin/site
 COPY --from=builder /src/cmd/site/content /app/cmd/site/content
 COPY --from=builder /src/templates /app/site/templates
 COPY --from=builder /src/public /app/site/public
 
 EXPOSE 8080
 
-CMD ["/app/site"]
+CMD ["/app/bin/site"]
 
 FROM golang:1.24-alpine AS runner
 
@@ -37,7 +37,7 @@ FROM golang:1.24-alpine AS runtime
 
 WORKDIR /app
 
-COPY --from=builder /out/site /app/site
+COPY --from=builder /out/site /app/bin/site
 COPY --from=builder /out/runner /app/runner
 COPY --from=builder /src/cmd/site/content /app/cmd/site/content
 COPY --from=builder /src/templates /app/site/templates
@@ -45,4 +45,4 @@ COPY --from=builder /src/public /app/site/public
 
 EXPOSE 8080
 
-CMD ["/app/site"]
+CMD ["/app/bin/site"]
