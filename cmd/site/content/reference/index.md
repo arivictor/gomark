@@ -1,19 +1,27 @@
 ---
 title: API Reference
-description: Reference for the public GoMark site and runner APIs.
+description: Reference for the GoMark site and runner package APIs.
 ---
 
 # API Reference
 
-The complete public surface of GoMark, in one place. Two small APIs — one to build sites, one to run code — cover everything.
+The configuration surface of GoMark, in one place. Two small package APIs — one to build sites, one to run code — cover everything, with a shared `protocol` package for the types they exchange.
+
+## Packages
+
+- `github.com/arivictor/gomark/internal/site` — the site server
+- `github.com/arivictor/gomark/internal/runner` — the runner server
+- `github.com/arivictor/gomark/internal/protocol` — shared wire types (`AuthMode`, `RunRequest`, `RunResponse`)
+
+These are internal packages consumed by the `cmd/site` and `cmd/runner` binaries in this repository.
 
 ## Site API
 
-### `type Site`
+### `type site.Site`
 
 Site server configured through constructor options.
 
-### `func NewSite(options ...SiteOption) *Site`
+### `func site.NewSite(options ...SiteOption) *Site`
 
 Creates a site instance.
 
@@ -21,42 +29,42 @@ Creates a site instance.
 
 Starts the site server using `WithSiteAddress`, `PORT`, or `:8080`.
 
-### `type SiteOption func(*Site)`
+### `type site.SiteOption func(*Site)`
 
 Common options:
 
-- `WithSiteAddress(addr)`
-- `WithSiteTitle(title)`
-- `WithSiteLogo(url)`
-- `WithSiteContentDir(dir)`
-- `WithSiteTemplatesDir(dir)`
-- `WithSiteLayoutPath(path)`
-- `WithSiteTemplateGlob(glob)`
-- `WithSitePublicDir(dir)`
-- `WithSiteSidebarDepth(depth)`
-- `WithSiteURL(url)`
-- `WithSiteMode(mode)`
-- `WithSiteRunnerEnabled(enabled)`
-- `WithSiteRunnerURL(url)`
-- `WithSiteRunnerAuth(mode, token)`
-- `WithSiteRunner(url, mode, token)`
+- `site.WithSiteAddress(addr)`
+- `site.WithSiteTitle(title)`
+- `site.WithSiteLogo(url)`
+- `site.WithSiteContentDir(dir)`
+- `site.WithSiteTemplatesDir(dir)`
+- `site.WithSiteLayoutPath(path)`
+- `site.WithSiteTemplateGlob(glob)`
+- `site.WithSitePublicDir(dir)`
+- `site.WithSiteSidebarDepth(depth)`
+- `site.WithSiteURL(url)`
+- `site.WithSiteMode(mode)`
+- `site.WithSiteRunnerEnabled(enabled)`
+- `site.WithSiteRunnerURL(url)`
+- `site.WithSiteRunnerAuth(mode, token)`
+- `site.WithSiteRunner(url, mode, token)`
 
-### `type RenderMode string`
+### `type site.RenderMode string`
 
-- `gomark.LiveRender`
-- `gomark.PreRender`
+- `site.LiveRender`
+- `site.PreRender`
 
-### `func ParseRenderMode(raw string) RenderMode`
+### `func site.ParseRenderMode(raw string) RenderMode`
 
 Resolves strings like `production`, `prod`, `development`, and `live` into a render mode.
 
 ## Runner API
 
-### `type Runner`
+### `type runner.Runner`
 
 Runner server configured through constructor options.
 
-### `func NewRunner(options ...Option) *Runner`
+### `func runner.NewRunner(options ...Option) *Runner`
 
 Creates a runner instance.
 
@@ -64,22 +72,36 @@ Creates a runner instance.
 
 Starts the Go runner server.
 
-### `func WithPort(port string) Option`
+### `func runner.WithPort(port string) Option`
 
 Sets the listen port.
 
-### `func WithAddress(addr string) Option`
+### `func runner.WithAddress(addr string) Option`
 
 Sets the full listen address.
 
-### `func WithAuth(mode AuthMode, token string) Option`
+### `func runner.WithAuth(mode protocol.AuthMode, token string) Option`
 
 Sets runner auth mode and token.
 
-### `type AuthMode string`
+### `func runner.WithTimeout(seconds int) Option`
 
-- `gomark.AuthModeBearerStatic`
-- `gomark.AuthModeNone`
+Sets the per-`/run` execution timeout in whole seconds. Defaults to 2 seconds; values `<= 0` are ignored.
+
+## Shared types
+
+### `type protocol.AuthMode string`
+
+- `protocol.AuthBearerStatic`
+- `protocol.AuthNone`
+
+### `type protocol.RunRequest`
+
+The body sent to the runner's `/run` endpoint (`{"code": "..."}`).
+
+### `type protocol.RunResponse`
+
+The runner's reply: `ok`, `output`, `error`, `exitCode`, and `durationMs`.
 
 ## Common examples
 
@@ -87,27 +109,28 @@ Copy, paste, ship.
 
 ### Site
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteTitle("My Docs"),
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteMode(gomark.PreRender),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteTitle("My Docs"),
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteMode(site.PreRender),
 )
 
-if err := site.Start(); err != nil {
+if err := s.Start(); err != nil {
 	log.Fatal(err)
 }
 ```
 
 ### Runner
 
-```go:title="main.go"
-runner := gomark.NewRunner(
-	gomark.WithPort("8081"),
-	gomark.WithAuth(gomark.AuthModeBearerStatic, "secret"),
+```go:title="cmd/runner/main.go"
+r := runner.NewRunner(
+	runner.WithPort("8081"),
+	runner.WithAuth(protocol.AuthBearerStatic, "secret"),
+	runner.WithTimeout(30),
 )
 
-if err := runner.Start(); err != nil {
+if err := r.Start(); err != nil {
 	log.Fatal(err)
 }
 ```

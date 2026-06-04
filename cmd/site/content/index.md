@@ -1,16 +1,16 @@
 ---
 title: GoMark
-description: GoMark is a batteries-included Go package for building markdown-powered documentation sites and embeddable Go code runners.
+description: GoMark is a self-hosted Go application for building markdown-powered documentation sites and embeddable Go code runners.
 nav_title: Home
 ---
 
 # GoMark
 
-GoMark is a batteries-included Go package for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
+GoMark is a self-hosted Go application for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
 
 **This site is built with GoMark.** Check out the [source code](https://github.com/arivictor/gomark).
 
-Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
+Build documentation sites, product handbooks, and developer guides with nothing but markdown. You clone the repo, drop in your content, and run the server. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
 
 ## Why GoMark
 
@@ -33,62 +33,67 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 - [Ship to production](/guides/deployment)
 - [Browse the public API](/reference)
 
-## Two entry points
+## Two commands
 
-GoMark gives you two ways in, depending on what you're building.
+GoMark ships as two binaries under `cmd/`, each backed by its own package: the **site** server (`cmd/site`, package `internal/site`) and the **runner** server (`cmd/runner`, package `internal/runner`). They share a small wire contract in `internal/protocol`.
 
 ### Build a site
 
-Reach for `gomark.NewSite(...)` when you want GoMark to serve a content directory as a complete website.
+`site.NewSite(...)` serves a content directory as a complete website. This is the `cmd/site` entrypoint you edit and run.
 
-```go:title="main.go"
+```go:title="cmd/site/main.go"
 package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark"
+	"github.com/arivictor/gomark/internal/site"
 )
 
 func main() {
-	site := gomark.NewSite(
-		gomark.WithSiteTitle("GoMark Docs"),
-		gomark.WithSiteContentDir("content"),
-		gomark.WithSiteMode(gomark.PreRender),
+	s := site.NewSite(
+		site.WithSiteTitle("GoMark Docs"),
+		site.WithSiteContentDir("content"),
+		site.WithSiteMode(site.PreRender),
 	)
 
-	if err := site.Start(); err != nil {
+	if err := s.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
 ```
+
+Run it with `go run ./cmd/site`.
 
 ### Run code snippets
 
 > Currently supports `go` code fences. More languages may follow.
 
-Reach for `gomark.NewRunner(...)` when you want the standalone Go runner server.
+`runner.NewRunner(...)` stands up the standalone Go runner server — the `cmd/runner` entrypoint.
 
-```go:title="main.go"
+```go:title="cmd/runner/main.go"
 package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark"
+	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/internal/runner"
 )
 
 func main() {
-	runner := gomark.NewRunner(
-		gomark.WithPort("8080"),
-		gomark.WithAuth(gomark.AuthModeNone, ""),
+	r := runner.NewRunner(
+		runner.WithPort("8081"),
+		runner.WithAuth(protocol.AuthNone, ""),
 	)
 
-	if err := runner.Start(); err != nil {
+	if err := r.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
 ```
+
+Run it with `go run ./cmd/runner`.
 
 ## What the site generates for you
 

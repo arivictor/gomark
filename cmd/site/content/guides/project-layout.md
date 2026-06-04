@@ -5,25 +5,41 @@ description: Organize content, templates, and public assets for a GoMark site.
 
 # Project Layout
 
-GoMark needs just one thing: a content directory. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
+GoMark needs just one thing to render a site: a content directory. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
 
-## Typical project structure
+## Repository structure
+
+GoMark is organized as two command binaries and three internal packages:
 
 ```text
-my-site/
-  main.go
-  content/
+gomark/
+  cmd/
+    site/
+      main.go          # site server entrypoint
+      content/         # your markdown lives here by default
+        index.md
+        guides/
+          index.md
+    runner/
+      main.go          # runner server entrypoint
+  internal/
+    site/              # markdown-to-HTML site service (+ embedded templates/ and public/)
+    runner/            # Go code executor service
+    protocol/          # shared site<->runner wire contract (RunRequest, RunResponse, AuthMode)
+```
+
+The `site` and `runner` packages each back one binary; `protocol` holds the request, response, and auth types both sides share. Templates and public assets are embedded inside `internal/site`, so the binaries are self-contained.
+
+## Your content directory
+
+A content tree is all you need to get started. Optionally bring your own templates and public assets to override the embedded defaults:
+
+```text
+cmd/site/content/
+  index.md
+  getting-started/
     index.md
-    getting-started/
-      index.md
-      install.md
-  templates/
-    layout.html
-    markdown.html
-    error.html
-  public/
-    favicon.ico
-    og-image.png
+    install.md
 ```
 
 ## Routing rules

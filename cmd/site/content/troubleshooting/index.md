@@ -21,7 +21,7 @@ Set `nav_title` in frontmatter when the navigation label should be shorter than 
 
 ## Content changes do not appear immediately
 
-Use `gomark.LiveRender` for local development. `gomark.PreRender` takes a snapshot at startup.
+Use `site.LiveRender` for local development. `site.PreRender` takes a snapshot at startup.
 
 ## Search returns no results
 
@@ -38,4 +38,4 @@ Check all of the following:
 
 ## Runner requests return unauthorized
 
-If you use `AuthModeBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.
+If you use `protocol.AuthBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.

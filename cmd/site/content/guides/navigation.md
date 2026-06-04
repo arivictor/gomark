@@ -29,10 +29,10 @@ You keep the full page title while showing a cleaner label in navigation.
 
 Keep the sidebar tidy by capping how deep it nests with `SidebarDepth`.
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteSidebarDepth(3),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteSidebarDepth(3),
 )
 ```
 

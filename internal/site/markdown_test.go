@@ -104,6 +104,21 @@ func TestStdlibMarkdownRendererRendersCodeFenceTitleMetadata(t *testing.T) {
 	}
 }
 
+func TestStdlibMarkdownRendererRendersCompactColonFenceMetadata(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
+	output, _ := renderer.Render("```go:title=\"example.go\"run=true:editable=true\npackage main\nfunc main(){}\n```")
+
+	if !strings.Contains(output, `<span class="code-frame-title">example.go</span>`) {
+		t.Fatalf("expected compact colon title metadata in output: %s", output)
+	}
+	if !strings.Contains(output, `data-runner-run="true"`) {
+		t.Fatalf("expected compact colon run metadata in output: %s", output)
+	}
+	if !strings.Contains(output, `data-runner-editable="true"`) {
+		t.Fatalf("expected compact colon editable metadata in output: %s", output)
+	}
+}
+
 func TestStdlibMarkdownRendererRunnerRunButtonEnabledForGoFence(t *testing.T) {
 	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
 	output, _ := renderer.Render("```go run=true editable=true\npackage main\nfunc main(){}\n```")

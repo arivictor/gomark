@@ -11,21 +11,21 @@ GoMark ships with embedded templates and public assets, so you get a presentable
 
 The simplest override is a directory holding `layout.html` and the page templates GoMark expects.
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteTemplatesDir("templates"),
-	gomark.WithSiteMode(gomark.PreRender),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteTemplatesDir("templates"),
+	site.WithSiteMode(site.PreRender),
 )
 ```
 
 If you need explicit paths instead of a directory convention, use `LayoutPath` and `TemplateGlob`.
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteLayoutPath("templates/layout.html"),
-	gomark.WithSiteTemplateGlob("templates/*.html"),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteLayoutPath("templates/layout.html"),
+	site.WithSiteTemplateGlob("templates/*.html"),
 )
 ```
 
@@ -33,14 +33,14 @@ site := gomark.NewSite(
 
 Set `PublicDir` to serve your own favicons, OG images, or any additional static files.
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSitePublicDir("public"),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSitePublicDir("public"),
 )
 ```
 
-If `PublicDir` is empty, GoMark serves embedded defaults from the package.
+If `PublicDir` is empty, GoMark serves embedded defaults baked into the `internal/site` package.
 
 ## What embedded defaults cover
 

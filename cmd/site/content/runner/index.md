@@ -5,31 +5,32 @@ description: Start the GoMark runner with one call and configure its auth and ad
 
 # Runner
 
-The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's a small constructor-based API to stand up.
+The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live runners in your docs — and it's the `cmd/runner` binary, backed by the `internal/runner` package.
 
 ## Entry point
 
-`gomark.NewRunner(...).Start()` is the public entry point for the runner. Call it with options to configure in code, or call it with no options and it reads address and auth settings from the environment.
+`runner.NewRunner(...).Start()` is the entry point for the runner, wired up in `cmd/runner/main.go`. Call it with options to configure in code, or call it with no options and it reads address and auth settings from the environment.
 
 ## Local development
 
 Get a runner going locally with auth turned off:
 
-```go:title="main.go"
+```go:title="cmd/runner/main.go"
 package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark"
+	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/internal/runner"
 )
 
 func main() {
-	runner := gomark.NewRunner(
-		gomark.WithAuth(gomark.AuthModeNone, ""),
+	r := runner.NewRunner(
+		runner.WithAuth(protocol.AuthNone, ""),
 	)
 
-	if err := runner.Start(); err != nil {
+	if err := r.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -39,7 +40,7 @@ That's the fastest path to a working runner on your machine.
 
 ## Environment-driven startup
 
-Prefer config outside your code? `gomark.NewRunner().Start()` works with no options at all when the environment supplies the auth configuration.
+Prefer config outside your code? `runner.NewRunner().Start()` works with no options at all when the environment supplies the auth configuration.
 
 ```terminal
 export RUNNER_AUTH_MODE=bearer_static
@@ -49,26 +50,41 @@ go run ./cmd/runner
 
 ## Configure in code
 
-```go:title="main.go"
+```go:title="cmd/runner/main.go"
 package main
 
 import (
 	"log"
 
-	"github.com/arivictor/gomark"
+	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/internal/runner"
 )
 
 func main() {
-	runner := gomark.NewRunner(
-		gomark.WithPort("9090"),
-		gomark.WithAuth(gomark.AuthModeBearerStatic, "my-runner-token"),
+	r := runner.NewRunner(
+		runner.WithPort("9090"),
+		runner.WithAuth(protocol.AuthBearerStatic, "my-runner-token"),
+		runner.WithTimeout(30),
 	)
 
-	if err := runner.Start(); err != nil {
+	if err := r.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
 ```
+
+## Execution timeout
+
+Each `/run` request is capped by an execution timeout. By default the runner allows 2 seconds per snippet; raise or lower it with `WithTimeout`, which takes a whole number of seconds.
+
+```go:title="cmd/runner/main.go"
+r := runner.NewRunner(
+	runner.WithAuth(protocol.AuthNone, ""),
+	runner.WithTimeout(10), // give snippets up to 10 seconds
+)
+```
+
+Values of `0` or less are ignored and the default timeout stays in effect.
 
 ## Environment variables
 
@@ -93,12 +109,12 @@ When `RUNNER_AUTH_MODE` is unset, the runner resolves to `bearer_static` — so 
 
 Reserve this for local development or fully trusted networks.
 
-```go:title="main.go"
-runner := gomark.NewRunner(
-	gomark.WithAuth(gomark.AuthModeNone, ""),
+```go:title="cmd/runner/main.go"
+r := runner.NewRunner(
+	runner.WithAuth(protocol.AuthNone, ""),
 )
 
-if err := runner.Start(); err != nil {
+if err := r.Start(); err != nil {
 	log.Fatal(err)
 }
 ```
@@ -110,4 +126,4 @@ if err := runner.Start(); err != nil {
 
 ## Pairing with site runners
 
-The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner](/guides/runner) for the site-side settings.
+The runner really shines when you wire it up to a docs site with runner execution enabled. See [Runner](/guides/playground) for the site-side settings.

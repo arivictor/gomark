@@ -9,12 +9,12 @@ Shipping to production comes down to three things: predictable output, correct c
 
 ## Recommended production app
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteTitle("My Docs"),
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteURL("https://docs.example.com"),
-	gomark.WithSiteMode(gomark.PreRender),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteTitle("My Docs"),
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteURL("https://docs.example.com"),
+	site.WithSiteMode(site.PreRender),
 )
 ```
 
@@ -31,23 +31,24 @@ site := gomark.NewSite(
 
 Run through this before you go live:
 
-1. Use `gomark.PreRender`
+1. Use `site.PreRender`
 2. Set `SiteURL` to your public origin
 3. Provide `PublicDir` if you need custom branding
 4. Add custom templates only when you need them
 5. Keep the runner behind auth if runner execution is enabled
 
-## Publishing the module
+## Building the binaries
 
-Publishing versions of GoMark itself? Tag releases in semver format.
+GoMark deploys as two self-contained binaries. Templates and public assets are embedded, so the compiled output is all you need to ship.
 
 ```terminal
-git tag v0.1.0
-git push origin v0.1.0
+go build -o bin/site ./cmd/site
+go build -o bin/runner ./cmd/runner
 ```
 
-Consumers can then install a pinned version with:
+The repository also includes a multi-stage `Dockerfile` that builds both binaries and serves the site by default:
 
 ```terminal
-go get github.com/arivictor/gomark@v0.1.0
+docker build -t gomark .
+docker run -p 8080:8080 gomark
 ```

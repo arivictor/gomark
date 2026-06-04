@@ -9,11 +9,20 @@ Turn static code samples into live ones. GoMark can attach run controls to your 
 
 ## Enable the feature
 
-```go:title="main.go"
-site := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteMode(gomark.PreRender),
-	gomark.WithSiteRunner("http://localhost:8081", gomark.RunnerAuthBearerStatic, "my-runner-token"),
+```go:title="cmd/site/main.go"
+s := site.NewSite(
+	site.WithSiteContentDir("cmd/site/content"),
+	site.WithSiteMode(site.PreRender),
+	site.WithSiteRunner("http://localhost:8081", protocol.AuthBearerStatic, "my-runner-token"),
+)
+```
+
+The auth mode comes from the shared `internal/protocol` package, so add it to your imports:
+
+```go
+import (
+	"github.com/arivictor/gomark/internal/protocol"
+	"github.com/arivictor/gomark/internal/site"
 )
 ```
 

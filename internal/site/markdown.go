@@ -212,6 +212,7 @@ func splitFenceInfo(info string) []string {
 	var tokens []string
 	var current strings.Builder
 	var quote rune
+	justClosedQuote := false
 
 	flush := func() {
 		if current.Len() == 0 {
@@ -226,6 +227,7 @@ func splitFenceInfo(info string) []string {
 		case quote != 0:
 			if r == quote {
 				quote = 0
+				justClosedQuote = true
 				continue
 			}
 			current.WriteRune(r)
@@ -233,7 +235,12 @@ func splitFenceInfo(info string) []string {
 			quote = r
 		case r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == ':':
 			flush()
+			justClosedQuote = false
 		default:
+			if justClosedQuote {
+				flush()
+				justClosedQuote = false
+			}
 			current.WriteRune(r)
 		}
 	}
