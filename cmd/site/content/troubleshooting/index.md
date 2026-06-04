@@ -32,15 +32,14 @@ Make sure your content exists under the configured `ContentDir` and that the sit
 
 Check all of the following:
 
-1. `gomark.WithSiteRunner` is set in your site configuration
+1. The runner is not disabled (`gomark.WithSiteRunnerEnabled(false)` or `PLAYGROUND_ENABLED=false`)
 2. The code fence language is `go`
-3. The fence includes `run=true`
-4. The runner URL and auth settings are valid
+3. The fence includes `run=true` (or `editable=true`)
 
-## Runner requests return unauthorized
+## Clicking Run does nothing or shows "runner failed to load"
 
-If you use `AuthBearerStatic`, the client must send `Authorization: Bearer <token>` and the token must match the configured value.
+The runner downloads a WebAssembly module on first use. Make sure `/runner.wasm` and `/wasm_exec.js` are reachable and that the browser supports WebAssembly. The first run can take a moment while the module downloads; it is cached afterward.
 
-## The runner proxy returns forbidden
+## A snippet errors or behaves differently than `go run`
 
-The site proxy now requires a CSRF token and a same-origin browser request. Make sure the request comes from a GoMark page, that the browser still has the CSRF cookie, and that the run button is sending the `X-CSRF-Token` header.
+Snippets run through the yaegi interpreter compiled to WebAssembly, which covers a large subset of Go but not all of it. Reflection-heavy code, `unsafe`, and `cgo` are unsupported, and there is no local filesystem or raw network socket access — snippets are confined to the browser sandbox (Go's WebAssembly HTTP client goes through the browser's `fetch`, subject to CORS). See [How the Runner Works](/runner) for the full list.

@@ -1703,15 +1703,61 @@
         });
       }
 
+      // Lazy-loads the client-side Go runner: a WebAssembly build of the yaegi
+      // interpreter. The ~8MB module is fetched once on the first "Run" click,
+      // then cached for the life of the page. Execution happens entirely in the
+      // browser — there is no server round-trip and no auth.
+      var wasmRunnerPromise = null;
+      function loadWasmRunner() {
+        if (wasmRunnerPromise) {
+          return wasmRunnerPromise;
+        }
+        wasmRunnerPromise = new Promise(function (resolve, reject) {
+          var script = document.createElement('script');
+          script.src = '/wasm_exec.js';
+          script.onerror = function () { reject(new Error('failed to load wasm_exec.js')); };
+          script.onload = function () {
+            try {
+              var go = new window.Go();
+              var instantiate;
+              if (WebAssembly.instantiateStreaming) {
+                instantiate = WebAssembly.instantiateStreaming(fetch('/runner.wasm'), go.importObject)
+                  .catch(function () {
+                    return fetch('/runner.wasm').then(function (r) { return r.arrayBuffer(); })
+                      .then(function (buf) { return WebAssembly.instantiate(buf, go.importObject); });
+                  });
+              } else {
+                instantiate = fetch('/runner.wasm').then(function (r) { return r.arrayBuffer(); })
+                  .then(function (buf) { return WebAssembly.instantiate(buf, go.importObject); });
+              }
+              instantiate.then(function (result) {
+                // go.run resolves when the program exits and rejects if the
+                // instance traps during startup; surface that as a load failure
+                // instead of waiting out the readiness timeout.
+                go.run(result.instance).catch(reject); // registers window.runGo, then parks on select{}
+                var startedAt = Date.now();
+                (function waitReady() {
+                  if (typeof window.runGo === 'function') { resolve(); return; }
+                  if (Date.now() - startedAt > 8000) { reject(new Error('runtime did not initialize')); return; }
+                  setTimeout(waitReady, 15);
+                })();
+              }).catch(reject);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          document.head.appendChild(script);
+        });
+        // If loading fails, clear the cached promise so a later click can retry
+        // instead of being stuck with a permanently rejected promise.
+        wasmRunnerPromise.catch(function () { wasmRunnerPromise = null; });
+        return wasmRunnerPromise;
+      }
+
       function setupRunnerRunButtons() {
         var RunnerEnabled = document.body.getAttribute('data-runner-enabled') === 'true';
         if (!RunnerEnabled) {
           return;
-        }
-
-        function getCSRFToken() {
-          var meta = document.querySelector('meta[name="csrf-token"]');
-          return meta ? (meta.getAttribute('content') || '') : '';
         }
 
         var runButtons = Array.prototype.slice.call(document.querySelectorAll('[data-run-code]'));
@@ -1770,61 +1816,37 @@
             var statusNode = panelNode.querySelector('.status');
             var outputNode = panelNode.querySelector('.runner-output');
             var source = codeNode.textContent || '';
-            var csrfToken = getCSRFToken();
             button.disabled = true;
             panelNode.setAttribute('data-state', 'running');
-            statusNode.textContent = 'Running…';
+            statusNode.textContent = window.runGo ? 'Running…' : 'Loading runtime…';
 
-            if (!csrfToken) {
-              outputNode.textContent = 'cannot run';
-              panelNode.setAttribute('data-state', 'error');
-              statusNode.textContent = 'Failed';
-              button.disabled = false;
-              return;
-            }
+            var startedAt = (window.performance && performance.now) ? performance.now() : Date.now();
 
-            window.fetch('/api/runner/run', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-              },
-              credentials: 'same-origin',
-              body: JSON.stringify({ code: source })
-            }).then(function (response) {
-              return response.json().catch(function () { return {}; }).then(function (payload) {
-                return { status: response.status, payload: payload };
-              });
-            }).then(function (result) {
-              var payload = result.payload || {};
-              if (result.status !== 200 || payload.ok === false) {
-                var errorMessage = (payload.error || '').trim();
-                var outputMessage = (payload.output || '').trim();
-                if (errorMessage && outputMessage) {
-                  outputNode.textContent = errorMessage + '\n\n' + outputMessage;
-                } else if (errorMessage) {
-                  outputNode.textContent = errorMessage;
-                } else if (outputMessage) {
-                  outputNode.textContent = outputMessage;
-                } else {
-                  outputNode.textContent = 'runner request failed';
-                }
+            loadWasmRunner().then(function () {
+              statusNode.textContent = 'Running…';
+              // Yield once so the "Running…" state paints before the
+              // interpreter runs synchronously on the main thread.
+              return new Promise(function (resolve) { setTimeout(resolve, 0); });
+            }).then(function () {
+              var result = window.runGo(source) || {};
+              var now = (window.performance && performance.now) ? performance.now() : Date.now();
+              var suffix = ' · ' + Math.round(now - startedAt) + 'ms';
+              var errorMessage = (result.error || '').trim();
+              var outputMessage = result.output || '';
+
+              if (errorMessage) {
+                outputNode.textContent = outputMessage
+                  ? (outputMessage.replace(/\n$/, '') + '\n' + errorMessage)
+                  : errorMessage;
                 panelNode.setAttribute('data-state', 'error');
-                statusNode.textContent = 'Failed';
-                return;
+                statusNode.textContent = 'Failed' + suffix;
+              } else {
+                outputNode.textContent = outputMessage;
+                panelNode.setAttribute('data-state', 'ok');
+                statusNode.textContent = 'Completed' + suffix;
               }
-
-              outputNode.textContent = payload.output || '';
-              var suffix = '';
-              if (typeof payload.durationMs === 'number') {
-                suffix = ' · ' + payload.durationMs + 'ms';
-              }
-              var ok = payload.exitCode === 0;
-              panelNode.setAttribute('data-state', ok ? 'ok' : 'error');
-              statusNode.textContent = (ok ? 'Completed' : 'Failed') + suffix;
             }).catch(function () {
-              outputNode.textContent = 'cannot run';
+              outputNode.textContent = 'runner failed to load';
               panelNode.setAttribute('data-state', 'error');
               statusNode.textContent = 'Failed';
             }).finally(function () {

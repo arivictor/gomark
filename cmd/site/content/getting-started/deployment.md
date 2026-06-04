@@ -36,21 +36,22 @@ Run through this before you go live:
 2. Set `SiteURL` to your public origin
 3. Provide `PublicDir` if you need custom branding or assets beyond the embedded defaults
 4. Add custom templates only when you need them
-5. Keep the runner behind auth if runner execution is enabled
 
-## Building the binaries
+The Go runner executes in the reader's browser, so there is no second service to deploy or secure.
 
-GoMark deploys as two self-contained binaries. Templates and public assets are embedded, so the compiled output is all you need to ship.
+## Building the binary
+
+GoMark deploys as a single self-contained binary. Templates and public assets — including the in-browser runner's WebAssembly module — are embedded, so the compiled output is all you need to ship.
 
 ```terminal
-go build -o bin/site cmd/site/main.go
-go build -o bin/runner cmd/runner/main.go
+go build -o bin/site ./cmd/site
 ```
 
-The repository also includes a multi-stage `Dockerfile` that builds both binaries and serves the site by default:
+The repository also includes a `Dockerfile` that builds and serves the site:
 
 ```terminal
 docker build -t <my-image> .
 docker run -p 8080:8080 <my-image>
-docker run -p 8080:8080 <my-image> /app/runner
 ```
+
+> The committed `public/runner.wasm.gz` is the prebuilt runner. If you change the runner source under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.

@@ -2,24 +2,18 @@ package main
 
 import (
 	"log"
-	"os"
 
 	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	runnerURL := os.Getenv("RUNNER_URL")
-	if runnerURL == "" {
-		runnerURL = "http://localhost:8081"
-	}
-
-	secret := os.Getenv("RUNNER_AUTH_TOKEN")
-
+	// The Go runner executes entirely in the reader's browser (a WebAssembly
+	// build of the yaegi interpreter), so it is enabled by default with no
+	// service to configure. Disable it with gm.WithSiteRunnerEnabled(false).
 	s := gm.NewSite(
 		gm.WithSiteAddress(":8080"),
 		gm.WithSiteContentDir("cmd/site/content"),
 		gm.WithSiteMode(gm.PreRender),
-		gm.WithSiteRunner(runnerURL, gm.AuthBearerStatic, secret),
 	)
 
 	if err := s.Start(); err != nil {

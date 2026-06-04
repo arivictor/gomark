@@ -1,36 +1,29 @@
 ---
 title: Runner Guide
-description: Connect a GoMark site to a runner so readers can run and edit Go snippets in your docs.
+description: Make Go snippets in your docs runnable and editable, so readers can experiment without leaving the page.
 order: 5
 ---
 
 # Runner Guide
 
-This guide is about the site side of runner support: connecting your docs site to a runner, enabling the UI, and marking code blocks as runnable.
-
-> If you need to start or secure the runner process itself, use [Runner Server](/runner).
-
-GoMark attaches run controls to your Go code fences and sends execution requests to a GoMark runner, so readers can run and edit examples without ever leaving the page.
+This guide covers marking code blocks as runnable so readers can run and edit Go examples inline. Execution happens entirely in the reader's browser — see [How the Runner Works](/runner) for the architecture.
 
 ## Enable the feature
+
+The runner is **enabled by default**. There is no service to run and nothing to configure — a standard site already has it on:
 
 ```go:title="cmd/site/main.go"
 s := gomark.NewSite(
 	gomark.WithSiteContentDir("cmd/site/content"),
 	gomark.WithSiteMode(gomark.PreRender),
-	gomark.WithSiteRunner("http://localhost:8081", gomark.AuthNone, ""),
 )
 ```
 
-With that in place, the site proxies execution requests to the runner.
-
-The browser-facing proxy is protected with a CSRF token and same-origin check, so only requests that originate from your GoMark pages can hit `/api/runner/run`.
-
-Use `gomark.AuthNone` only for local development. For anything shared or public, use bearer auth with `gomark.AuthBearerStatic` and a secret token. The runner bearer token protects the runner itself; the site proxy is protected separately by CSRF validation.
+To turn the run controls off across the whole site, pass `gomark.WithSiteRunnerEnabled(false)` (or set `PLAYGROUND_ENABLED=false`).
 
 ## Mark runnable code fences
 
-GoMark looks for Go code fences with `run=true` or `editable=true` to attach run controls. The runner validates that the snippet is actually runnable Go code before execution, so you can mark any code block as runnable without worrying about breaking the site.
+GoMark attaches run controls to Go code fences marked with `run=true` or `editable=true`:
 
 ~~~markdown
 ```go:title="hello.go":run=true:editable=true
@@ -44,7 +37,7 @@ func main() {
 ```
 ~~~
 
-This renders as below, give it a try!
+This renders as below — give it a try:
 
 ```go:title="hello.go":run=true:editable=true
 package main
@@ -56,14 +49,15 @@ func main() {
 }
 ```
 
-The runner expects at a minimum a `package main` declaration and a `func main()`, but the snippet can include any valid Go code beyond that. The runner compiles and runs the whole snippet, so readers can experiment with imports, helper functions, and more.:
+The first run downloads the in-browser runtime (cached afterward), then executes the snippet locally.
 
-The runner will not accept:
+## What runs
 
-1. Code blocks without `package main`
-2. Code blocks without `func main()`
-3. Code blocks with syntax errors
-4. Code blocks in languages other than Go
-5. Imported modules other than the standard library
+A snippet needs a `package main` declaration and a `func main()`. Beyond that you can use most of the standard library, generics, goroutines, and helper functions. Snippets run through the yaegi interpreter, so a few things behave differently from `go run`:
 
-See [Runner Server](/runner) for the runner process itself.
+1. Some reflection-heavy code, `unsafe`, and `cgo` are unsupported
+2. There is no filesystem or network access in the browser sandbox
+3. A deliberate infinite loop freezes the reader's own tab
+4. Output is capped to protect browser memory
+
+See [How the Runner Works](/runner) for the full list of limitations.
