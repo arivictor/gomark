@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -12,8 +13,10 @@ import (
 )
 
 // routeFromFrontmatter returns an explicit route override from frontmatter
-// (slug/permalink/route), normalized to a clean "/..." path, or "" if none is set.
-// The same normalization links use is applied so internal links resolve identically.
+// (slug/permalink/route), normalized to a clean, fragment-free "/..." path, or
+// "" if none is set or it cannot be made safe. Dot-segments are resolved so an
+// override can never escape the site root (and, in the exporter, never escape
+// the output directory).
 func routeFromFrontmatter(meta map[string]string) string {
 	if meta == nil {
 		return ""
@@ -23,10 +26,20 @@ func routeFromFrontmatter(meta map[string]string) string {
 		return ""
 	}
 	route := normalizeLinkTarget(raw)
+	// Routes are paths, not anchors: drop any fragment.
+	if i := strings.IndexByte(route, '#'); i >= 0 {
+		route = route[:i]
+	}
 	if !strings.HasPrefix(route, "/") {
 		return ""
 	}
-	return route
+	// path.Clean collapses "." and ".." (and ".." at root is dropped), so the
+	// result is always a rooted path that stays within the site.
+	cleaned := path.Clean(route)
+	if !strings.HasPrefix(cleaned, "/") {
+		return ""
+	}
+	return cleaned
 }
 
 var (

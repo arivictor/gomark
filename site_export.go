@@ -75,17 +75,8 @@ func (s *Site) Export(outputDir string) error {
 			StaticBuild:     true,
 		}
 
-		file := exportFilePath(outputDir, route)
-		if mkErr := os.MkdirAll(filepath.Dir(file), 0o755); mkErr != nil {
-			return mkErr
-		}
-		f, createErr := os.Create(file)
-		if createErr != nil {
-			return createErr
-		}
-		defer f.Close()
-		if renderErr := b.renderer.RenderTo(f, "markdown", data); renderErr != nil {
-			return renderErr
+		if err := writePageFile(b.renderer, exportFilePath(outputDir, route), data); err != nil {
+			return err
 		}
 		pages++
 		return nil
@@ -125,6 +116,23 @@ func (s *Site) Export(outputDir string) error {
 	return os.WriteFile(filepath.Join(outputDir, "search-index.json"), indexJSON, 0o644)
 }
 
+// writePageFile renders one page to file, closing it explicitly so a write/flush
+// error surfaced by Close is not silently dropped (as a deferred Close would).
+func writePageFile(renderer *FileTemplateRenderer, file string, data PageData) error {
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		return err
+	}
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	if err := renderer.RenderTo(f, "markdown", data); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
+}
+
 // exportFilePath maps a public route to its static file: "/" -> index.html and
 // "/guides/install" -> guides/install/index.html. Directory-style output lets a
 // static host serve extensionless URLs without rewrite rules.
@@ -145,23 +153,35 @@ func copyFS(dst string, src fs.FS) error {
 		if d.IsDir() {
 			return nil
 		}
-		target := filepath.Join(dst, filepath.FromSlash(p))
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		in, err := src.Open(p)
-		if err != nil {
-			return err
-		}
-		defer in.Close()
-		out, err := os.Create(target)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-		_, err = io.Copy(out, in)
-		return err
+		return copyFSFile(src, p, filepath.Join(dst, filepath.FromSlash(p)))
 	})
+}
+
+// copyFSFile copies a single file, closing both handles explicitly so closes run
+// (and the write-side Close error is returned) even if io.Copy fails.
+func copyFSFile(src fs.FS, srcPath, target string) error {
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	in, err := src.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	out, err := os.Create(target)
+	if err != nil {
+		in.Close()
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		in.Close()
+		out.Close()
+		return err
+	}
+	if err := in.Close(); err != nil {
+		out.Close()
+		return err
+	}
+	return out.Close()
 }
 
 // writeDecompressedRunner gunzips public/runner.wasm.gz into outputDir/runner.wasm.

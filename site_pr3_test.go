@@ -16,6 +16,9 @@ func TestRouteFromFrontmatter(t *testing.T) {
 		{"permalink absolute", map[string]string{"permalink": "/api/v2/users"}, "/api/v2/users"},
 		{"route key", map[string]string{"route": "/changelog"}, "/changelog"},
 		{"nil", nil, ""},
+		{"strips fragment", map[string]string{"permalink": "/foo#bar"}, "/foo"},
+		{"neutralizes traversal", map[string]string{"permalink": "/../tmp/evil"}, "/tmp/evil"},
+		{"cleans dot segments", map[string]string{"slug": "/a/b/../c"}, "/a/c"},
 	}
 	for _, tc := range cases {
 		if got := routeFromFrontmatter(tc.meta); got != tc.want {
