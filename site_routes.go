@@ -12,16 +12,13 @@ import (
 	"time"
 )
 
-func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL, ogImagePath, twitterImagePath string, markdownRenderer MarkdownRenderer, RunnerEnabled bool) (string, error) {
-	cleanDir := filepath.Clean(dir)
-	provider, err := a.newContentPageProvider(cleanDir, markdownRenderer)
-	if err != nil {
-		return "", err
-	}
-	depth := a.sidebarDepth()
-	registered := map[string]string{}
-
-	err = filepath.WalkDir(cleanDir, func(path string, d os.DirEntry, walkErr error) error {
+// eachContentRoute walks the content dir and invokes fn with each markdown
+// file's service slug (path without extension) and its resolved public route,
+// honoring frontmatter slug/permalink overrides. Both the live route registrar
+// and the static exporter use it so the route↔slug mapping can never drift.
+func eachContentRoute(contentDir string, fn func(slug, route, path string) error) error {
+	cleanDir := filepath.Clean(contentDir)
+	return filepath.WalkDir(cleanDir, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -48,8 +45,6 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 		}
 
 		// A page may override its served route via frontmatter (slug/permalink).
-		// This must match the route computed in BuildContentIndex/BuildSearchIndex
-		// so the sidebar, sitemap, and search all point at the same URL.
 		if data, readErr := os.ReadFile(path); readErr == nil {
 			if meta, _ := parseFrontmatter(string(data)); meta != nil {
 				if override := routeFromFrontmatter(meta); override != "" {
@@ -58,6 +53,15 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 			}
 		}
 
+		return fn(serviceSlug, pageRoute, path)
+	})
+}
+
+func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL, ogImagePath, twitterImagePath string, provider contentPageProvider, RunnerEnabled bool) (string, error) {
+	depth := a.sidebarDepth()
+	registered := map[string]string{}
+
+	err := eachContentRoute(dir, func(serviceSlug, pageRoute, path string) error {
 		if existing, exists := registered[pageRoute]; exists {
 			return fmt.Errorf("route collision for %s between %s and %s", pageRoute, existing, path)
 		}
@@ -114,7 +118,7 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 	}
 
 	if len(registered) == 0 {
-		return "", fmt.Errorf("no markdown files found in content dir %s", cleanDir)
+		return "", fmt.Errorf("no markdown files found in content dir %s", filepath.Clean(dir))
 	}
 
 	return landingRoute(registered), nil

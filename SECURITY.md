@@ -52,12 +52,11 @@ classic docs-playground risk (server-side remote code execution) does not exist 
   `Referrer-Policy`, or HSTS. Adding `nosniff` and a restrictive CSP is the highest-value
   cheap win and would backstop any future renderer-escaping slip. Consider adding these
   via middleware.
-- **Third-party JavaScript.** Syntax highlighting (highlight.js) and icons (Lucide) are
-  currently loaded from public CDNs (`cdnjs`, `unpkg`) without Subresource Integrity
-  (`integrity=`) hashes, so a CDN compromise could run arbitrary JS on the docs site.
-  The planned fix is to **self-host** these libraries from `public/`, which removes the
-  CDN supply-chain risk entirely and lets docs run fully offline / air-gapped. Until
-  then, if you reintroduce or keep any remote `<script>`/`<link>`, add SRI hashes.
+- **Third-party JavaScript.** Syntax highlighting (highlight.js) and icons (Lucide), plus
+  the highlight.js theme CSS, are **self-hosted** from `public/vendor/` rather than loaded
+  from a CDN. This removes the CDN supply-chain risk entirely and lets docs run fully
+  offline / air-gapped (including static exports). If you reintroduce any remote
+  `<script>`/`<link>`, add Subresource Integrity (`integrity=`) hashes.
 
 ## Reporting
 

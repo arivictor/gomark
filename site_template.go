@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"net/http"
 	"path/filepath"
@@ -39,6 +40,7 @@ type PageData struct {
 	Nav             []NavNode
 	TopNav          []NavLink
 	CurrentPath     string
+	StaticBuild     bool
 }
 
 type FileTemplateRenderer struct {
@@ -128,13 +130,19 @@ func (r *FileTemplateRenderer) Render(w http.ResponseWriter, name string, data P
 }
 
 func (r *FileTemplateRenderer) RenderStatus(w http.ResponseWriter, status int, name string, data PageData) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	return r.RenderTo(w, name, data)
+}
+
+// RenderTo writes the named page (wrapped in the layout) to any io.Writer. It is
+// the shared rendering primitive behind both the HTTP handler and the static
+// exporter, so served and exported HTML are identical.
+func (r *FileTemplateRenderer) RenderTo(w io.Writer, name string, data PageData) error {
 	tpl, ok := r.templates[name]
 	if !ok {
 		return fmt.Errorf("unknown template: %s", name)
 	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
 	if err := tpl.ExecuteTemplate(w, "layout", data); err != nil {
 		return fmt.Errorf("render template %s: %w", name, err)
 	}

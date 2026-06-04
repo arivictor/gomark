@@ -14,6 +14,27 @@ type SearchResult struct {
 	Snippet string `json:"snippet,omitempty"`
 }
 
+// SearchEntry is one document in the static search index (search-index.json),
+// consumed by the client-side search used in exported static builds.
+type SearchEntry struct {
+	Title string `json:"title"`
+	Path  string `json:"path"`
+	Body  string `json:"body"`
+}
+
+// Entries returns every indexed document for serialization into a static search
+// index. The body is the same normalized text the server-side query scores on.
+func (idx *SearchIndex) Entries() []SearchEntry {
+	if idx == nil {
+		return nil
+	}
+	out := make([]SearchEntry, 0, len(idx.docs))
+	for _, doc := range idx.docs {
+		out = append(out, SearchEntry{Title: doc.title, Path: doc.path, Body: doc.body})
+	}
+	return out
+}
+
 type searchDoc struct {
 	title      string
 	path       string

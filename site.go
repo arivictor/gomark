@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const defaultSiteName = "GoMark"
@@ -42,6 +41,13 @@ func (s *Site) Start() error {
 		return fmt.Errorf("site is nil")
 	}
 
+	// When an export target is configured (option or EXPORT_DIR), build the
+	// static site and exit instead of serving — handy for CI pipelines.
+	if dir := s.App.exportDir(); dir != "" {
+		log.Printf("exporting static site to %s", dir)
+		return s.Export(dir)
+	}
+
 	addr := strings.TrimSpace(s.addr)
 	if addr == "" {
 		port := strings.TrimSpace(os.Getenv("PORT"))
@@ -57,34 +63,25 @@ func (s *Site) Start() error {
 func (s *Site) run(addr string) error {
 	a := &s.App
 
-	dir := a.contentDir()
-	layoutPath, templateGlob := a.templatePaths()
-	renderer, err := NewFileTemplateRenderer(layoutPath, templateGlob)
+	b, err := a.buildSite(false)
 	if err != nil {
 		return err
 	}
 
-	index, err := BuildContentIndex(dir)
-	if err != nil {
-		return err
-	}
-	appTitle := a.siteTitle()
-	appLogo := a.logoURL()
-	ogImagePath := a.ogImagePath()
-	twitterImagePath := a.twitterImagePath()
-	siteURL := a.siteURL()
-	RunnerEnabled := a.GetRunnerEnabled()
-	searchIndex, err := BuildSearchIndex(dir)
-	if err != nil {
-		return err
-	}
-	topNav := index.TopNav()
-	sitemapRoutes := buildSitemapRoutes(index)
-	sitemapXML, err := renderSitemapXML(siteURL, sitemapRoutes, time.Now())
-	if err != nil {
-		return err
-	}
-	robotsTXT := renderRobotsTXT(siteURL)
+	dir := b.contentDir
+	renderer := b.renderer
+	index := b.index
+	appTitle := b.siteName
+	appLogo := b.logoURL
+	ogImagePath := b.ogImagePath
+	twitterImagePath := b.twitterImagePath
+	siteURL := b.siteURL
+	RunnerEnabled := b.runnerEnabled
+	searchIndex := b.searchIndex
+	topNav := b.topNav
+	sitemapRoutes := b.sitemapRoutes
+	sitemapXML := b.sitemapXML
+	robotsTXT := b.robotsTXT
 
 	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
 	httpApp.Use(LoggingMiddleware)
@@ -128,10 +125,7 @@ func (s *Site) run(addr string) error {
 	// otherwise the embedded public/ tree. The runner module is sourced from
 	// here too, so overriding assets via PublicDir keeps runner.wasm and
 	// wasm_exec.js consistent with each other.
-	publicFS, err := a.publicFS()
-	if err != nil {
-		return err
-	}
+	publicFS := b.publicFS
 
 	if RunnerEnabled {
 		// The runner executes entirely in the browser via a WebAssembly build of
@@ -158,7 +152,7 @@ func (s *Site) run(addr string) error {
 		})
 	}
 
-	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, ogImagePath, twitterImagePath, StdlibMarkdownRenderer{RunnerEnabled: RunnerEnabled}, RunnerEnabled)
+	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, ogImagePath, twitterImagePath, b.provider, RunnerEnabled)
 	if err != nil {
 		return err
 	}

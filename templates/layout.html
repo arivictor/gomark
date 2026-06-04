@@ -53,8 +53,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
-  <link id="hljs-theme-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" media="all" />
-  <link id="hljs-theme-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" media="all" disabled />
+  <link id="hljs-theme-light" rel="stylesheet" href="/vendor/hljs-atom-one-light.min.css" media="all" />
+  <link id="hljs-theme-dark" rel="stylesheet" href="/vendor/hljs-atom-one-dark.min.css" media="all" disabled />
   <style>
     :root {
       color-scheme: light dark;
@@ -1187,7 +1187,7 @@
     .code-tabs .code-frame[hidden] { display: none; }
   </style>
 </head>
-<body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}">
+<body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}" data-static="{{if .StaticBuild}}true{{else}}false{{end}}">
   <div class="scroll-progress" aria-hidden="true">
     <div class="scroll-progress__bar" data-scroll-progress></div>
   </div>
@@ -1301,8 +1301,8 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script src="/vendor/highlight.min.js"></script>
+  <script src="/vendor/lucide.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.hljs) { hljs.highlightAll(); }
@@ -1457,9 +1457,79 @@
         });
       }
 
+      var staticSearchMode = document.body.getAttribute('data-static') === 'true';
+      var staticSearchData = null;
+
+      // Client-side scoring mirror of the server's SearchIndex.Query, used by
+      // exported static builds where there is no /api/search endpoint.
+      function staticSearchQuery(entries, query) {
+        var terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!terms.length) { return []; }
+        var ql = query.toLowerCase().trim();
+        var scored = [];
+        entries.forEach(function (e) {
+          var title = (e.title || '').toLowerCase();
+          var body = (e.body || '').toLowerCase();
+          var hay = title + ' ' + body;
+          var score = 0;
+          for (var i = 0; i < terms.length; i++) {
+            if (hay.indexOf(terms[i]) === -1) { return; }
+            score += 2;
+            var idx = 0, freq = 0;
+            while ((idx = body.indexOf(terms[i], idx)) !== -1) { freq++; idx += terms[i].length; if (freq >= 5) break; }
+            score += freq;
+            if (title.indexOf(terms[i]) !== -1) { score += 3; }
+          }
+          if (title.indexOf(ql) !== -1) { score += 5; }
+          else if (terms.length > 1 && body.indexOf(ql) !== -1) { score += 3; }
+          scored.push({ score: score, result: { title: e.title, path: e.path, snippet: makeStaticSnippet(e.body || '', terms) } });
+        });
+        scored.sort(function (a, b) {
+          if (a.score !== b.score) { return b.score - a.score; }
+          if (a.result.title !== b.result.title) { return a.result.title < b.result.title ? -1 : 1; }
+          return a.result.path < b.result.path ? -1 : 1;
+        });
+        return scored.slice(0, 12).map(function (s) { return s.result; });
+      }
+
+      function makeStaticSnippet(body, terms) {
+        if (!body) { return ''; }
+        var lower = body.toLowerCase();
+        var at = -1;
+        for (var i = 0; i < terms.length; i++) {
+          var p = lower.indexOf(terms[i]);
+          if (p !== -1) { at = p; break; }
+        }
+        if (at === -1) { return body.length <= 180 ? body : body.slice(0, 180).trim() + '...'; }
+        var start = Math.max(0, at - 72);
+        var end = Math.min(body.length, start + 180);
+        return (start > 0 ? '...' : '') + body.slice(start, end).trim() + (end < body.length ? '...' : '');
+      }
+
+      function runStaticSearch(query) {
+        if (searchResults) {
+          searchResults.innerHTML = '<div class="command-empty">Searching...</div>';
+        }
+        var go = function () { renderSearchResults(staticSearchQuery(staticSearchData || [], query), query); };
+        if (staticSearchData) { go(); return; }
+        window.fetch('/search-index.json', { headers: { 'Accept': 'application/json' } })
+          .then(function (r) { if (!r.ok) { throw new Error('index'); } return r.json(); })
+          .then(function (data) { staticSearchData = data || []; go(); })
+          .catch(function () {
+            if (searchResults) {
+              searchResults.innerHTML = '<div class="command-empty">Search is unavailable right now.</div>';
+            }
+          });
+      }
+
       function fetchSearch(query) {
         if (!query) {
           renderSearchResults([], '');
+          return;
+        }
+
+        if (staticSearchMode) {
+          runStaticSearch(query);
           return;
         }
 
