@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+
 	"github.com/arivictor/gomark/internal/protocol"
 	"github.com/arivictor/gomark/internal/site"
 )
