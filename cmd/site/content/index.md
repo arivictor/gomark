@@ -7,13 +7,13 @@ order: 0
 
 # GoMark
 
-GoMark is a Go package for turning a folder of markdown into a real webgm. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
-
 **This site is built with GoMark.** Check out the [source code](https://github.com/arivictor/gomark).
+
+GoMark is a Go package for turning a folder of markdown into a real webgm. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
 
 Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. `go get` the package, drop in your content, and run the server. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code securely right inside your docs.
 
-**Try it out!**
+## Live Code Examples
 
 ```go:title="main.go":run=true
 package main
@@ -23,7 +23,7 @@ func main() {
 }
 ```
 
-Test it out with the [playground](/playground) guide, then [get started](/getting-started) building your gm.
+Experiment in the [playground](/playground), then [get started](/getting-started) building your gm.
 
 ## Why GoMark
 

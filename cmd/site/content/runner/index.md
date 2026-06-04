@@ -1,7 +1,7 @@
 ---
 title: Runner Server
 description: Start the GoMark runner HTTP server and configure its auth, address, and execution limits.
-order: 2
+order: 3
 ---
 
 # Runner Server

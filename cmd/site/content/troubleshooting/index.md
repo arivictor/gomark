@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 description: Fix common GoMark setup issues around content discovery, routes, rendering modes, and runner auth.
-order: 3
+order: 4
 ---
 
 # Troubleshooting
