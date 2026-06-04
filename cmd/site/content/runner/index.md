@@ -16,7 +16,7 @@ The runner is GoMark's code-execution engine: a small HTTP server that compiles 
 Get a runner going locally with auth turned off:
 
 ```go:title="cmd/runner/main.go"
-package main
+package gomark
 
 import (
 	"log"
@@ -51,7 +51,7 @@ go run ./cmd/runner
 ## Configure in code
 
 ```go:title="cmd/runner/main.go"
-package main
+package gomark
 
 import (
 	"log"

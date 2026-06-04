@@ -54,7 +54,7 @@ This site is powered by GoMark.
 A few lines of Go is all it takes — the HTTP server is part of the package. Create a `main.go` that points at your content:
 
 ```go:title="main.go"
-package main
+package gomark
 
 import (
 	"log"

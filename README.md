@@ -22,7 +22,7 @@ GoMark is published as importable packages: `github.com/arivictor/gomark/site`
 Create `main.go` in your project:
 
 ```go
-package main
+package gomark
 
 import (
 	"log"

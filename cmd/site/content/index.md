@@ -42,7 +42,7 @@ GoMark ships as two importable packages, each with a reference binary under `cmd
 `site.NewSite(...)` serves a content directory as a complete website. This is the `cmd/site` entrypoint you edit and run.
 
 ```go:title="cmd/site/main.go"
-package main
+package gomark
 
 import (
 	"log"
@@ -72,7 +72,7 @@ Run it with `go run ./cmd/site`.
 `runner.NewRunner(...)` stands up the standalone Go runner server — the `cmd/runner` entrypoint.
 
 ```go:title="cmd/runner/main.go"
-package main
+package gomark
 
 import (
 	"log"

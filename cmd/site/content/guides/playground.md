@@ -32,7 +32,7 @@ Opt a code block in by adding metadata to its Go fence.
 
 ~~~md
 ```go:title="hello.go" run=true editable=true
-package main
+package gomark
 
 import "fmt"
 
