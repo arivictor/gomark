@@ -8,6 +8,8 @@ nav_title: Home
 
 GoMark is a batteries-included Go package for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
 
+**This site is built with GoMark.** Check out the [source code](https://github.com/arivictor/gomark).
+
 Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
 
 ## Why GoMark
