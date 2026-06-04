@@ -1697,7 +1697,17 @@
             }).then(function (result) {
               var payload = result.payload || {};
               if (result.status !== 200 || payload.ok === false) {
-                outputNode.textContent = payload.error || 'cannot run';
+                var errorMessage = (payload.error || '').trim();
+                var outputMessage = (payload.output || '').trim();
+                if (errorMessage && outputMessage) {
+                  outputNode.textContent = errorMessage + '\n\n' + outputMessage;
+                } else if (errorMessage) {
+                  outputNode.textContent = errorMessage;
+                } else if (outputMessage) {
+                  outputNode.textContent = outputMessage;
+                } else {
+                  outputNode.textContent = 'runner request failed';
+                }
                 statusNode.textContent = 'Failed';
                 return;
               }

@@ -143,9 +143,10 @@ func (s *Site) run(addr string) error {
 
 			resp, runErr := runnerClient.Run(r.Context(), req)
 			if runErr != nil {
+				log.Printf("runner proxy error: %v", runErr)
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(http.StatusBadGateway)
-				return json.NewEncoder(w).Encode(RunResponse{OK: false, Error: "cannot run"})
+				return json.NewEncoder(w).Encode(RunResponse{OK: false, Error: "runner error: " + runErr.Error()})
 			}
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")

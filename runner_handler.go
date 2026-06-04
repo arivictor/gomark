@@ -40,6 +40,7 @@ func (h Handler) Register(mux *http.ServeMux) {
 }
 
 func (h Handler) handleRun(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received /run request from %s\n", r.RemoteAddr)
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -51,7 +52,8 @@ func (h Handler) handleRun(w http.ResponseWriter, r *http.Request) {
 
 	var req RunRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, MaxSourceBytes+1024)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, RunResponse{OK: false, Error: "cannot run", ExitCode: 1})
+		fmt.Printf("Error decoding /run request: %v\n", err)
+		writeJSON(w, http.StatusBadRequest, RunResponse{OK: false, Error: err.Error(), ExitCode: 1})
 		return
 	}
 

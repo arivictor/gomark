@@ -9,7 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
+
+const runnerMaxAttempts = 3
+
+var runnerRetryDelays = []time.Duration{300 * time.Millisecond, 900 * time.Millisecond}
 
 // RunnerClient is the Site's HTTP client to the Runner service.
 type RunnerClient struct {
@@ -60,38 +65,115 @@ func (c *RunnerClient) Run(ctx context.Context, req RunRequest) (RunResponse, er
 		return RunResponse{}, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.runnerURL+"/run", bytes.NewReader(payload))
-	if err != nil {
-		return RunResponse{}, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	if c.authMode == AuthBearerStatic {
-		httpReq.Header.Set("Authorization", "Bearer "+c.authToken)
+	var lastErr error
+	for attempt := 1; attempt <= runnerMaxAttempts; attempt++ {
+		httpReq, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, c.runnerURL+"/run", bytes.NewReader(payload))
+		if reqErr != nil {
+			return RunResponse{}, reqErr
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+		if c.authMode == AuthBearerStatic {
+			httpReq.Header.Set("Authorization", "Bearer "+c.authToken)
+		}
+
+		resp, doErr := c.http.Do(httpReq)
+		if doErr != nil {
+			lastErr = doErr
+			if attempt == runnerMaxAttempts || !runnerRetryableError(doErr) {
+				return RunResponse{}, doErr
+			}
+			if sleepErr := runnerSleepWithContext(ctx, runnerRetryDelay(attempt)); sleepErr != nil {
+				return RunResponse{}, doErr
+			}
+			continue
+		}
+
+		body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+		_ = resp.Body.Close()
+		if readErr != nil {
+			return RunResponse{}, readErr
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			var decoded RunResponse
+			if err := json.Unmarshal(body, &decoded); err != nil {
+				return RunResponse{}, err
+			}
+
+			if !decoded.OK && strings.TrimSpace(decoded.Error) == "" {
+				decoded.Error = "runner returned an unsuccessful response"
+			}
+
+			return decoded, nil
+		}
+
+		if attempt < runnerMaxAttempts && runnerRetryableStatus(resp.StatusCode) {
+			if sleepErr := runnerSleepWithContext(ctx, runnerRetryDelay(attempt)); sleepErr != nil {
+				return RunResponse{OK: false, Error: fmt.Sprintf("runner unavailable: %s", resp.Status)}, nil
+			}
+			continue
+		}
+
+		return decodeRunnerError(resp.Status, body), nil
 	}
 
-	resp, err := c.http.Do(httpReq)
-	if err != nil {
-		return RunResponse{}, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return RunResponse{}, err
+	if lastErr != nil {
+		return RunResponse{}, lastErr
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return RunResponse{OK: false, Error: "cannot run"}, nil
+	return RunResponse{OK: false, Error: "runner unavailable"}, nil
+}
+
+func decodeRunnerError(status string, body []byte) RunResponse {
+	var payload RunResponse
+	if err := json.Unmarshal(body, &payload); err == nil {
+		msg := strings.TrimSpace(payload.Error)
+		if msg != "" {
+			return RunResponse{OK: false, Error: fmt.Sprintf("runner error (%s): %s", status, msg)}
+		}
 	}
 
-	var decoded RunResponse
-	if err := json.Unmarshal(body, &decoded); err != nil {
-		return RunResponse{}, err
-	}
+	return RunResponse{OK: false, Error: fmt.Sprintf("runner returned %s", status)}
+}
 
-	if !decoded.OK && strings.TrimSpace(decoded.Error) == "" {
-		decoded.Error = "cannot run"
-	}
+func runnerRetryableError(err error) bool {
+	return err != nil
+}
 
-	return decoded, nil
+func runnerRetryableStatus(status int) bool {
+	switch status {
+	case http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+func runnerRetryDelay(attempt int) time.Duration {
+	if attempt <= 0 {
+		return 0
+	}
+	idx := attempt - 1
+	if idx >= len(runnerRetryDelays) {
+		idx = len(runnerRetryDelays) - 1
+	}
+	if idx < 0 {
+		return 0
+	}
+	return runnerRetryDelays[idx]
+}
+
+func runnerSleepWithContext(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return nil
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }

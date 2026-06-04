@@ -5,16 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go/ast"
 	"go/parser"
 	"go/token"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-
 )
 
 const (
@@ -45,22 +45,30 @@ func (e GoExecutor) timeout() time.Duration {
 func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	start := time.Now()
 
-	if len(strings.TrimSpace(code)) == 0 || len(code) > MaxSourceBytes {
-		return failure(start)
+	if len(strings.TrimSpace(code)) == 0 {
+		return failure(start, "source code is empty")
+	}
+	if len(code) > MaxSourceBytes {
+		return failure(start, fmt.Sprintf("source exceeds max size (%d bytes)", MaxSourceBytes))
 	}
 	if !usesOnlyAllowedImports(code) {
-		return failure(start)
+		return failure(start, "source imports include blocked or external packages")
+	}
+	if reason, ok := validateRunnableSource(code); !ok {
+		return failure(start, reason)
 	}
 
 	dir, err := os.MkdirTemp("", "go-runner-*")
 	if err != nil {
-		return failure(start)
+		log.Printf("runner: create temp dir failed: %v", err)
+		return failure(start, "internal runner error creating workspace")
 	}
 	defer os.RemoveAll(dir)
 
 	mainPath := filepath.Join(dir, "main.go")
 	if writeErr := os.WriteFile(mainPath, []byte(code), 0o600); writeErr != nil {
-		return failure(start)
+		log.Printf("runner: write source failed: %v", writeErr)
+		return failure(start, "internal runner error writing source")
 	}
 
 	runCtx, cancel := context.WithTimeout(ctx, e.timeout())
@@ -83,20 +91,25 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	duration := time.Since(start)
 
 	if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
-		return failureWithOutput(start, combineOutput(stdout.String(), stderr.String()), 124)
+		return failureWithOutput(start, combineOutput(stdout.String(), stderr.String()), 124, "execution timed out")
 	}
 
 	if err != nil {
+		log.Printf("runner: go run failed: %v", err)
 		exitCode := 1
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			exitCode = exitErr.ExitCode()
 		}
 		output := combineOutput(stdout.String(), stderr.String())
+		errorMessage := fmt.Sprintf("execution failed (exit code %d)", exitCode)
+		if strings.TrimSpace(output) == "" {
+			errorMessage = fmt.Sprintf("execution failed: %v", err)
+		}
 		return RunResponse{
 			OK:         false,
 			Output:     output,
-			Error:      "execution failed",
+			Error:      errorMessage,
 			ExitCode:   exitCode,
 			DurationMS: duration.Milliseconds(),
 		}
@@ -111,12 +124,20 @@ func (e GoExecutor) Run(ctx context.Context, code string) RunResponse {
 	}
 }
 
-func failure(start time.Time) RunResponse {
-	return RunResponse{OK: false, Error: "cannot run", ExitCode: 1, DurationMS: time.Since(start).Milliseconds()}
+func failure(start time.Time, reason string) RunResponse {
+	msg := strings.TrimSpace(reason)
+	if msg == "" {
+		msg = "runner rejected request"
+	}
+	return RunResponse{OK: false, Error: msg, ExitCode: 1, DurationMS: time.Since(start).Milliseconds()}
 }
 
-func failureWithOutput(start time.Time, output string, code int) RunResponse {
-	return RunResponse{OK: false, Output: output, Error: "cannot run", ExitCode: code, DurationMS: time.Since(start).Milliseconds()}
+func failureWithOutput(start time.Time, output string, code int, reason string) RunResponse {
+	msg := strings.TrimSpace(reason)
+	if msg == "" {
+		msg = "runner rejected request"
+	}
+	return RunResponse{OK: false, Output: output, Error: msg, ExitCode: code, DurationMS: time.Since(start).Milliseconds()}
 }
 
 func usesOnlyAllowedImports(src string) bool {
@@ -136,6 +157,39 @@ func usesOnlyAllowedImports(src string) bool {
 		}
 	}
 	return true
+}
+
+func validateRunnableSource(src string) (string, bool) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "main.go", src, parser.AllErrors)
+	if err != nil {
+		return "source has syntax errors", false
+	}
+	if file == nil || file.Name == nil {
+		return "source has invalid package declaration", false
+	}
+	if strings.TrimSpace(file.Name.Name) != "main" {
+		return "source must declare package main", false
+	}
+
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv != nil || fn.Name == nil || fn.Name.Name != "main" {
+			continue
+		}
+		if fn.Type == nil {
+			continue
+		}
+		if fn.Type.Params != nil && len(fn.Type.Params.List) > 0 {
+			continue
+		}
+		if fn.Type.Results != nil && len(fn.Type.Results.List) > 0 {
+			continue
+		}
+		return "", true
+	}
+
+	return "source must define func main()", false
 }
 
 func isAllowedImport(path string) bool {
