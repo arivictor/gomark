@@ -2,15 +2,17 @@ package main
 
 import (
 	"log"
+	"os"
 
-	"github.com/arivictor/gomark"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
-	r := gomark.NewRunner(
-		gomark.WithAuth(gomark.AuthNone, ""),
-		gomark.WithTimeout(30),
-		gomark.WithPort("8081"),
+	secret := os.Getenv("RUNNER_AUTH_TOKEN")
+
+	r := gm.NewRunner(
+		gm.WithAuth(gm.AuthBearerStatic, secret),
+		gm.WithTimeout(30),
 	)
 	if err := r.Start(); err != nil {
 		log.Fatal(err)

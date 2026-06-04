@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/arivictor/gomark"
+	gm "github.com/arivictor/gomark"
 )
 
 func main() {
@@ -13,11 +13,13 @@ func main() {
 		runnerURL = "http://localhost:8081"
 	}
 
-	s := gomark.NewSite(
-		gomark.WithSiteAddress(":8080"),
-		gomark.WithSiteContentDir("cmd/site/content"),
-		gomark.WithSiteMode(gomark.PreRender),
-		gomark.WithSiteRunner(runnerURL, gomark.AuthNone, ""),
+	secret := os.Getenv("RUNNER_AUTH_TOKEN")
+
+	s := gm.NewSite(
+		gm.WithSiteAddress(":8080"),
+		gm.WithSiteContentDir("cmd/site/content"),
+		gm.WithSiteMode(gm.PreRender),
+		gm.WithSiteRunner(runnerURL, gm.AuthBearerStatic, secret),
 	)
 
 	if err := s.Start(); err != nil {
