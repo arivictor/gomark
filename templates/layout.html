@@ -1365,11 +1365,35 @@
         var pageUrl = window.location.href;
         var explainPrompt = 'Explain this to me ' + pageUrl;
         if (linkClaude) {
-          linkClaude.href = 'claude://new?prompt=' + encodeURIComponent(explainPrompt);
+          linkClaude.href = 'claude://';
+          linkClaude.setAttribute('title', 'Copy prompt and open Claude');
         }
         if (linkChatGPT) {
-          linkChatGPT.href = 'chatgpt://new?prompt=' + encodeURIComponent(explainPrompt);
+          linkChatGPT.href = 'chatgpt://';
+          linkChatGPT.setAttribute('title', 'Copy prompt and open ChatGPT');
         }
+
+        function openAIApp(link) {
+          if (!link) {
+            return;
+          }
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            var target = link.getAttribute('href') || '';
+            writeToClipboard(explainPrompt).finally(function () {
+              if (copyStatus) {
+                copyStatus.textContent = 'Prompt copied';
+                setTimeout(function () { copyStatus.textContent = ''; }, 1600);
+              }
+              if (target) {
+                window.location.href = target;
+              }
+            });
+          });
+        }
+
+        openAIApp(linkClaude);
+        openAIApp(linkChatGPT);
 
         function asText(el) {
           return (el.textContent || '').replace(/\s+/g, ' ').trim();
