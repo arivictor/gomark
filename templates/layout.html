@@ -244,10 +244,10 @@
     }
     .brand-mark {
       display: block;
-      width: 22px;
-      height: 22px;
+      width: 30px;
+      height: 30px;
       border-radius: 6px;
-      border: 1px solid var(--border);
+      /* border: 1px solid var(--border); */
       object-fit: cover;
     }
     .header-actions {
@@ -1010,7 +1010,7 @@
   <header class="site-header">
     <div class="container">
       <a class="brand" href="/" aria-label="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}} home">
-        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/favicon-32x32.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
+        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/logo-dark.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
       <div class="header-actions">
@@ -1073,7 +1073,7 @@
   <footer class="site-footer">
     <div class="container">
       <a class="brand" href="/">
-        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/favicon-32x32.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/logo-dark.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
       <!-- <span class="footer-meta">Rendered {{.Time}}</span> -->
