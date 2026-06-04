@@ -1,8 +1,10 @@
 package gomark
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -122,20 +124,36 @@ func (s *Site) run(addr string) error {
 		results := searchIndex.Query(q, limit)
 		return json.NewEncoder(w).Encode(map[string]any{"query": q, "results": results})
 	})
+	// publicFS serves static assets: an on-disk directory when configured,
+	// otherwise the embedded public/ tree. The runner module is sourced from
+	// here too, so overriding assets via PublicDir keeps runner.wasm and
+	// wasm_exec.js consistent with each other.
+	publicFS, err := a.publicFS()
+	if err != nil {
+		return err
+	}
+
 	if RunnerEnabled {
-		// The runner executes entirely in the browser via a WebAssembly build
-		// of the yaegi interpreter. The module is committed gzipped and served
-		// with Content-Encoding: gzip so the browser decompresses it
-		// transparently; wasm_exec.js is served as a normal static asset.
+		// The runner executes entirely in the browser via a WebAssembly build of
+		// the yaegi interpreter. The pre-gzipped module is read once at startup
+		// and served with Content-Encoding: gzip plus an ETag, so browsers
+		// revalidate cheaply (a 304 when unchanged) instead of holding a stale
+		// module under a long immutable cache; wasm_exec.js is a static asset.
+		wasmGz, wasmErr := fs.ReadFile(publicFS, "runner.wasm.gz")
+		if wasmErr != nil {
+			return fmt.Errorf("read runner.wasm.gz: %w", wasmErr)
+		}
+		wasmETag := fmt.Sprintf("%q", fmt.Sprintf("%x", sha256.Sum256(wasmGz)))
 		httpApp.Handle("GET", "/runner.wasm", func(w http.ResponseWriter, r *http.Request) error {
-			data, readErr := wasmModuleGz()
-			if readErr != nil {
-				return readErr
-			}
+			w.Header().Set("ETag", wasmETag)
 			w.Header().Set("Content-Type", "application/wasm")
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+			if match := r.Header.Get("If-None-Match"); match != "" && match == wasmETag {
+				w.WriteHeader(http.StatusNotModified)
+				return nil
+			}
 			w.Header().Set("Content-Encoding", "gzip")
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-			_, writeErr := w.Write(data)
+			_, writeErr := w.Write(wasmGz)
 			return writeErr
 		})
 	}
@@ -149,10 +167,6 @@ func (s *Site) run(addr string) error {
 	// at "/{$}", so "/" stays the catch-all: canonicalize trailing slashes, then
 	// serve static assets (favicons, og-image…) from the public dir. The bare-root
 	// redirect only fires when there is no root index.md.
-	publicFS, err := a.publicFS()
-	if err != nil {
-		return err
-	}
 	staticFiles := http.FileServerFS(publicFS)
 	// An earlier version redirected "/" -> oldBase (e.g. "/content") with a 301,
 	// which browsers cache permanently. Self-heal those clients: clear their cache

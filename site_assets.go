@@ -13,13 +13,6 @@ import (
 //go:embed public/*
 var embeddedPublicFS embed.FS
 
-// wasmModuleGz returns the gzip-compressed client-side runner module
-// (public/runner.wasm.gz) from the embedded assets. The bytes are already
-// gzipped, so callers serve them verbatim with Content-Encoding: gzip.
-func wasmModuleGz() ([]byte, error) {
-	return embeddedPublicFS.ReadFile("public/runner.wasm.gz")
-}
-
 // publicFS returns the filesystem serving static public assets: an on-disk
 // directory when configured, otherwise the embedded public/ tree.
 func (a *App) publicFS() (fs.FS, error) {

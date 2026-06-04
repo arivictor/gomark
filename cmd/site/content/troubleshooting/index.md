@@ -42,4 +42,4 @@ The runner downloads a WebAssembly module on first use. Make sure `/runner.wasm`
 
 ## A snippet errors or behaves differently than `go run`
 
-Snippets run through the yaegi interpreter compiled to WebAssembly, which covers a large subset of Go but not all of it. Reflection-heavy code, `unsafe`, `cgo`, and filesystem or network access are unavailable in the browser. See [How the Runner Works](/runner) for the full list.
+Snippets run through the yaegi interpreter compiled to WebAssembly, which covers a large subset of Go but not all of it. Reflection-heavy code, `unsafe`, and `cgo` are unsupported, and there is no local filesystem or raw network socket access — snippets are confined to the browser sandbox (Go's WebAssembly HTTP client goes through the browser's `fetch`, subject to CORS). See [How the Runner Works](/runner) for the full list.

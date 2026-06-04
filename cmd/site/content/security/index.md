@@ -15,7 +15,7 @@ This eliminates the largest risk a docs playground usually carries: server-side 
 What this means in practice:
 
 - **Nothing to secure on the server.** There is no runner service, no bearer token, and no `/run` endpoint to lock down or rate-limit.
-- **No filesystem or network access** is available to snippets — the browser sandbox does not provide them.
+- **No local filesystem and no raw network sockets.** Snippets are confined to the browser's sandbox — the same boundary as any other script on the page, not a GoMark-enforced allow-list. (Go's WebAssembly HTTP client is backed by the browser's `fetch`, so an outbound HTTP request is possible only within the page's CORS/same-origin rules, never as unrestricted network access.)
 - **Output is capped** so a runaway print loop cannot exhaust browser memory.
 
 The one remaining caveat is that a deliberate infinite loop freezes the reader's *own* tab (execution is single-threaded on the page's main thread). It affects no one else and no server. Running the interpreter in a Web Worker with a watchdog is a planned improvement.

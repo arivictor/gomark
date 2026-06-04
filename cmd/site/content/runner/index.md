@@ -39,7 +39,7 @@ func main() {
 Because this is an interpreter compiled to WebAssembly rather than the `gc` toolchain, a few things differ from `go run`:
 
 - **Not 100% of Go.** Some reflection-heavy code, `unsafe`, `cgo`, and a handful of stdlib corners are unsupported. Most teaching snippets are unaffected.
-- **No filesystem or network.** The browser sandbox has neither; snippets that need them won't work.
+- **No local filesystem; no raw sockets.** The browser sandbox provides neither. Go's WebAssembly HTTP client routes through the browser's `fetch`, so an HTTP call is bound by the page's CORS rules rather than being open network access — don't treat this as a security boundary GoMark enforces.
 - **Single-threaded, main-thread execution.** A deliberate infinite loop (`for {}`) will freeze the reader's own tab until they close it. Output is capped to protect browser memory.
 - **First-run download.** The module is fetched once on first use, then cached.
 

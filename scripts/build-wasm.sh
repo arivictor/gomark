@@ -19,7 +19,8 @@ echo "==> building cmd/wasm -> $out_dir/runner.wasm.gz"
 tmp_wasm="$(mktemp)"
 trap 'rm -f "$tmp_wasm"' EXIT
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o "$tmp_wasm" ./cmd/wasm
-gzip -9 -c "$tmp_wasm" > "$out_dir/runner.wasm.gz"
+# -n omits the filename and timestamp so the committed archive is deterministic.
+gzip -9 -n -c "$tmp_wasm" > "$out_dir/runner.wasm.gz"
 
 echo "==> copying wasm_exec.js from $(go env GOROOT)"
 goroot="$(go env GOROOT)"
@@ -34,5 +35,6 @@ fi
 
 raw_size="$(stat -c%s "$tmp_wasm" 2>/dev/null || stat -f%z "$tmp_wasm")"
 gz_size="$(stat -c%s "$out_dir/runner.wasm.gz" 2>/dev/null || stat -f%z "$out_dir/runner.wasm.gz")"
-printf '==> done: raw %.1f MB, gzipped %.1f MB\n' \
-  "$(echo "$raw_size/1048576" | bc -l)" "$(echo "$gz_size/1048576" | bc -l)"
+# awk keeps the script dependency-free (bc is absent on many minimal images).
+awk -v raw="$raw_size" -v gz="$gz_size" \
+  'BEGIN { printf "==> done: raw %.1f MB, gzipped %.1f MB\n", raw/1048576, gz/1048576 }'
