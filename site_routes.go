@@ -47,6 +47,17 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 			}
 		}
 
+		// A page may override its served route via frontmatter (slug/permalink).
+		// This must match the route computed in BuildContentIndex/BuildSearchIndex
+		// so the sidebar, sitemap, and search all point at the same URL.
+		if data, readErr := os.ReadFile(path); readErr == nil {
+			if meta, _ := parseFrontmatter(string(data)); meta != nil {
+				if override := routeFromFrontmatter(meta); override != "" {
+					pageRoute = override
+				}
+			}
+		}
+
 		if existing, exists := registered[pageRoute]; exists {
 			return fmt.Errorf("route collision for %s between %s and %s", pageRoute, existing, path)
 		}
@@ -88,6 +99,7 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 				MarkdownFile:    page.Path,
 				BodyHTML:        template.HTML(page.HTML),
 				Headings:        page.Headings,
+				HideTOC:         page.HideTOC,
 				NavTitle:        navTitle,
 				Nav:             nav,
 				TopNav:          topNav,

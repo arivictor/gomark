@@ -34,6 +34,7 @@ type PageData struct {
 	MarkdownFile    string
 	BodyHTML        template.HTML
 	Headings        []Heading
+	HideTOC         bool
 	NavTitle        string
 	Nav             []NavNode
 	TopNav          []NavLink

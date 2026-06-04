@@ -7,8 +7,27 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
+
+// routeFromFrontmatter returns an explicit route override from frontmatter
+// (slug/permalink/route), normalized to a clean "/..." path, or "" if none is set.
+// The same normalization links use is applied so internal links resolve identically.
+func routeFromFrontmatter(meta map[string]string) string {
+	if meta == nil {
+		return ""
+	}
+	raw := strings.TrimSpace(firstNonEmpty(meta["slug"], meta["permalink"], meta["route"]))
+	if raw == "" {
+		return ""
+	}
+	route := normalizeLinkTarget(raw)
+	if !strings.HasPrefix(route, "/") {
+		return ""
+	}
+	return route
+}
 
 var (
 	ErrInvalidMarkdownPath = errors.New("invalid markdown path")
@@ -79,6 +98,7 @@ type RenderedPage struct {
 	Title       string
 	Description string
 	Headings    []Heading
+	HideTOC     bool
 }
 
 func (s MarkdownService) LoadAndRender(slug string) (RenderedPage, error) {
@@ -108,6 +128,7 @@ func (s MarkdownService) LoadAndRender(slug string) (RenderedPage, error) {
 	description := firstNonEmpty(meta["description"], meta["tagline"], meta["lede"])
 
 	html, headings := s.renderer.Render(body)
+	headings = limitTOCDepth(headings, tocDepth(meta))
 
 	return RenderedPage{
 		Path:        resolved,
@@ -115,7 +136,49 @@ func (s MarkdownService) LoadAndRender(slug string) (RenderedPage, error) {
 		Title:       title,
 		Description: description,
 		Headings:    headings,
+		HideTOC:     tocHidden(meta),
 	}, nil
+}
+
+// tocHidden reports whether frontmatter explicitly disables the on-page table of
+// contents via `toc: false` (also accepts 0/no/off).
+func tocHidden(meta map[string]string) bool {
+	raw, ok := meta["toc"]
+	if !ok {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "false", "0", "no", "off", "hide", "none":
+		return true
+	default:
+		return false
+	}
+}
+
+// tocDepth returns the maximum heading level to include in the TOC from
+// frontmatter `toc_depth` (2 or 3). It defaults to 3 (H2 + H3).
+func tocDepth(meta map[string]string) int {
+	raw := strings.TrimSpace(firstNonEmpty(meta["toc_depth"], meta["tocdepth"]))
+	if raw == "" {
+		return 3
+	}
+	if n, err := strconv.Atoi(raw); err == nil && n >= 2 && n <= 3 {
+		return n
+	}
+	return 3
+}
+
+func limitTOCDepth(headings []Heading, maxLevel int) []Heading {
+	if maxLevel >= 3 {
+		return headings
+	}
+	out := make([]Heading, 0, len(headings))
+	for _, h := range headings {
+		if h.Level <= maxLevel {
+			out = append(out, h)
+		}
+	}
+	return out
 }
 
 func firstNonEmpty(values ...string) string {
@@ -289,6 +352,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 	codeTitle := ""
 	codeRun := false
 	codeEditable := false
+	codeGroup := ""
 	codeFenceChar := ""
 	codeFenceLen := 0
 
@@ -374,6 +438,15 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			out.WriteString(editableAttr)
 			out.WriteString("\"")
 		}
+		if codeGroup != "" {
+			// Adjacent code-frames sharing a group are merged into a tabbed
+			// multi-file example by the client; the title becomes the tab label.
+			out.WriteString(" data-tab-group=\"")
+			out.WriteString(html.EscapeString(codeGroup))
+			out.WriteString("\" data-tab-title=\"")
+			out.WriteString(html.EscapeString(title))
+			out.WriteString("\"")
+		}
 		out.WriteString(">")
 		out.WriteString("<div class=\"code-frame-header\">")
 		out.WriteString("<span class=\"code-frame-title\">")
@@ -400,6 +473,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		codeTitle = ""
 		codeRun = false
 		codeEditable = false
+		codeGroup = ""
 		codeFenceChar = ""
 		codeFenceLen = 0
 	}
@@ -427,12 +501,13 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		return string(fenceChar), count, strings.TrimSpace(line[count:]), true
 	}
 
-	parseFenceInfo := func(info string) (string, string, bool, bool) {
+	parseFenceInfo := func(info string) (string, string, bool, bool, string) {
 		tokens := splitFenceInfo(info)
 		lang := ""
 		title := ""
 		run := false
 		editable := false
+		group := ""
 
 		for _, token := range tokens {
 			key, value, found := strings.Cut(token, "=")
@@ -444,6 +519,8 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 					run = parseBoolMeta(value)
 				case "editable":
 					editable = parseBoolMeta(value)
+				case "group", "tab":
+					group = strings.TrimSpace(value)
 				}
 				continue
 			}
@@ -457,7 +534,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			title = lang
 		}
 
-		return lang, title, run, editable
+		return lang, title, run, editable, group
 	}
 
 	for i := 0; i < len(lines); i++ {
@@ -483,7 +560,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			inCode = true
 			codeFenceChar = fenceChar
 			codeFenceLen = fenceLen
-			codeLang, codeTitle, codeRun, codeEditable = parseFenceInfo(info)
+			codeLang, codeTitle, codeRun, codeEditable, codeGroup = parseFenceInfo(info)
 			codeLines = nil
 			continue
 		}
@@ -597,7 +674,7 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			flushQuote()
 			flushList()
 			id := makeID(headingText)
-			out.WriteString(fmt.Sprintf("<h%d id=\"%s\">%s</h%d>\n", headingLevel, id, renderInline(headingText), headingLevel))
+			out.WriteString(fmt.Sprintf("<h%d id=\"%s\">%s<a class=\"heading-anchor\" href=\"#%s\" aria-label=\"Permalink to this section\">#</a></h%d>\n", headingLevel, id, renderInline(headingText), id, headingLevel))
 			if headingLevel == 2 || headingLevel == 3 {
 				headings = append(headings, Heading{Level: headingLevel, Text: headingPlain(headingText), ID: id})
 			}

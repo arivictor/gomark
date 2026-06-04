@@ -1055,6 +1055,7 @@
       .docs { padding: 0 24px; }
       main { flex: 1 1 auto; max-width: var(--content-width); margin: 0 auto; }
       .docs.docs--error main { min-height: calc(100vh - var(--header-h) - 120px); }
+      .nav-toggle { display: inline-flex; }
     }
     @media (max-width: 640px) {
       .site-header { height: 56px; }
@@ -1073,6 +1074,117 @@
       html { scroll-behavior: auto; }
       * { transition: none !important; }
     }
+
+    /* ---------- Mobile navigation drawer ---------- */
+    .nav-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--heading);
+      cursor: pointer;
+    }
+    .nav-toggle:hover { border-color: var(--border-strong); }
+    .nav-toggle i { width: 18px; height: 18px; }
+
+    .mobile-nav { position: fixed; inset: 0; z-index: 60; }
+    .mobile-nav[hidden] { display: none; }
+    .mobile-nav__backdrop {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      padding: 0;
+      background: rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+    }
+    .mobile-nav__panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(82vw, 320px);
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+    }
+    .mobile-nav__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: var(--heading);
+    }
+    .mobile-nav__close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--muted-strong);
+      cursor: pointer;
+    }
+    body.nav-open { overflow: hidden; }
+
+    /* ---------- Heading permalink anchors ---------- */
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 { position: relative; }
+    .prose .heading-anchor {
+      margin-left: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    .prose h1:hover .heading-anchor,
+    .prose h2:hover .heading-anchor,
+    .prose h3:hover .heading-anchor,
+    .prose h4:hover .heading-anchor,
+    .prose h5:hover .heading-anchor,
+    .prose h6:hover .heading-anchor,
+    .prose .heading-anchor:focus-visible { opacity: 1; }
+
+    /* ---------- Tabbed multi-file code examples ---------- */
+    .code-tabs { margin: 0 0 24px; }
+    .code-tabs__bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 6px 6px 0;
+      background: var(--surface);
+    }
+    .code-tabs__btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-family: var(--mono, monospace);
+      color: var(--muted-strong);
+      background: transparent;
+      border: 0;
+      border-radius: var(--radius) var(--radius) 0 0;
+      cursor: pointer;
+    }
+    .code-tabs__btn[aria-selected="true"] {
+      color: var(--heading);
+      background: var(--bg);
+      box-shadow: inset 0 -2px 0 var(--accent);
+    }
+    .code-tabs .code-frame { margin: 0; }
+    .code-tabs__bar + .code-frame { border-top-left-radius: 0; border-top-right-radius: 0; }
+    .code-tabs .code-frame[hidden] { display: none; }
   </style>
 </head>
 <body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}">
@@ -1087,6 +1199,11 @@
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
       <div class="header-actions">
+        {{if .Nav}}
+        <button type="button" class="nav-toggle" data-nav-toggle aria-label="Open navigation menu" aria-controls="mobile-nav" aria-expanded="false">
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
+        {{end}}
         <button type="button" class="search-trigger" data-search-open aria-label="Search all markdown pages" title="Search all markdown (Command+K)">
           <i class="search-icon" data-lucide="search" aria-hidden="true"></i>
           <span>Search</span>
@@ -1100,6 +1217,23 @@
     </div>
   </header>
 
+  {{if .Nav}}
+  <div class="mobile-nav" data-mobile-nav hidden>
+    <button type="button" class="mobile-nav__backdrop" data-nav-close aria-label="Close navigation"></button>
+    <aside class="mobile-nav__panel" id="mobile-nav">
+      <div class="mobile-nav__head">
+        <span>{{if .NavTitle}}{{.NavTitle}}{{else}}Menu{{end}}</span>
+        <button type="button" class="mobile-nav__close" data-nav-close aria-label="Close navigation menu">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <nav aria-label="Section">
+        {{template "navtree" .Nav}}
+      </nav>
+    </aside>
+  </div>
+  {{end}}
+
   <div class="docs{{if .StatusCode}} docs--error{{end}}">
     {{if .Nav}}
     <aside class="sidebar">
@@ -1112,7 +1246,7 @@
     <main>{{block "content" .}}{{end}}</main>
 
     <aside class="toc">
-      {{if .Headings}}
+      {{if and (not .HideTOC) .Headings}}
       <nav aria-label="On this page">
         <div class="toc-title">On this page</div>
         <ul>
@@ -1938,6 +2072,86 @@
 
         document.querySelectorAll('.prose h2[id], .prose h3[id]').forEach(function (h) { observer.observe(h); });
       }
+
+      // Mobile navigation drawer.
+      (function () {
+        var drawer = document.querySelector('[data-mobile-nav]');
+        var openBtn = document.querySelector('[data-nav-toggle]');
+        if (!drawer || !openBtn) { return; }
+        var closers = Array.prototype.slice.call(drawer.querySelectorAll('[data-nav-close]'));
+
+        function openDrawer() {
+          drawer.hidden = false;
+          document.body.classList.add('nav-open');
+          openBtn.setAttribute('aria-expanded', 'true');
+          var first = drawer.querySelector('a[href], button');
+          if (first) { first.focus(); }
+        }
+        function closeDrawer() {
+          drawer.hidden = true;
+          document.body.classList.remove('nav-open');
+          openBtn.setAttribute('aria-expanded', 'false');
+          openBtn.focus();
+        }
+        openBtn.addEventListener('click', openDrawer);
+        closers.forEach(function (b) { b.addEventListener('click', closeDrawer); });
+        Array.prototype.slice.call(drawer.querySelectorAll('a[href]')).forEach(function (a) {
+          a.addEventListener('click', closeDrawer);
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !drawer.hidden) { closeDrawer(); }
+        });
+      })();
+
+      // Group adjacent code-frames sharing a data-tab-group into a tabbed example.
+      (function () {
+        var frames = Array.prototype.slice.call(document.querySelectorAll('.code-frame[data-tab-group]'));
+
+        function buildTabs(run) {
+          var container = document.createElement('div');
+          container.className = 'code-tabs';
+          var bar = document.createElement('div');
+          bar.className = 'code-tabs__bar';
+          bar.setAttribute('role', 'tablist');
+          run[0].parentNode.insertBefore(container, run[0]);
+          container.appendChild(bar);
+
+          run.forEach(function (frame, idx) {
+            var title = frame.getAttribute('data-tab-title') || ('Tab ' + (idx + 1));
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'code-tabs__btn';
+            btn.setAttribute('role', 'tab');
+            btn.textContent = title;
+            btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+            bar.appendChild(btn);
+            container.appendChild(frame);
+            frame.hidden = idx !== 0;
+
+            btn.addEventListener('click', function () {
+              run.forEach(function (f, k) { f.hidden = k !== idx; });
+              Array.prototype.slice.call(bar.querySelectorAll('.code-tabs__btn')).forEach(function (b, k) {
+                b.setAttribute('aria-selected', k === idx ? 'true' : 'false');
+              });
+            });
+          });
+        }
+
+        var i = 0;
+        while (i < frames.length) {
+          var group = frames[i].getAttribute('data-tab-group');
+          var run = [frames[i]];
+          var j = i + 1;
+          while (j < frames.length &&
+                 frames[j].getAttribute('data-tab-group') === group &&
+                 frames[j].previousElementSibling === run[run.length - 1]) {
+            run.push(frames[j]);
+            j++;
+          }
+          if (run.length > 1) { buildTabs(run); }
+          i = j;
+        }
+      })();
     });
   </script>
 </body>

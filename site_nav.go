@@ -85,6 +85,10 @@ func BuildContentIndex(dir string) (*ContentIndex, error) {
 		data, _ := os.ReadFile(path)
 		meta, _ := parseFrontmatter(string(data))
 
+		if override := routeFromFrontmatter(meta); override != "" {
+			route = override
+		}
+
 		title := strings.TrimSpace(meta["title"])
 		if title == "" {
 			title = pageTitleFromSlug(slug)
