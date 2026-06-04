@@ -31,9 +31,18 @@ type Executor interface {
 
 // GoExecutor compiles and runs Go source in an isolated temp directory using
 // `go run`, enforcing an import allow-list, size limits, and a timeout.
-type GoExecutor struct{}
+type GoExecutor struct {
+	Timeout time.Duration
+}
 
-func (GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
+func (e GoExecutor) timeout() time.Duration {
+	if e.Timeout <= 0 {
+		return RunTimeout
+	}
+	return e.Timeout
+}
+
+func (e GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
 	start := time.Now()
 
 	if len(strings.TrimSpace(code)) == 0 || len(code) > MaxSourceBytes {
@@ -54,7 +63,7 @@ func (GoExecutor) Run(ctx context.Context, code string) protocol.RunResponse {
 		return failure(start)
 	}
 
-	runCtx, cancel := context.WithTimeout(ctx, RunTimeout)
+	runCtx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 
 	var stdout, stderr cappedBuffer

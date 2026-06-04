@@ -29,7 +29,7 @@ WORKDIR /app
 
 COPY --from=builder /out/runner /app/runner
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["/app/runner"]
 

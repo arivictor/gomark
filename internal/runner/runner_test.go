@@ -2,6 +2,7 @@ package runner
 
 import (
 	"testing"
+	"time"
 
 	"github.com/arivictor/gomark/internal/protocol"
 )
@@ -55,5 +56,19 @@ func TestResolveConfigOptionsOverrideEnvironment(t *testing.T) {
 	}
 	if cfg.authToken != "abc123" {
 		t.Fatalf("expected auth token override, got %q", cfg.authToken)
+	}
+}
+
+func TestResolveConfigUsesDefaultTimeout(t *testing.T) {
+	cfg := resolveConfig()
+	if cfg.timeout != RunTimeout {
+		t.Fatalf("expected default timeout %s, got %s", RunTimeout, cfg.timeout)
+	}
+}
+
+func TestResolveConfigWithTimeoutOption(t *testing.T) {
+	cfg := resolveConfig(WithTimeout(15))
+	if cfg.timeout != 15*time.Second {
+		t.Fatalf("expected timeout 15s, got %s", cfg.timeout)
 	}
 }

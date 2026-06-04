@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/arivictor/gomark/internal/protocol"
 )
@@ -20,6 +21,7 @@ type config struct {
 	port      string
 	authMode  protocol.AuthMode
 	authToken string
+	timeout   time.Duration
 }
 
 func NewRunner(options ...Option) *Runner {
@@ -47,6 +49,7 @@ func (r *Runner) Start() error {
 	if err != nil {
 		return err
 	}
+	h.runner = GoExecutor{Timeout: cfg.timeout}
 
 	mux := http.NewServeMux()
 	h.Register(mux)
@@ -83,6 +86,17 @@ func WithAuth(mode protocol.AuthMode, token string) Option {
 	}
 }
 
+// WithTimeout sets the execution timeout in seconds for each /run request.
+// Values <= 0 are ignored.
+func WithTimeout(seconds int) Option {
+	return func(c *config) {
+		if seconds <= 0 {
+			return
+		}
+		c.timeout = time.Duration(seconds) * time.Second
+	}
+}
+
 func resolveConfig(options ...Option) config {
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
@@ -99,6 +113,7 @@ func resolveConfig(options ...Option) config {
 		port:      port,
 		authMode:  protocol.AuthMode(strings.TrimSpace(os.Getenv("RUNNER_AUTH_MODE"))),
 		authToken: strings.TrimSpace(os.Getenv("RUNNER_AUTH_TOKEN")),
+		timeout:   RunTimeout,
 	}
 
 	for _, option := range options {
