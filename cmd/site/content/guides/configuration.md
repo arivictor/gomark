@@ -5,7 +5,7 @@ description: Configure GoMark with App fields, environment-driven behavior, and 
 
 # Configuration
 
-`gomark.App` is the main configuration surface for the site server.
+`gomark.App` is the single configuration surface for the site server. Every knob lives in one struct — set the fields you need, leave the rest to sensible defaults.
 
 ## Core fields
 
@@ -21,22 +21,26 @@ app := gomark.App{
 
 ## App fields
 
-- `Title`: site name used in layout and metadata
-- `Logo`: optional logo URL used in the header
-- `ContentDir`: markdown content root, default `content`
-- `TemplatesDir`: directory containing `layout.html` and page templates
-- `LayoutPath`: explicit path to a layout template
-- `TemplateGlob`: explicit glob for page templates
-- `PublicDir`: static asset directory that overrides embedded defaults
-- `SidebarDepth`: max sidebar depth, default `2`
-- `SiteURL`: base URL used for sitemap and canonical URLs
-- `Mode`: `gomark.LiveRender` or `gomark.PreRender`
-- `PlaygroundEnabled`: enables runner UI for compatible Go code fences
-- `PlaygroundRunnerURL`: runner base URL for playground execution
-- `PlaygroundRunnerAuthMode`: auth mode sent to the runner client
-- `PlaygroundRunnerAuthToken`: auth token sent to the runner client
+Every field you can set on `gomark.App`:
+
+- `Title` — site name used in layout and metadata
+- `Logo` — optional logo URL shown in the header
+- `ContentDir` — markdown content root, default `content`
+- `TemplatesDir` — directory containing `layout.html` and page templates
+- `LayoutPath` — explicit path to a layout template
+- `TemplateGlob` — explicit glob for page templates
+- `PublicDir` — static asset directory that overrides embedded defaults
+- `SidebarDepth` — max sidebar depth, default `2`
+- `SiteURL` — base URL used for sitemap and canonical URLs
+- `Mode` — `gomark.LiveRender` or `gomark.PreRender`
+- `PlaygroundEnabled` — enables runner UI for compatible Go code fences
+- `PlaygroundRunnerURL` — runner base URL for playground execution
+- `PlaygroundRunnerAuthMode` — auth mode sent to the runner client
+- `PlaygroundRunnerAuthToken` — auth token sent to the runner client
 
 ## Render modes
+
+GoMark renders one of two ways. Pick the one that matches what you're doing.
 
 ### `gomark.LiveRender`
 
@@ -53,6 +57,8 @@ app := gomark.App{
 GoMark also recognizes common environment aliases such as `prod`, `production`, `live`, and `development` when resolving render mode.
 
 ## Recommended defaults
+
+Two starting points that cover most projects.
 
 For local work:
 

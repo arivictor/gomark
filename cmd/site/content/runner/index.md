@@ -5,15 +5,15 @@ description: Start the GoMark runner with one call and configure its auth and ad
 
 # Runner
 
-GoMark includes an HTTP runner for executing Go snippets. The public entry point is `gomark.Start()`.
+The runner is GoMark's code-execution engine: a small HTTP server that compiles and runs Go snippets on demand. It's what powers live playgrounds in your docs — and it's a single function call to stand up.
 
 ## Entry point
 
-`gomark.Start()` is the single public start function for the runner.
-
-If you call it without options, it reads address and auth settings from the environment.
+`gomark.Start()` is the one public entry point for the runner. Call it with options to configure in code, or call it bare and it reads its address and auth settings from the environment.
 
 ## Local development
+
+Get a runner going locally with auth turned off:
 
 ```go:title="main.go"
 package main
@@ -33,11 +33,11 @@ func main() {
 }
 ```
 
-This is the easiest way to run the runner locally.
+That's the fastest path to a working runner on your machine.
 
 ## Environment-driven startup
 
-`gomark.Start()` also works without options when the environment provides the auth configuration.
+Prefer config outside your code? `gomark.Start()` works with no options at all when the environment supplies the auth configuration.
 
 ```terminal
 export RUNNER_AUTH_MODE=bearer_static
@@ -68,22 +68,26 @@ func main() {
 
 ## Environment variables
 
-- `PORT`: listen port, default `8080`
-- `RUNNER_ADDR`: full listen address, which overrides `PORT`
-- `RUNNER_AUTH_MODE`: `bearer_static` or `none`
-- `RUNNER_AUTH_TOKEN`: required when auth resolves to `bearer_static`
+Configure the runner without touching code:
+
+- `PORT` — listen port, default `8080`
+- `RUNNER_ADDR` — full listen address; overrides `PORT`
+- `RUNNER_AUTH_MODE` — `bearer_static` or `none`
+- `RUNNER_AUTH_TOKEN` — required when auth resolves to `bearer_static`
 
 ## Auth modes
 
+The runner executes code, so it ships secure by default. Choose the mode that fits where it's running.
+
 ### `bearer_static`
 
-This is the safe default for any runner exposed outside local development. Clients must send an `Authorization: Bearer ...` header.
+The safe default for any runner exposed outside local development. Clients must send an `Authorization: Bearer ...` header.
 
-When `RUNNER_AUTH_MODE` is unset, handler creation resolves to `bearer_static`, so you must either provide a token or explicitly switch to `none`.
+When `RUNNER_AUTH_MODE` is unset, the runner resolves to `bearer_static` — so you'll either provide a token or explicitly opt into `none`. No accidental open endpoints.
 
 ### `none`
 
-Use this only for local development or fully trusted networks.
+Reserve this for local development or fully trusted networks.
 
 ```go:title="main.go"
 if err := gomark.Start(
@@ -95,9 +99,9 @@ if err := gomark.Start(
 
 ## Endpoints
 
-- `GET /healthz` returns `ok`
-- `POST /run` executes a Go snippet request
+- `GET /healthz` — returns `ok`
+- `POST /run` — executes a Go snippet request
 
 ## Pairing with site playgrounds
 
-The runner becomes useful when your site enables Go playground execution. See [Playground](/guides/playground) for the site-side settings.
+The runner really shines when you wire it up to a docs site with playground execution enabled. See [Playground](/guides/playground) for the site-side settings.

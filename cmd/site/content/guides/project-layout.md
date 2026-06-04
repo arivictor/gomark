@@ -5,7 +5,7 @@ description: Organize content, templates, and public assets for a GoMark site.
 
 # Project Layout
 
-GoMark expects a content directory and can optionally use custom templates and public assets.
+GoMark needs just one thing: a content directory. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
 
 ## Typical project structure
 
@@ -28,22 +28,24 @@ my-site/
 
 ## Routing rules
 
-- Every markdown file becomes a page route.
-- `index.md` becomes the route for its folder.
-- The content root is mounted at `/`.
-- Folder names become route segments.
+Routing is convention, not configuration:
+
+- Every markdown file becomes a page route
+- `index.md` becomes the route for its folder
+- The content root is mounted at `/`
+- Folder names become route segments
 
 ## Frontmatter fields
 
-GoMark understands these page-level metadata fields:
+Control each page with a small set of metadata fields:
 
-- `title`: page title and default nav label
-- `description`: page description for rendering and SEO metadata
-- `nav_title`: optional shorter label for navigation
+- `title` — page title and default nav label
+- `description` — page description for rendering and SEO metadata
+- `nav_title` — optional shorter label for navigation
 
 ## Choosing folders vs files
 
-Use a folder with `index.md` when you want a section landing page and child pages beneath it.
+Reach for a folder with `index.md` when you want a section landing page with child pages beneath it.
 
 ```text
 content/

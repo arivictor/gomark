@@ -5,13 +5,11 @@ description: Override GoMark templates and public assets while keeping the built
 
 # Customization
 
-GoMark ships with embedded templates and embedded public assets so you can start without any frontend setup.
-
-When you want more control, point the app at your own template and asset directories.
+GoMark ships with embedded templates and public assets, so you get a presentable site with zero frontend setup. When you're ready to make it yours, point the app at your own templates and assets — and anything you don't override keeps falling back to the built-in defaults.
 
 ## Custom templates
 
-The simplest template override is a directory with `layout.html` and the page templates GoMark expects.
+The simplest override is a directory holding `layout.html` and the page templates GoMark expects.
 
 ```go:title="main.go"
 app := gomark.App{
@@ -33,7 +31,7 @@ app := gomark.App{
 
 ## Custom public assets
 
-Use `PublicDir` when you want your own favicons, OG images, or additional static files.
+Set `PublicDir` to serve your own favicons, OG images, or any additional static files.
 
 ```go:title="main.go"
 app := gomark.App{
@@ -46,9 +44,11 @@ If `PublicDir` is empty, GoMark serves embedded defaults from the package.
 
 ## What embedded defaults cover
 
+Out of the box, GoMark serves:
+
 - `favicon.ico`
 - PNG favicon variants
 - Apple touch icon
 - Default OG images
 
-This means you can launch a presentable docs site before you have any custom branding.
+That's why you can launch a polished docs site before you've designed a single piece of branding.

@@ -5,14 +5,14 @@ description: Use folders, index pages, and nav_title to shape the sidebar and to
 
 # Navigation
 
-Navigation is generated from your content tree.
+You don't build navigation in GoMark — you grow it. The sidebar and top-level nav are generated straight from your content tree, so adding a page is all it takes to add a link.
 
 ## Sidebar behavior
 
-- Root pages and folders appear in the sidebar.
-- A folder with `index.md` is routable.
-- A folder without `index.md` can still act as a toggle-only section if it has child pages.
-- Active branches stay open so readers can see nearby pages.
+- Root pages and folders appear in the sidebar
+- A folder with `index.md` is routable
+- A folder without `index.md` still works as a toggle-only section when it has child pages
+- Active branches stay open so readers always see nearby pages
 
 ## Use `nav_title` for shorter labels
 
@@ -23,11 +23,11 @@ nav_title: Home
 ---
 ```
 
-This keeps the full page title while showing a cleaner label in navigation.
+You keep the full page title while showing a cleaner label in navigation.
 
 ## Sidebar depth
 
-Limit the tree depth with `SidebarDepth`.
+Keep the sidebar tidy by capping how deep it nests with `SidebarDepth`.
 
 ```go:title="main.go"
 app := gomark.App{

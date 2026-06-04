@@ -5,12 +5,12 @@ description: Guides for structuring content, configuring GoMark, and enabling fe
 
 # Guides
 
-Use these guides when you have a site running and want to shape how it behaves.
+You have a site running. Now shape it. These guides cover everything from structuring your content to wiring up search, runnable code, and a production deploy.
 
-- [Project Layout](/guides/project-layout)
-- [Configuration](/guides/configuration)
-- [Customization](/guides/customization)
-- [Navigation](/guides/navigation)
-- [Search](/guides/search)
-- [Playground](/guides/playground)
-- [Deployment](/guides/deployment)
+- [Project Layout](/guides/project-layout) — organize content, templates, and assets
+- [Configuration](/guides/configuration) — every `App` field and what it does
+- [Customization](/guides/customization) — bring your own templates and branding
+- [Navigation](/guides/navigation) — shape the sidebar and top-level nav
+- [Search](/guides/search) — the built-in search endpoint and index
+- [Playground](/guides/playground) — runnable Go code blocks in your docs
+- [Deployment](/guides/deployment) — ship to production with confidence

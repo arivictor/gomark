@@ -5,7 +5,7 @@ description: Understand the built-in search endpoint and how GoMark indexes mark
 
 # Search
 
-GoMark generates a search index from your content and exposes it over HTTP.
+Search ships ready to use. GoMark builds an index from your content and exposes it over HTTP — no external service, no setup, just a query away.
 
 ## Endpoint
 
@@ -39,6 +39,6 @@ curl "http://localhost:8080/api/search?q=render&limit=5"
 
 ## Notes
 
-- Empty queries return an empty result set.
-- Search is built from your markdown content.
-- In `PreRender` mode the search index is built at startup.
+- Empty queries return an empty result set
+- The index is built from your markdown content
+- In `PreRender` mode, the index is built once at startup

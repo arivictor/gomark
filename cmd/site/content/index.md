@@ -6,37 +6,38 @@ nav_title: Home
 
 # GoMark
 
-GoMark turns a folder of markdown files into a navigable website with search, sitemap generation, embedded assets, and optional runnable Go examples.
+GoMark is a batteries-included Go package for turning a folder of markdown into a real website. Routing, rendering, navigation, search, sitemap, robots, and embedded assets ship in the box — point it at your content and run it.
 
-It is built for two jobs:
+Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
 
-1. Serve a markdown-powered site with `gomark.App`.
-2. Run Go snippets over HTTP with `gomark.Start()`.
+## [Why GoMark](#why-gomark)
 
-## Why GoMark
+Everything you need to ship a polished site comes built in, with sensible defaults you can override when you're ready:
 
-- Built-in HTTP server for the docs site.
-- File-based routing from your markdown tree.
-- Generated sidebar and top-level navigation.
-- Search endpoint at `/api/search`.
-- Generated `sitemap.xml` and `robots.txt`.
-- Embedded default templates and public assets.
-- Optional playground integration for runnable Go examples.
+- **Built-in HTTP server** — no separate web framework to wire up
+- **File-based routing** — your markdown tree *is* your URL structure
+- **Generated navigation** — sidebar and top-level nav built from your folders
+- **Search out of the box** — a ready-to-query endpoint at `/api/search`
+- **SEO on by default** — generated `sitemap.xml` and `robots.txt`
+- **Embedded templates and assets** — a presentable site before you touch a single template
+- **Runnable Go examples** — optional playground integration for live code
 
-## Start Here
+## [Start here](#start-here)
 
-- [Install and launch a site](/getting-started)
-- [Use the runner with one call](/runner)
-- [Configure app behavior](/guides/configuration)
+- [Install and launch your first site](/getting-started)
+- [Run Go snippets with one call](/runner)
+- [Configure how the app behaves](/guides/configuration)
 - [Customize templates and assets](/guides/customization)
-- [Prepare for deployment](/guides/deployment)
+- [Ship to production](/guides/deployment)
 - [Browse the public API](/reference)
 
-## The Two Entry Points
+## [Two entry points](#two-entry-points)
 
-## Build a site
+GoMark gives you two ways in, depending on what you're building.
 
-Use `gomark.App` when you want GoMark to serve a content directory as a full website.
+### Build a site
+
+Reach for `gomark.App` when you want GoMark to serve a content directory as a complete website.
 
 ```go:title="main.go"
 package main
@@ -60,9 +61,11 @@ func main() {
 }
 ```
 
-## Run Go snippets
+### Run code snippets
 
-Use `gomark.Start()` when you want the Go runner server.
+> Currently supports `go` code fences. More languages may follow.
+
+Reach for `gomark.Start()` when you want the standalone Go runner server.
 
 ```go:title="main.go"
 package main
@@ -83,24 +86,12 @@ func main() {
 }
 ```
 
-## What the Site Generates
+## [What the site generates for you](#what-the-site-generates-for-you)
 
-Point GoMark at a content tree and it will:
+Point GoMark at a content tree and it does the rest:
 
-1. Register routes from file and folder names.
-2. Use `index.md` as the route for its folder.
-3. Build sidebar navigation from the same tree.
-4. Serve default favicons and OG images unless you override them.
-5. Expose search and SEO endpoints automatically.
-
-## Suggested Reading Order
-
-1. [Getting Started](/getting-started)
-2. [Runner](/runner)
-3. [Configuration](/guides/configuration)
-4. [Customization](/guides/customization)
-5. [Navigation](/guides/navigation)
-6. [Search](/guides/search)
-7. [Playground](/guides/playground)
-8. [Deployment](/guides/deployment)
-9. [API Reference](/reference)
+1. Registers routes from your file and folder names
+2. Treats `index.md` as the route for its folder
+3. Builds sidebar navigation from the same tree
+4. Serves default favicons and OG images until you override them
+5. Exposes search and SEO endpoints automatically

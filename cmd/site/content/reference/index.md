@@ -5,7 +5,7 @@ description: Reference for the public GoMark site and runner APIs.
 
 # API Reference
 
-This page summarizes the public surfaces you will use most often.
+The complete public surface of GoMark, in one place. Two small APIs — one to build sites, one to run code — cover everything.
 
 ## Site API
 
@@ -54,6 +54,8 @@ Sets runner auth mode and token.
 - `gomark.AuthModeNone`
 
 ## Common examples
+
+Copy, paste, ship.
 
 ### Site
 

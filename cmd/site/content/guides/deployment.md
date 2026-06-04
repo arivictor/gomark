@@ -5,7 +5,7 @@ description: Prepare a GoMark site for production with prerendering, a stable Si
 
 # Deployment
 
-For production, the main goals are predictable output, correct canonical URLs, and safe runner settings if you enable playground execution.
+Shipping to production comes down to three things: predictable output, correct canonical URLs, and a locked-down runner if you've enabled playground execution. GoMark makes all three a matter of setting a couple of fields.
 
 ## Recommended production app
 
@@ -20,7 +20,7 @@ app := gomark.App{
 
 ## Why `SiteURL` matters
 
-Set `SiteURL` so GoMark can generate:
+`SiteURL` is the one field production really cares about. Set it and GoMark generates correct:
 
 - canonical URLs
 - `sitemap.xml`
@@ -29,15 +29,17 @@ Set `SiteURL` so GoMark can generate:
 
 ## Deployment checklist
 
-1. Use `gomark.PreRender`.
-2. Set `SiteURL` to the public origin.
-3. Provide `PublicDir` if you need custom branding.
-4. Provide custom templates only when you need them.
-5. Keep the runner behind auth if playground execution is enabled.
+Run through this before you go live:
+
+1. Use `gomark.PreRender`
+2. Set `SiteURL` to your public origin
+3. Provide `PublicDir` if you need custom branding
+4. Add custom templates only when you need them
+5. Keep the runner behind auth if playground execution is enabled
 
 ## Publishing the module
 
-If you publish versions of GoMark itself, tag releases in semver format.
+Publishing versions of GoMark itself? Tag releases in semver format.
 
 ```terminal
 git tag v0.1.0

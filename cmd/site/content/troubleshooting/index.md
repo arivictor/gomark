@@ -5,6 +5,8 @@ description: Fix common GoMark setup issues around content discovery, routes, re
 
 # Troubleshooting
 
+Hit a snag? These are the issues people run into most, each with a one-step fix.
+
 ## The site fails to start with no markdown pages found
 
 Make sure your content directory exists and contains at least one markdown file, usually `content/index.md`.

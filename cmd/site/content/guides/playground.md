@@ -5,7 +5,7 @@ description: Enable runnable Go code blocks in your docs by connecting a site to
 
 # Playground
 
-GoMark can attach run controls to Go code fences and send execution requests to a GoMark runner.
+Turn static code samples into live ones. GoMark can attach run controls to your Go code fences and send execution requests to a GoMark runner, so readers run and edit examples without ever leaving the page.
 
 ## Enable the feature
 
@@ -22,7 +22,7 @@ app := gomark.App{
 
 ## Mark runnable code fences
 
-Use a Go code fence with metadata.
+Opt a code block in by adding metadata to its Go fence.
 
 ~~~md
 ```go:title="hello.go" run=true editable=true
@@ -40,8 +40,8 @@ When playground support is enabled, GoMark can render run controls for Go code b
 
 ## Recommended setup
 
-1. Run the docs site on one port.
-2. Run the GoMark runner on another port.
-3. Protect the runner with bearer auth unless you are working locally.
+1. Run the docs site on one port
+2. Run the GoMark runner on another port
+3. Protect the runner with bearer auth unless you're working locally
 
 See [Runner](/runner) for the runner server side.
