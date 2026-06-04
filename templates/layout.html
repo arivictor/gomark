@@ -722,10 +722,7 @@
     }
     .prose .runner-panel {
       border-top: 1px solid var(--border);
-      background: color-mix(in srgb, var(--background) 90%, var(--surface));
-      padding: 12px;
-      display: grid;
-      gap: 10px;
+      background: color-mix(in srgb, var(--background) 88%, var(--surface));
     }
     .prose .runner-editor {
       width: 100%;
@@ -744,27 +741,79 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 8px 14px;
+      min-height: 36px;
+    }
+    .prose .runner-toolbar .runner-label {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
     .prose .runner-toolbar .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       margin-left: auto;
-      font-size: 12px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
       color: var(--muted);
+    }
+    .prose .runner-toolbar .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      flex: 0 0 auto;
+    }
+    .prose .runner-panel[data-state="running"] .status {
+      color: var(--muted-strong);
+    }
+    .prose .runner-panel[data-state="running"] .status::before {
+      background: #f5a623;
+      box-shadow: 0 0 0 3px color-mix(in srgb, #f5a623 22%, transparent);
+      animation: runner-pulse 1s ease-in-out infinite;
+    }
+    .prose .runner-panel[data-state="ok"] .status {
+      color: color-mix(in srgb, var(--foreground) 55%, #1a8f4a);
+    }
+    .prose .runner-panel[data-state="ok"] .status::before {
+      background: #1fb863;
+      box-shadow: 0 0 0 3px color-mix(in srgb, #1fb863 22%, transparent);
+    }
+    .prose .runner-panel[data-state="error"] .status {
+      color: color-mix(in srgb, var(--foreground) 45%, #e5484d);
+    }
+    .prose .runner-panel[data-state="error"] .status::before {
+      background: #e5484d;
+      box-shadow: 0 0 0 3px color-mix(in srgb, #e5484d 22%, transparent);
+    }
+    @keyframes runner-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
     }
     .prose .runner-output {
       margin: 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: 0;
+      border-top: 1px solid var(--border);
       background: var(--code-bg);
       color: var(--code-fg);
       font-family: var(--font-mono);
-      font-size: 12px;
-      line-height: 1.55;
-      padding: 10px 12px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      padding: 12px 14px;
       white-space: pre-wrap;
       word-break: break-word;
       max-height: 260px;
       overflow: auto;
     }
+    .prose .runner-output:empty { display: none; }
+    .prose .runner-output::selection,
+    .prose .runner-output *::selection { background: var(--selection); }
 
     /* Blockquote → Vercel-style note callout */
     .prose blockquote {
@@ -1686,6 +1735,11 @@
             var toolbar = document.createElement('div');
             toolbar.className = 'runner-toolbar';
 
+            var label = document.createElement('span');
+            label.className = 'runner-label';
+            label.textContent = 'Output';
+            toolbar.appendChild(label);
+
             var status = document.createElement('span');
             status.className = 'status';
             toolbar.appendChild(status);
@@ -1708,7 +1762,8 @@
             var outputNode = panelNode.querySelector('.runner-output');
             var source = codeNode.textContent || '';
             button.disabled = true;
-            statusNode.textContent = 'Running...';
+            panelNode.setAttribute('data-state', 'running');
+            statusNode.textContent = 'Running…';
 
             window.fetch('/api/runner/run', {
               method: 'POST',
@@ -1735,6 +1790,7 @@
                 } else {
                   outputNode.textContent = 'runner request failed';
                 }
+                panelNode.setAttribute('data-state', 'error');
                 statusNode.textContent = 'Failed';
                 return;
               }
@@ -1742,11 +1798,14 @@
               outputNode.textContent = payload.output || '';
               var suffix = '';
               if (typeof payload.durationMs === 'number') {
-                suffix = ' (' + payload.durationMs + 'ms)';
+                suffix = ' · ' + payload.durationMs + 'ms';
               }
-              statusNode.textContent = payload.exitCode === 0 ? 'Completed' + suffix : 'Failed' + suffix;
+              var ok = payload.exitCode === 0;
+              panelNode.setAttribute('data-state', ok ? 'ok' : 'error');
+              statusNode.textContent = (ok ? 'Completed' : 'Failed') + suffix;
             }).catch(function () {
               outputNode.textContent = 'cannot run';
+              panelNode.setAttribute('data-state', 'error');
               statusNode.textContent = 'Failed';
             }).finally(function () {
               button.disabled = false;
