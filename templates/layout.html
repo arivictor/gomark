@@ -53,8 +53,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
-  <link id="hljs-theme-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" media="all" />
-  <link id="hljs-theme-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" media="all" disabled />
+  <link id="hljs-theme-light" rel="stylesheet" href="/vendor/hljs-atom-one-light.min.css" media="all" />
+  <link id="hljs-theme-dark" rel="stylesheet" href="/vendor/hljs-atom-one-dark.min.css" media="all" disabled />
   <style>
     :root {
       color-scheme: light dark;
@@ -829,6 +829,33 @@
     .prose blockquote p { margin: 0; }
     .prose blockquote strong { color: var(--heading); }
 
+    /* GitHub-style callouts / admonitions */
+    .prose .callout {
+      margin: 24px 0;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--callout-accent, var(--border-strong));
+      border-radius: var(--radius);
+      color: var(--muted-strong);
+    }
+    .prose .callout p { margin: 0; }
+    .prose .callout p + p { margin-top: 8px; }
+    .prose .callout strong { color: var(--heading); }
+    .prose .callout-title {
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      color: var(--callout-accent, var(--heading));
+      margin-bottom: 6px !important;
+    }
+    .prose .callout-note      { --callout-accent: #3b82f6; }
+    .prose .callout-tip       { --callout-accent: #22c55e; }
+    .prose .callout-important { --callout-accent: #a855f7; }
+    .prose .callout-warning   { --callout-accent: #f59e0b; }
+    .prose .callout-caution   { --callout-accent: #ef4444; }
+
     .prose img { max-width: 100%; height: auto; border-radius: var(--radius); }
 
     .prose table {
@@ -1028,6 +1055,7 @@
       .docs { padding: 0 24px; }
       main { flex: 1 1 auto; max-width: var(--content-width); margin: 0 auto; }
       .docs.docs--error main { min-height: calc(100vh - var(--header-h) - 120px); }
+      .nav-toggle { display: inline-flex; }
     }
     @media (max-width: 640px) {
       .site-header { height: 56px; }
@@ -1046,9 +1074,120 @@
       html { scroll-behavior: auto; }
       * { transition: none !important; }
     }
+
+    /* ---------- Mobile navigation drawer ---------- */
+    .nav-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--heading);
+      cursor: pointer;
+    }
+    .nav-toggle:hover { border-color: var(--border-strong); }
+    .nav-toggle i { width: 18px; height: 18px; }
+
+    .mobile-nav { position: fixed; inset: 0; z-index: 60; }
+    .mobile-nav[hidden] { display: none; }
+    .mobile-nav__backdrop {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      padding: 0;
+      background: rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+    }
+    .mobile-nav__panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(82vw, 320px);
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+    }
+    .mobile-nav__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: var(--heading);
+    }
+    .mobile-nav__close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--muted-strong);
+      cursor: pointer;
+    }
+    body.nav-open { overflow: hidden; }
+
+    /* ---------- Heading permalink anchors ---------- */
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 { position: relative; }
+    .prose .heading-anchor {
+      margin-left: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    .prose h1:hover .heading-anchor,
+    .prose h2:hover .heading-anchor,
+    .prose h3:hover .heading-anchor,
+    .prose h4:hover .heading-anchor,
+    .prose h5:hover .heading-anchor,
+    .prose h6:hover .heading-anchor,
+    .prose .heading-anchor:focus-visible { opacity: 1; }
+
+    /* ---------- Tabbed multi-file code examples ---------- */
+    .code-tabs { margin: 0 0 24px; }
+    .code-tabs__bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 6px 6px 0;
+      background: var(--surface);
+    }
+    .code-tabs__btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-family: var(--mono, monospace);
+      color: var(--muted-strong);
+      background: transparent;
+      border: 0;
+      border-radius: var(--radius) var(--radius) 0 0;
+      cursor: pointer;
+    }
+    .code-tabs__btn[aria-selected="true"] {
+      color: var(--heading);
+      background: var(--bg);
+      box-shadow: inset 0 -2px 0 var(--accent);
+    }
+    .code-tabs .code-frame { margin: 0; }
+    .code-tabs__bar + .code-frame { border-top-left-radius: 0; border-top-right-radius: 0; }
+    .code-tabs .code-frame[hidden] { display: none; }
   </style>
 </head>
-<body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}">
+<body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}" data-static="{{if .StaticBuild}}true{{else}}false{{end}}">
   <div class="scroll-progress" aria-hidden="true">
     <div class="scroll-progress__bar" data-scroll-progress></div>
   </div>
@@ -1060,6 +1199,11 @@
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
       <div class="header-actions">
+        {{if .Nav}}
+        <button type="button" class="nav-toggle" data-nav-toggle aria-label="Open navigation menu" aria-controls="mobile-nav" aria-expanded="false">
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
+        {{end}}
         <button type="button" class="search-trigger" data-search-open aria-label="Search all markdown pages" title="Search all markdown (Command+K)">
           <i class="search-icon" data-lucide="search" aria-hidden="true"></i>
           <span>Search</span>
@@ -1073,6 +1217,23 @@
     </div>
   </header>
 
+  {{if .Nav}}
+  <div class="mobile-nav" data-mobile-nav hidden>
+    <button type="button" class="mobile-nav__backdrop" data-nav-close aria-label="Close navigation"></button>
+    <aside class="mobile-nav__panel" id="mobile-nav">
+      <div class="mobile-nav__head">
+        <span>{{if .NavTitle}}{{.NavTitle}}{{else}}Menu{{end}}</span>
+        <button type="button" class="mobile-nav__close" data-nav-close aria-label="Close navigation menu">
+          <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <nav aria-label="Section">
+        {{template "navtree" .Nav}}
+      </nav>
+    </aside>
+  </div>
+  {{end}}
+
   <div class="docs{{if .StatusCode}} docs--error{{end}}">
     {{if .Nav}}
     <aside class="sidebar">
@@ -1085,7 +1246,7 @@
     <main>{{block "content" .}}{{end}}</main>
 
     <aside class="toc">
-      {{if .Headings}}
+      {{if and (not .HideTOC) .Headings}}
       <nav aria-label="On this page">
         <div class="toc-title">On this page</div>
         <ul>
@@ -1140,8 +1301,8 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script src="/vendor/highlight.min.js"></script>
+  <script src="/vendor/lucide.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.hljs) { hljs.highlightAll(); }
@@ -1296,9 +1457,79 @@
         });
       }
 
+      var staticSearchMode = document.body.getAttribute('data-static') === 'true';
+      var staticSearchData = null;
+
+      // Client-side scoring mirror of the server's SearchIndex.Query, used by
+      // exported static builds where there is no /api/search endpoint.
+      function staticSearchQuery(entries, query) {
+        var terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!terms.length) { return []; }
+        var ql = query.toLowerCase().trim();
+        var scored = [];
+        entries.forEach(function (e) {
+          var title = (e.title || '').toLowerCase();
+          var body = (e.body || '').toLowerCase();
+          var hay = title + ' ' + body;
+          var score = 0;
+          for (var i = 0; i < terms.length; i++) {
+            if (hay.indexOf(terms[i]) === -1) { return; }
+            score += 2;
+            var idx = 0, freq = 0;
+            while ((idx = body.indexOf(terms[i], idx)) !== -1) { freq++; idx += terms[i].length; if (freq >= 5) break; }
+            score += freq;
+            if (title.indexOf(terms[i]) !== -1) { score += 3; }
+          }
+          if (title.indexOf(ql) !== -1) { score += 5; }
+          else if (terms.length > 1 && body.indexOf(ql) !== -1) { score += 3; }
+          scored.push({ score: score, result: { title: e.title, path: e.path, snippet: makeStaticSnippet(e.body || '', terms) } });
+        });
+        scored.sort(function (a, b) {
+          if (a.score !== b.score) { return b.score - a.score; }
+          if (a.result.title !== b.result.title) { return a.result.title < b.result.title ? -1 : 1; }
+          return a.result.path < b.result.path ? -1 : 1;
+        });
+        return scored.slice(0, 12).map(function (s) { return s.result; });
+      }
+
+      function makeStaticSnippet(body, terms) {
+        if (!body) { return ''; }
+        var lower = body.toLowerCase();
+        var at = -1;
+        for (var i = 0; i < terms.length; i++) {
+          var p = lower.indexOf(terms[i]);
+          if (p !== -1) { at = p; break; }
+        }
+        if (at === -1) { return body.length <= 180 ? body : body.slice(0, 180).trim() + '...'; }
+        var start = Math.max(0, at - 72);
+        var end = Math.min(body.length, start + 180);
+        return (start > 0 ? '...' : '') + body.slice(start, end).trim() + (end < body.length ? '...' : '');
+      }
+
+      function runStaticSearch(query) {
+        if (searchResults) {
+          searchResults.innerHTML = '<div class="command-empty">Searching...</div>';
+        }
+        var go = function () { renderSearchResults(staticSearchQuery(staticSearchData || [], query), query); };
+        if (staticSearchData) { go(); return; }
+        window.fetch('/search-index.json', { headers: { 'Accept': 'application/json' } })
+          .then(function (r) { if (!r.ok) { throw new Error('index'); } return r.json(); })
+          .then(function (data) { staticSearchData = data || []; go(); })
+          .catch(function () {
+            if (searchResults) {
+              searchResults.innerHTML = '<div class="command-empty">Search is unavailable right now.</div>';
+            }
+          });
+      }
+
       function fetchSearch(query) {
         if (!query) {
           renderSearchResults([], '');
+          return;
+        }
+
+        if (staticSearchMode) {
+          runStaticSearch(query);
           return;
         }
 
@@ -1911,6 +2142,86 @@
 
         document.querySelectorAll('.prose h2[id], .prose h3[id]').forEach(function (h) { observer.observe(h); });
       }
+
+      // Mobile navigation drawer.
+      (function () {
+        var drawer = document.querySelector('[data-mobile-nav]');
+        var openBtn = document.querySelector('[data-nav-toggle]');
+        if (!drawer || !openBtn) { return; }
+        var closers = Array.prototype.slice.call(drawer.querySelectorAll('[data-nav-close]'));
+
+        function openDrawer() {
+          drawer.hidden = false;
+          document.body.classList.add('nav-open');
+          openBtn.setAttribute('aria-expanded', 'true');
+          var first = drawer.querySelector('a[href], button');
+          if (first) { first.focus(); }
+        }
+        function closeDrawer() {
+          drawer.hidden = true;
+          document.body.classList.remove('nav-open');
+          openBtn.setAttribute('aria-expanded', 'false');
+          openBtn.focus();
+        }
+        openBtn.addEventListener('click', openDrawer);
+        closers.forEach(function (b) { b.addEventListener('click', closeDrawer); });
+        Array.prototype.slice.call(drawer.querySelectorAll('a[href]')).forEach(function (a) {
+          a.addEventListener('click', closeDrawer);
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !drawer.hidden) { closeDrawer(); }
+        });
+      })();
+
+      // Group adjacent code-frames sharing a data-tab-group into a tabbed example.
+      (function () {
+        var frames = Array.prototype.slice.call(document.querySelectorAll('.code-frame[data-tab-group]'));
+
+        function buildTabs(run) {
+          var container = document.createElement('div');
+          container.className = 'code-tabs';
+          var bar = document.createElement('div');
+          bar.className = 'code-tabs__bar';
+          bar.setAttribute('role', 'tablist');
+          run[0].parentNode.insertBefore(container, run[0]);
+          container.appendChild(bar);
+
+          run.forEach(function (frame, idx) {
+            var title = frame.getAttribute('data-tab-title') || ('Tab ' + (idx + 1));
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'code-tabs__btn';
+            btn.setAttribute('role', 'tab');
+            btn.textContent = title;
+            btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+            bar.appendChild(btn);
+            container.appendChild(frame);
+            frame.hidden = idx !== 0;
+
+            btn.addEventListener('click', function () {
+              run.forEach(function (f, k) { f.hidden = k !== idx; });
+              Array.prototype.slice.call(bar.querySelectorAll('.code-tabs__btn')).forEach(function (b, k) {
+                b.setAttribute('aria-selected', k === idx ? 'true' : 'false');
+              });
+            });
+          });
+        }
+
+        var i = 0;
+        while (i < frames.length) {
+          var group = frames[i].getAttribute('data-tab-group');
+          var run = [frames[i]];
+          var j = i + 1;
+          while (j < frames.length &&
+                 frames[j].getAttribute('data-tab-group') === group &&
+                 frames[j].previousElementSibling === run[run.length - 1]) {
+            run.push(frames[j]);
+            j++;
+          }
+          if (run.length > 1) { buildTabs(run); }
+          i = j;
+        }
+      })();
     });
   </script>
 </body>

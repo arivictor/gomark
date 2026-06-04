@@ -18,6 +18,7 @@ type App struct {
 	PublicDir        string
 	SidebarDepth     int
 	SiteURL          string
+	ExportDir        string
 	Mode             RenderMode
 	// DisableRunner turns off the in-browser Go runner. Execution is
 	// client-side (a WebAssembly build of the yaegi interpreter), so the
@@ -109,6 +110,24 @@ func WithSiteMode(mode RenderMode) SiteOption {
 	return func(s *Site) {
 		s.App.Mode = mode
 	}
+}
+
+// WithSiteExportDir makes Start() export a static build into dir (instead of
+// serving) — convenient for CI. Equivalent to setting the EXPORT_DIR env var or
+// calling Site.Export(dir) directly.
+func WithSiteExportDir(dir string) SiteOption {
+	return func(s *Site) {
+		s.App.ExportDir = strings.TrimSpace(dir)
+	}
+}
+
+// exportDir returns the configured static-export target, falling back to the
+// EXPORT_DIR environment variable.
+func (a *App) exportDir() string {
+	if d := strings.TrimSpace(a.ExportDir); d != "" {
+		return d
+	}
+	return strings.TrimSpace(os.Getenv("EXPORT_DIR"))
 }
 
 // WithSiteRunnerEnabled toggles the in-browser Go runner. It is enabled by
