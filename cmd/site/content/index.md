@@ -10,7 +10,7 @@ GoMark is a batteries-included Go package for turning a folder of markdown into 
 
 Build documentation sites, product handbooks, and developer guides with nothing but markdown and a few lines of Go. When you need interactive examples, GoMark also runs Go snippets over HTTP, so readers can execute code right inside your docs.
 
-## [Why GoMark](#why-gomark)
+## Why GoMark
 
 Everything you need to ship a polished site comes built in, with sensible defaults you can override when you're ready:
 
@@ -22,7 +22,7 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 - **Embedded templates and assets** — a presentable site before you touch a single template
 - **Runnable Go examples** — optional playground integration for live code
 
-## [Start here](#start-here)
+## Start here
 
 - [Install and launch your first site](/getting-started)
 - [Run Go snippets with one call](/runner)
@@ -31,7 +31,7 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 - [Ship to production](/guides/deployment)
 - [Browse the public API](/reference)
 
-## [Two entry points](#two-entry-points)
+## Two entry points
 
 GoMark gives you two ways in, depending on what you're building.
 
