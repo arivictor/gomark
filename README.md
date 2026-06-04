@@ -1,7 +1,11 @@
 # gomark
 
+![GoMark splash](public/gomark-twitter-1200x628.png)
+
 Build a markdown-powered website in Go with batteries included: routing, rendering,
 navigation, search, sitemap, robots, and static site assets.
+
+Read the docs at [gomark.dev](https://gomark.dev).
 
 ## Install
 
