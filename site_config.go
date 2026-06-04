@@ -7,20 +7,22 @@ import (
 )
 
 type App struct {
-	Title           string
-	Logo            string
-	ContentDir      string
-	TemplatesDir    string
-	LayoutPath      string
-	TemplateGlob    string
-	PublicDir       string
-	SidebarDepth    int
-	SiteURL         string
-	Mode            RenderMode
-	RunnerEnabled   bool
-	RunnerURL       string
-	RunnerAuthMode  AuthMode
-	RunnerAuthToken string
+	Title            string
+	Logo             string
+	OGImagePath      string
+	TwitterImagePath string
+	ContentDir       string
+	TemplatesDir     string
+	LayoutPath       string
+	TemplateGlob     string
+	PublicDir        string
+	SidebarDepth     int
+	SiteURL          string
+	Mode             RenderMode
+	RunnerEnabled    bool
+	RunnerURL        string
+	RunnerAuthMode   AuthMode
+	RunnerAuthToken  string
 }
 
 type RenderMode string
@@ -45,6 +47,18 @@ func WithSiteTitle(title string) SiteOption {
 func WithSiteLogo(logoURL string) SiteOption {
 	return func(s *Site) {
 		s.App.Logo = strings.TrimSpace(logoURL)
+	}
+}
+
+func WithSiteOGImage(imagePath string) SiteOption {
+	return func(s *Site) {
+		s.App.OGImagePath = strings.TrimSpace(imagePath)
+	}
+}
+
+func WithSiteTwitterImage(imagePath string) SiteOption {
+	return func(s *Site) {
+		s.App.TwitterImagePath = strings.TrimSpace(imagePath)
 	}
 }
 
@@ -231,4 +245,18 @@ func (a *App) siteTitle() string {
 
 func (a *App) logoURL() string {
 	return strings.TrimSpace(a.Logo)
+}
+
+func (a *App) ogImagePath() string {
+	if strings.TrimSpace(a.OGImagePath) != "" {
+		return strings.TrimSpace(a.OGImagePath)
+	}
+	return defaultOGImagePath
+}
+
+func (a *App) twitterImagePath() string {
+	if strings.TrimSpace(a.TwitterImagePath) != "" {
+		return strings.TrimSpace(a.TwitterImagePath)
+	}
+	return defaultTwitterImagePath
 }

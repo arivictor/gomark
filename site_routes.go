@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL string, markdownRenderer MarkdownRenderer, RunnerEnabled bool) (string, error) {
+func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL, ogImagePath, twitterImagePath string, markdownRenderer MarkdownRenderer, RunnerEnabled bool) (string, error) {
 	cleanDir := filepath.Clean(dir)
 	provider, err := a.newContentPageProvider(cleanDir, markdownRenderer)
 	if err != nil {
@@ -80,8 +80,8 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 				SiteName:        siteName,
 				LogoURL:         logoURL,
 				CanonicalURL:    joinAbsoluteURL(baseURL, pageRoute),
-				OGImageURL:      joinAbsoluteURL(baseURL, defaultOGImagePath),
-				TwitterImageURL: joinAbsoluteURL(baseURL, defaultTwitterImagePath),
+				OGImageURL:      joinAbsoluteURL(baseURL, ogImagePath),
+				TwitterImageURL: joinAbsoluteURL(baseURL, twitterImagePath),
 				RunnerEnabled:   RunnerEnabled,
 				Robots:          "index,follow",
 				Time:            time.Now().UTC().Format(time.RFC3339),

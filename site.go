@@ -68,6 +68,8 @@ func (s *Site) run(addr string) error {
 	}
 	appTitle := a.siteTitle()
 	appLogo := a.logoURL()
+	ogImagePath := a.ogImagePath()
+	twitterImagePath := a.twitterImagePath()
 	siteURL := a.siteURL()
 	RunnerEnabled := a.GetRunnerEnabled()
 	RunnerURL := a.GetRunnerURL()
@@ -95,7 +97,7 @@ func (s *Site) run(addr string) error {
 	}
 	robotsTXT := renderRobotsTXT(siteURL)
 
-	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, Logger: log.Default()})
+	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
 	httpApp.Use(LoggingMiddleware)
 	log.Printf("seo sitemap generated with %d routes", len(sitemapRoutes))
 	httpApp.Handle("GET", "/sitemap.xml", func(w http.ResponseWriter, r *http.Request) error {
@@ -151,7 +153,7 @@ func (s *Site) run(addr string) error {
 		})
 	}
 
-	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, StdlibMarkdownRenderer{RunnerEnabled: RunnerEnabled}, RunnerEnabled)
+	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, ogImagePath, twitterImagePath, StdlibMarkdownRenderer{RunnerEnabled: RunnerEnabled}, RunnerEnabled)
 	if err != nil {
 		return err
 	}

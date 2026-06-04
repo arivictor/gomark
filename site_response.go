@@ -26,12 +26,14 @@ func (e *HTTPError) Error() string {
 }
 
 type HTMLErrorResponder struct {
-	Renderer TemplateRenderer
-	TopNav   []NavLink
-	SiteName string
-	LogoURL  string
-	SiteURL  string
-	Logger   *log.Logger
+	Renderer         TemplateRenderer
+	TopNav           []NavLink
+	SiteName         string
+	LogoURL          string
+	SiteURL          string
+	OGImagePath      string
+	TwitterImagePath string
+	Logger           *log.Logger
 }
 
 func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err error) {
@@ -79,8 +81,8 @@ func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err
 			requestBaseURL(req, r.SiteURL),
 			req.URL.Path,
 		),
-		OGImageURL:      joinAbsoluteURL(requestBaseURL(req, r.SiteURL), defaultOGImagePath),
-		TwitterImageURL: joinAbsoluteURL(requestBaseURL(req, r.SiteURL), defaultTwitterImagePath),
+		OGImageURL:      joinAbsoluteURL(requestBaseURL(req, r.SiteURL), firstNonEmpty(strings.TrimSpace(r.OGImagePath), defaultOGImagePath)),
+		TwitterImageURL: joinAbsoluteURL(requestBaseURL(req, r.SiteURL), firstNonEmpty(strings.TrimSpace(r.TwitterImagePath), defaultTwitterImagePath)),
 		Robots:          "noindex,nofollow",
 		TopNav:          r.TopNav,
 		CurrentPath:     req.URL.Path,
