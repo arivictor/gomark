@@ -1,10 +1,31 @@
 # gomark
 
-![GoMark splash](site/public/gomark-twitter-1200x628.png)
+![GoMark splash](public/gomark-twitter-1200x628.png)
 
-Build a markdown-powered website in Go with batteries included: routing, rendering,
-navigation, search, sitemap, robots, static site assets, and runnable Go examples
-that execute right in the reader's browser.
+**Docs for Go libraries where every example actually runs.**
+
+GoMark turns a folder of markdown into a real documentation site — and the Go code
+blocks in your docs run live, right in the reader's browser. No playground server, no
+backend, no infrastructure: execution happens client-side via a WebAssembly build of
+the [yaegi](https://github.com/traefik/yaegi) interpreter, so your examples stay honest
+and your servers stay boring.
+
+```go:title="main.go":run=true
+package main
+
+func main() {
+	println("Hello, Gophers!") // edit me and hit Run
+}
+```
+
+> _The block above is runnable on [gomark.dev](https://gomark.dev) — a site built with
+> GoMark itself. Try editing it and clicking **Run**._
+
+<!-- TODO: replace the static splash above with a short GIF of a reader editing and
+running this snippet — the differentiator should be visible in the first 3 seconds. -->
+
+`go get` the package, point it at your markdown, and ship. Routing, navigation, search,
+sitemap, robots, and static export are all built in.
 
 Read the docs at [gomark.dev](https://gomark.dev).
 
