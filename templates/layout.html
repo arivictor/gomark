@@ -1412,13 +1412,14 @@
         var linkChatGPT = tocTools.querySelector('[data-ai-link="chatgpt"]');
 
         var pageUrl = window.location.href;
-        var explainPrompt = 'Explain this to me ' + pageUrl;
+        var explainPrompt = 'Explain this to me: ' + pageUrl;
+        var encodedPrompt = encodeURIComponent(explainPrompt);
         if (linkClaude) {
-          linkClaude.href = 'claude://';
+          linkClaude.href = 'https://claude.ai/new?q=' + encodedPrompt;
           linkClaude.setAttribute('title', 'Copy prompt and open Claude');
         }
         if (linkChatGPT) {
-          linkChatGPT.href = 'chatgpt://';
+          linkChatGPT.href = 'https://chatgpt.com/?q=' + encodedPrompt;
           linkChatGPT.setAttribute('title', 'Copy prompt and open ChatGPT');
         }
 
@@ -1429,15 +1430,17 @@
           link.addEventListener('click', function (event) {
             event.preventDefault();
             var target = link.getAttribute('href') || '';
-            writeToClipboard(explainPrompt).finally(function () {
+            // Open in a new tab up front so it isn't treated as a popup blocker
+            // victim, then copy the prompt as a convenience fallback.
+            if (target) {
+              window.open(target, '_blank', 'noopener,noreferrer');
+            }
+            writeToClipboard(explainPrompt).then(function () {
               if (copyStatus) {
                 copyStatus.textContent = 'Prompt copied';
                 setTimeout(function () { copyStatus.textContent = ''; }, 1600);
               }
-              if (target) {
-                window.location.href = target;
-              }
-            });
+            }).catch(function () {});
           });
         }
 
