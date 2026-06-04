@@ -17,8 +17,8 @@ WORKDIR /app
 COPY --from=builder /out/site /app/site
 COPY --from=builder /out/runner /app/runner
 COPY --from=builder /src/cmd/site/content /app/cmd/site/content
-COPY --from=builder /src/templates /app/templates
-COPY --from=builder /src/public /app/public
+COPY --from=builder /src/internal/site/templates /app/internal/site/templates
+COPY --from=builder /src/internal/site/public /app/internal/site/public
 
 EXPOSE 8080
 
