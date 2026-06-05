@@ -50,17 +50,19 @@
   <link rel="manifest" href="/site.webmanifest" />
   <script>
     (function () {
+      var pref = 'system';
       try {
         var stored = localStorage.getItem('theme');
-        var pref = stored === 'light' || stored === 'dark' || stored === 'system'
-          ? stored
-          : 'system';
-        var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var resolved = pref === 'system' ? (systemDark ? 'dark' : 'light') : pref;
-        document.documentElement.setAttribute('data-theme', resolved);
+        if (stored === 'light' || stored === 'dark' || stored === 'system') {
+          pref = stored;
+        }
       } catch (err) {
-        document.documentElement.setAttribute('data-theme', 'light');
+        // localStorage may be unavailable (e.g. privacy mode); fall back to
+        // the 'system' default and resolve via prefers-color-scheme below.
       }
+      var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var resolved = pref === 'system' ? (systemDark ? 'dark' : 'light') : pref;
+      document.documentElement.setAttribute('data-theme', resolved);
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -68,6 +70,20 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
   <link id="hljs-theme-light" rel="stylesheet" href="/vendor/hljs-atom-one-light.min.css" media="all" />
   <link id="hljs-theme-dark" rel="stylesheet" href="/vendor/hljs-atom-one-dark.min.css" media="all" disabled />
+  <script>
+    // Sync the highlight.js stylesheet to the resolved theme before first
+    // paint so code blocks don't flash the wrong palette. Runs here, right
+    // after the <link> elements exist, rather than waiting for DOMContentLoaded.
+    (function () {
+      var useDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      var light = document.getElementById('hljs-theme-light');
+      var dark = document.getElementById('hljs-theme-dark');
+      if (light && dark) {
+        light.disabled = useDark;
+        dark.disabled = !useDark;
+      }
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light dark;
@@ -1515,9 +1531,11 @@
           setThemePref(option.getAttribute('data-theme-option'));
         });
         option.addEventListener('keydown', function (event) {
-          if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') { return; }
+          var forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+          var backward = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+          if (!forward && !backward) { return; }
           event.preventDefault();
-          var step = event.key === 'ArrowRight' ? 1 : -1;
+          var step = forward ? 1 : -1;
           var next = (index + step + themeOptions.length) % themeOptions.length;
           var nextOption = themeOptions[next];
           nextOption.focus();
