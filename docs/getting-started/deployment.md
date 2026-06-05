@@ -126,30 +126,52 @@ the CloudFront distribution after each deploy.
 
 ## Self-hosted (containers, nginx, Caddy)
 
-Serve the `dist` directory with any static web server. A two-stage container builds the
-site and serves it with [Caddy](https://caddyserver.com/) (which sends the correct
-`application/wasm` type automatically):
+Serve the built output with any static web server. The two-stage container below
+installs the `gomark` CLI, renders your content directory, and serves the result with
+[Caddy](https://caddyserver.com/) (which sends the correct `application/wasm` type
+automatically). Save it as `Dockerfile` next to your content directory:
 
 ```dockerfile:title="Dockerfile"
-# Stage 1: build the CLI and render the static site
+# Stage 1: install the gomark CLI and render your content to static files.
 FROM golang:1.24-alpine AS builder
-WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/gomark ./cmd/gomark
-RUN /out/gomark build ./my_docs /out/site --url https://docs.example.com
+ENV CGO_ENABLED=0
+RUN go install github.com/arivictor/gomark/cmd/gomark@latest
 
-# Stage 2: serve the static output
-FROM caddy:2-alpine
+WORKDIR /src
+COPY . .
+RUN gomark build ./my_docs /out/site --url https://docs.example.com
+
+# Stage 2: serve the static output with Caddy.
+FROM caddy:2-alpine AS site
+COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=builder /out/site /usr/share/caddy
 EXPOSE 80
+```
+
+> command-line values will override `gomark.yaml`, so you can set `--url` here for correct canonical links and SEO.
+
+Caddy needs a config to point at the rendered files. Save this as `Caddyfile` alongside
+the `Dockerfile` (the `.wasm` header is optional — Caddy already serves `application/wasm`
+correctly, but it makes the intent explicit):
+
+```caddyfile:title="Caddyfile"
+:80 {
+	root * /usr/share/caddy
+	file_server
+	encode gzip zstd
+
+	@wasm path *.wasm
+	header @wasm Content-Type application/wasm
+}
 ```
 
 ```terminal
 docker build -t my-docs .
 docker run -p 8080:80 my-docs
 ```
+
+Then browse to `http://localhost:8080`. Adjust `./my_docs` and `--url` to match your
+content directory and public origin.
 
 With nginx, copy `dist` into the web root and confirm `application/wasm` is in
 `mime.types` (it is on current nginx builds); add
