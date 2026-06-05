@@ -882,15 +882,16 @@
     .prose blockquote p { margin: 0; }
     .prose blockquote strong { color: var(--heading); }
 
-    /* GitHub-style callouts / admonitions */
+    /* GitHub-style callouts / admonitions — full tonal design.
+       Background and border are tinted with the callout accent, mixed against
+       the page background so the tone adapts automatically to light/dark. */
     .prose .callout {
       margin: 24px 0;
       padding: 14px 18px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--callout-accent, var(--border-strong));
+      background: color-mix(in srgb, var(--callout-accent, var(--border-strong)) 10%, var(--background));
+      border: 1px solid color-mix(in srgb, var(--callout-accent, var(--border-strong)) 28%, var(--background));
       border-radius: var(--radius);
-      color: var(--muted-strong);
+      color: var(--foreground);
     }
     .prose .callout p { margin: 0; }
     .prose .callout p + p { margin-top: 8px; }
