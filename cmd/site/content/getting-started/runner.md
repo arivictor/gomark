@@ -19,7 +19,7 @@ s := gomark.NewSite(
 )
 ```
 
-To turn the run controls off across the whole site, pass `gomark.WithSiteRunnerEnabled(false)` (or set `PLAYGROUND_ENABLED=false`).
+To turn the run controls off across the whole site, pass `--no-runner` on the CLI, set `build.runner: false` in `gomark.yaml`, or — from Go — pass `gomark.WithSiteRunnerEnabled(false)` (or set `PLAYGROUND_ENABLED=false`).
 
 ## Mark runnable code fences
 

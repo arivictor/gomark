@@ -1,12 +1,12 @@
 ---
 title: Project Layout
-description: Organize content, templates, and public assets for a GoMark site.
+description: Organize your content tree and optional gomark.yaml for a GoMark site.
 order: 4
 ---
 
 # Project Layout
 
-GoMark needs just one thing to render a site: a content directory. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
+GoMark needs just one thing to render a site: a content directory. Everything else — the theme, assets, and runner — is built in. A `gomark.yaml` is optional; add it when you want to set a title, logo, SEO, navigation, or analytics.
 
 ## Recommended structure
 
@@ -14,22 +14,18 @@ You can organize your project however you like, but here's a recommended structu
 
 ```text
 project/
-  main.go
+  gomark.yaml   (optional — site config)
   content/
     index.md
-  templates/ (optional)
-    layout.html
-    markdown.html
-    error.html
-  public/ (optional)
-    favicon.ico
-    logo.png
+    guides/
+      index.md
+      install.md
 ```
 
-- `main.go` is your app entry point. Point it at your content and optionally templates and public assets.
 - `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required.
-- `templates/` holds your custom templates. Only add this if you want to override the embedded defaults.
-- `public/` holds your static assets. Only add this if you want to override the embedded defaults.
+- `gomark.yaml` configures the site (title, logo, SEO, nav, analytics, build options). It's auto-discovered by `gomark build` and `gomark serve`. See the [configuration guide](/guides/configuration).
+
+Driving GoMark from Go instead? Add a `main.go` that calls `gomark.NewSite(...)` — see [Getting Started](/getting-started).
 
 ## Choosing folders vs files
 

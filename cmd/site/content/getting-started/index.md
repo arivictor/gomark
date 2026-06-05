@@ -8,9 +8,15 @@ order: 2
 
 GoMark turns a folder of markdown into a real website. This guide walks through the basics: installing the package, creating a content tree, and launching your first markdown-powered site.
 
-## Install the package
+## Install
 
-GoMark is an importable Go package. Create a module for your site and add it:
+GoMark is both a CLI and an importable Go package. For the quickest start, install the CLI:
+
+```shell
+go install github.com/arivictor/gomark/cmd/gomark@latest
+```
+
+Prefer to drive it from Go? Add the package to your module instead:
 
 ```shell
 go get github.com/arivictor/gomark
@@ -51,7 +57,28 @@ This site is powered by GoMark.
 
 ## Start your site
 
-A few lines of Go is all it takes — the HTTP server is part of the package. Create a `main.go` that points at your content:
+The CLI previews your content with live reload — no code required:
+
+```shell
+gomark serve content --live
+```
+
+Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website, reloading as you edit.
+
+### Configure it (optional)
+
+Site title, logo, SEO, navigation, and analytics live in an optional `gomark.yaml` that `serve` and `build` auto-discover. See the [configuration guide](/guides/configuration) for the full schema.
+
+```yaml:title="gomark.yaml"
+title: My Docs
+url: https://docs.example.com
+seo:
+  description: Docs for my project.
+```
+
+### Drive it from Go (optional)
+
+Prefer code? The HTTP server is part of the package, so a few lines of Go does the same thing:
 
 ```go:title="main.go"
 package main
@@ -75,14 +102,6 @@ func main() {
 }
 ```
 
-Run it:
-
-```shell
-go run main.go
-```
-
-Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website.
-
 ## Opinionated features out of the box
 
 No extra setup, no plugins — the moment your site boots, you have:
@@ -92,11 +111,11 @@ No extra setup, no plugins — the moment your site boots, you have:
 - Top-level navigation from your top-level sections
 - A search endpoint at `/api/search`
 - Generated `sitemap.xml` and `robots.txt`
-- Default templates and public assets
+- A presentable, responsive built-in theme — no frontend setup
 
 ## Next steps
 
 - [Understand the content layout](/guides/project-layout)
 - [Configure the app](/guides/configuration)
-- [Customize templates and assets](/guides/customization)
+- [Customize branding & SEO](/guides/customization)
 - [Set up the Go runner](/runner)

@@ -34,5 +34,5 @@ Everything you need to ship a polished site comes built in, with sensible defaul
 - **Generated navigation** — sidebar and top-level nav built from your folders
 - **Search out of the box** — a ready-to-query endpoint at `/api/search`
 - **SEO on by default** — generated `sitemap.xml` and `robots.txt`
-- **Embedded templates and assets** — a presentable site before you touch a single template
+- **Built-in theme** — a presentable, responsive site with zero frontend setup
 - **Runnable Go examples** — optional runner integration for live code
