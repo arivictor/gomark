@@ -6,7 +6,7 @@ order: 4
 
 # Project Layout
 
-GoMark needs just one thing to render a site: a content directory. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
+GoMark needs just one thing to render a site: a content directory. You point the `gomark` CLI at it — there's no project scaffold to generate and no entry point to write. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
 
 ## Recommended structure
 
@@ -14,7 +14,6 @@ You can organize your project however you like, but here's a recommended structu
 
 ```text
 project/
-  main.go
   content/
     index.md
   templates/ (optional)
@@ -26,10 +25,11 @@ project/
     logo.png
 ```
 
-- `main.go` is your app entry point. Point it at your content and optionally templates and public assets.
-- `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required.
-- `templates/` holds your custom templates. Only add this if you want to override the embedded defaults.
-- `public/` holds your static assets. Only add this if you want to override the embedded defaults.
+- `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required. Preview it with `gomark serve ./content --live` and build it with `gomark build ./content ./dist`.
+- `templates/` holds your custom templates. Only add this if you want to override the embedded defaults. Custom templates are wired up through the [Go API](/getting-started/customization).
+- `public/` holds your static assets. Only add this if you want to override the embedded defaults — also through the [Go API](/getting-started/customization).
+
+> Using GoMark as a [library](/getting-started/configuration#use-it-as-a-library) instead of the CLI? Add a `main.go` at the project root as your entry point and point `gomark.NewSite(...)` at these same directories.
 
 ## Choosing folders vs files
 

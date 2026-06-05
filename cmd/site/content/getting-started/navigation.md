@@ -28,7 +28,7 @@ You keep the full page title while showing a cleaner label in navigation.
 
 ## Sidebar depth
 
-Keep the sidebar tidy by capping how deep it nests with `SidebarDepth`.
+Keep the sidebar tidy by capping how deep it nests. The default is `2`. This option isn't exposed on the CLI, so reach for the [Go API](/getting-started/configuration#use-it-as-a-library):
 
 ```go:title="main.go"
 s := gomark.NewSite(
@@ -37,4 +37,4 @@ s := gomark.NewSite(
 )
 ```
 
-Use a smaller depth when your content tree is broad and you want a simpler sidebar.
+Use a smaller depth when your content tree is broad and you want a simpler sidebar. Everything else on this page works the same whether you preview with `gomark serve` or build with `gomark build`.
