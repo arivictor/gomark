@@ -9,7 +9,7 @@ order: 3
 GoMark uses a single built-in theme, so there are no layouts or CSS to wire up —
 you get a presentable, responsive site with zero frontend setup. What you *do*
 customize is the site's identity: its name, logo, SEO metadata, navigation,
-social links, and analytics. All of it lives in [`gomark.yaml`](/getting-started/configuration).
+social links, and analytics. All of it lives in [gomark.yaml](/getting-started/configuration).
 
 > Custom layouts and CSS are intentionally out of scope for now. If your project
 > needs them, open an issue describing the use case.

@@ -1,10 +1,10 @@
 ---
-title: Runner Guide
+title: Code Runner
 description: Make Go snippets in your docs runnable and editable, so readers can experiment without leaving the page.
-order: 5
+order: 6
 ---
 
-# Runner Guide
+# Code Runner
 
 This guide covers marking code blocks as runnable so readers can run and edit Go examples inline. Execution happens entirely in the reader's browser — see [How the Runner Works](/runner) for the architecture.
 
@@ -58,6 +58,6 @@ A snippet needs a `package main` declaration and a `func main()`. Beyond that yo
 1. Some reflection-heavy code, `unsafe`, and `cgo` are unsupported
 2. There is no filesystem or network access in the browser sandbox
 3. A deliberate infinite loop freezes the reader's own tab
-4. Output is capped to protect browser memory
+4. Output is capped to protect browser memory.
 
-See [How the Runner Works](/runner) for the full list of limitations.
+> [!NOTE] Learn more about the runner's architecture, capabilities, and limitations in the [Runner Guide](/runner).

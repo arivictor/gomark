@@ -1,7 +1,7 @@
 ---
 title: "Markdown Examples"
 description: "GoMark supports a wide range of markdown features. Here are examples of the supported syntax."
-order: 6
+order: 4
 ---
 
 # Markdown Examples

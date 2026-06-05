@@ -1,7 +1,7 @@
 ---
 title: Deployment
 description: Build a GoMark site to static files and host it anywhere — GitHub Pages, Netlify, S3, or your own container. No server required.
-order: 7
+order: 8
 ---
 
 # Deployment

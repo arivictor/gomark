@@ -11,7 +11,7 @@ GoMark is configured through a single declarative `gomark.yaml` file, read by bo
 configurable — every site uses the built-in theme, so you configure identity, SEO,
 navigation, and build behavior, then focus on writing content.
 
-## `gomark.yaml`
+## gomark.yaml
 
 Drop a `gomark.yaml` in your project root (or content directory). It is
 auto-discovered; pass `--config <path>` to point elsewhere.
