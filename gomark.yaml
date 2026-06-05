@@ -1,0 +1,25 @@
+title: GoMark
+url: https://gomark.dev
+lang: en
+
+logo:
+  light: /logo-light.png
+  dark: /logo-dark.png
+
+seo:
+  description: GoMark turns a folder of markdown into a real documentation site, with Go code examples that run live in the reader's browser.
+  og_image: /gomark-og-1200x630.png
+  twitter_image: /gomark-twitter-1200x628.png
+  image_alt: GoMark — docs for Go libraries where every example actually runs.
+
+social:
+  - label: GitHub
+    url: https://github.com/arivictor/gomark
+    icon: github
+
+build:
+  content_dir: docs
+  output_dir: dist
+  runner: true
+  sitemap: true
+  robots: true
