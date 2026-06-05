@@ -11,6 +11,14 @@ FROM golang:1.24-alpine AS builder
 ENV CGO_ENABLED=0
 WORKDIR /src
 
+# Pre-fetch module downloads in their own layer so they're cached across source
+# changes. docs/ replaces gomark with ../, so the root go.mod must be present for
+# the module graph to resolve; go mod download then fetches only what the CLI
+# compiles against (yaml.v3 — yaegi is wasm-only and not pulled).
+COPY go.mod go.sum ./
+COPY docs/go.mod docs/go.sum ./docs/
+RUN cd docs && go mod download
+
 COPY . .
 
 # Build from the docs site, which resolves the gomark CLI via its go.mod tool
