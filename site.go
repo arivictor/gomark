@@ -2,16 +2,13 @@ package gomark
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 const defaultSiteName = "GoMark"
@@ -77,6 +74,13 @@ func (s *Site) Serve(addr string, live bool) error {
 }
 
 func (s *Site) run(addr string, live bool) error {
+	// The live development server rebuilds routes, navigation, search, and the
+	// sitemap whenever files change, so it dispatches dynamically rather than
+	// registering a fixed route table. Production serving stays static below.
+	if live {
+		return s.runLive(addr)
+	}
+
 	a := &s.App
 
 	b, err := a.buildSite(false)
@@ -86,7 +90,6 @@ func (s *Site) run(addr string, live bool) error {
 
 	dir := b.contentDir
 	renderer := b.renderer
-	index := b.index
 	appTitle := b.siteName
 	appLogo := b.logoURL
 	ogImagePath := b.ogImagePath
@@ -100,13 +103,6 @@ func (s *Site) run(addr string, live bool) error {
 	robotsTXT := b.robotsTXT
 
 	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
-	// In live mode the reload middleware is outermost so it can inject the
-	// client into the final HTML (including error pages) before it ships.
-	var hub *liveReloadHub
-	if live {
-		hub = newLiveReloadHub()
-		httpApp.Use(liveReloadMiddleware)
-	}
 	httpApp.Use(LoggingMiddleware)
 	httpApp.Use(CSRFProtectionMiddleware(siteURL))
 	log.Printf("seo sitemap generated with %d routes", len(sitemapRoutes))
@@ -121,28 +117,7 @@ func (s *Site) run(addr string, live bool) error {
 		return writeErr
 	})
 	httpApp.Handle("GET", "/api/search", func(w http.ResponseWriter, r *http.Request) error {
-		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		limit := 8
-		if rawLimit := strings.TrimSpace(r.URL.Query().Get("limit")); rawLimit != "" {
-			parsed, parseErr := strconv.Atoi(rawLimit)
-			if parseErr == nil {
-				if parsed < 1 {
-					parsed = 1
-				}
-				if parsed > 25 {
-					parsed = 25
-				}
-				limit = parsed
-			}
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if q == "" {
-			return json.NewEncoder(w).Encode(map[string]any{"query": "", "results": []SearchResult{}})
-		}
-
-		results := searchIndex.Query(q, limit)
-		return json.NewEncoder(w).Encode(map[string]any{"query": q, "results": results})
+		return serveSearch(w, r, searchIndex)
 	})
 	// publicFS serves static assets: an on-disk directory when configured,
 	// otherwise the embedded public/ tree. The runner module is sourced from
@@ -175,7 +150,7 @@ func (s *Site) run(addr string, live bool) error {
 		})
 	}
 
-	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, ogImagePath, twitterImagePath, b.provider, RunnerEnabled)
+	landing, err := registerContentRoutes(httpApp, b)
 	if err != nil {
 		return err
 	}
@@ -226,14 +201,6 @@ func (s *Site) run(addr string, live bool) error {
 
 		return &HTTPError{Status: http.StatusNotFound, Message: "page not found"}
 	})
-
-	if live {
-		httpApp.Handle("GET", liveReloadPath, hub.handler)
-		stop := make(chan struct{})
-		defer close(stop)
-		go watchTree(dir, 400*time.Millisecond, hub.broadcast, stop)
-		log.Printf("live reload enabled; watching %s for changes", dir)
-	}
 
 	return httpApp.Run(addr)
 }

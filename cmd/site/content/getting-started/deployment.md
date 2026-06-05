@@ -38,10 +38,12 @@ gomark serve ./my_docs --live
 ```
 
 `gomark serve` is a **development tool**, not a production server. With `--live` it
-renders pages on every request and auto-reloads your browser as you edit files under
-the content directory. Drop `--live` for a quick static-style preview. (You can't open
-the built files directly over `file://` — the runner and search use `fetch`, which needs
-an HTTP origin — so use `serve` to preview.)
+renders pages on every request and auto-reloads your browser as files under the content
+directory change — including structural changes: adding, renaming, or deleting markdown
+updates routes, the sidebar, search, and the sitemap without a restart. Drop `--live`
+for a quick static-style preview. (You can't open the built files directly over
+`file://` — the runner and search use `fetch`, which needs an HTTP origin — so use
+`serve` to preview.)
 
 ## What you need from a host
 
