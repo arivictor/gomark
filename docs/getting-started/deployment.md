@@ -6,10 +6,7 @@ order: 7
 
 # Deployment
 
-GoMark deploys as a **static site**. You build your markdown into plain HTML, CSS,
-JavaScript, and assets, then host the output on any static host. There is no
-long-running Go server to operate, and — because the in-browser Go runner executes
-client-side via WebAssembly — there is no execution backend to secure or scale either.
+GoMark deploys as a **static site**. You build your markdown into plain HTML, CSS, JavaScript, and assets, then host the output on any static host. There is no long-running Go server to operate, and — because the in-browser Go runner executes client-side via WebAssembly — there is no execution backend to secure or scale either.
 
 ## Build the site
 
@@ -25,12 +22,9 @@ gomark build ./my_docs ./dist --url https://docs.example.com
   `robots.txt`, and Open Graph / Twitter image URLs. SEO metadata is wrong without it.
   (You can also set `url:` in `gomark.yaml`; the flag overrides it.)
 
-Title, logo, SEO, navigation, and analytics come from an optional `gomark.yaml` that
-`build` auto-discovers. See the [configuration guide](/getting-started/configuration).
+Title, logo, SEO, navigation, and analytics come from an optional `gomark.yaml` that `build` auto-discovers. See the [configuration guide](/getting-started/configuration).
 
-The output is self-contained. It includes your rendered pages (`<route>/index.html`),
-copied assets, `sitemap.xml`, `robots.txt`, `search-index.json` for client-side search,
-and — when the runner is enabled — `runner.wasm` and `wasm_exec.js`.
+The output is self-contained. It includes your rendered pages (`<route>/index.html`), copied assets, `sitemap.xml`, `robots.txt`, `search-index.json` for client-side search, and — when the runner is enabled — `runner.wasm` and `wasm_exec.js`.
 
 > Prefer Go over the CLI? `gomark.NewSite(...).Export("./dist")` does the same thing,
 > and so does setting the `EXPORT_DIR` environment variable.
@@ -41,13 +35,7 @@ and — when the runner is enabled — `runner.wasm` and `wasm_exec.js`.
 gomark serve ./my_docs --live
 ```
 
-`gomark serve` is a **development tool**, not a production server. With `--live` it
-renders pages on every request and auto-reloads your browser as files under the content
-directory change — including structural changes: adding, renaming, or deleting markdown
-updates routes, the sidebar, search, and the sitemap without a restart. Drop `--live`
-for a quick static-style preview. (You can't open the built files directly over
-`file://` — the runner and search use `fetch`, which needs an HTTP origin — so use
-`serve` to preview.)
+`gomark serve` is a **development tool**, not a production server. With `--live` it renders pages on every request and auto-reloads your browser as files under the content directory change — including structural changes: adding, renaming, or deleting markdown updates routes, the sidebar, search, and the sitemap without a restart. Drop `--live` for a quick static-style preview. (You can't open the built files directly over `file://` — the runner and search use `fetch`, which needs an HTTP origin — so use `serve` to preview.)
 
 ## What you need from a host
 
@@ -100,8 +88,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Set `--url` to your Pages origin so canonical links and SEO metadata are correct. For a
-project site that origin includes the repo path (`https://<user>.github.io/<repo>`).
+Set `--url` to your Pages origin so canonical links and SEO metadata are correct. For a project site that origin includes the repo path (`https://<user>.github.io/<repo>`).
 
 ## Netlify, Vercel, Cloudflare Pages
 
@@ -119,17 +106,23 @@ gomark build ./my_docs ./dist --url https://docs.example.com
 aws s3 sync ./dist s3://my-docs-bucket --delete
 ```
 
-Set the bucket's static-website index document to `index.html`. Ensure objects ending in
-`.wasm` are served with `Content-Type: application/wasm` (set it on upload with
-`aws s3 cp --content-type`, or via a CloudFront response-headers policy), and invalidate
-the CloudFront distribution after each deploy.
+Set the bucket's static-website index document to `index.html`. Ensure objects ending in `.wasm` are served with `Content-Type: application/wasm` (set it on upload with `aws s3 cp --content-type`, or via a CloudFront response-headers policy), and invalidate the CloudFront distribution after each deploy.
 
 ## Self-hosted (containers, nginx, Caddy)
 
-Serve the built output with any static web server. The two-stage container below
-installs the `gomark` CLI, renders your content directory, and serves the result with
-[Caddy](https://caddyserver.com/) (which sends the correct `application/wasm` type
-automatically). Save it as `Dockerfile` next to your content directory:
+Serve the built output with any static web server. The two-stage container below installs the `gomark` CLI, renders your content directory, and serves the result with [Caddy](https://caddyserver.com/) (which sends the correct `application/wasm` type automatically). 
+
+```text:title="Directory structure"
+.
+├── Dockerfile
+├── gomark.yaml
+├── Caddyfile
+└── my_docs
+    ├── index.md
+    └── ... other markdown files and assets
+```
+
+Save it as `Dockerfile` next to your content directory:
 
 ```dockerfile:title="Dockerfile"
 # Stage 1: install the gomark CLI and render your content to static files.
@@ -139,7 +132,7 @@ RUN go install github.com/arivictor/gomark/cmd/gomark@latest
 
 WORKDIR /src
 COPY . .
-RUN gomark build ./my_docs /out/site --url https://docs.example.com
+RUN gomark build ./my_docs /out/site --url https://docs.example.com # or use gomark.yaml
 
 # Stage 2: serve the static output with Caddy.
 FROM caddy:2-alpine AS site
@@ -150,9 +143,7 @@ EXPOSE 80
 
 > command-line values will override `gomark.yaml`, so you can set `--url` here for correct canonical links and SEO.
 
-Caddy needs a config to point at the rendered files. Save this as `Caddyfile` alongside
-the `Dockerfile` (the `.wasm` header is optional — Caddy already serves `application/wasm`
-correctly, but it makes the intent explicit):
+Caddy needs a config to point at the rendered files. Save this as `Caddyfile` alongside the `Dockerfile` (the `.wasm` header is optional — Caddy already serves `application/wasm` correctly, but it makes the intent explicit):
 
 ```caddyfile:title="Caddyfile"
 :80 {
@@ -170,22 +161,19 @@ docker build -t my-docs .
 docker run -p 8080:80 my-docs
 ```
 
-Then browse to `http://localhost:8080`. Adjust `./my_docs` and `--url` to match your
-content directory and public origin.
+Then browse to `http://localhost:8080`. Adjust `./my_docs` and `--url` to match your content directory and public origin.
 
-With nginx, copy `dist` into the web root and confirm `application/wasm` is in
-`mime.types` (it is on current nginx builds); add
-`try_files $uri $uri/ $uri/index.html =404;` for clean URLs.
+With nginx, copy `dist` into the web root and confirm `application/wasm` is in `mime.types` (it is on current nginx builds); add `try_files $uri $uri/ $uri/index.html =404;` for clean URLs.
+
+See our [sites repo](https://github.com/arivictor/gomark/tree/main/docs) for a real-world example.
 
 ## Updating the runner
 
-The committed `public/runner.wasm.gz` is the prebuilt in-browser runner and is embedded
-in the CLI, so `gomark build` ships it automatically. If you change the runner source
-under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.
+The committed `public/runner.wasm.gz` is the prebuilt in-browser runner and is embedded in the CLI, so `gomark build` ships it automatically. If you change the runner source under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.
 
 ## Deployment checklist
 
-1. Build with `gomark build <content> <output>`.
+1. Build with `gomark build <content> <output>` (or define values in `gomark.yaml`).
 2. Pass `--url` (your public origin) for correct canonical links and SEO.
 3. Upload the output directory to your static host.
 4. Confirm `.wasm` is served as `application/wasm` (most hosts do this automatically).
