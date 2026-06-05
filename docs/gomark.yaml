@@ -18,7 +18,7 @@ social:
     icon: github
 
 build:
-  content_dir: docs
+  content_dir: .
   output_dir: dist
   runner: true
   sitemap: true
