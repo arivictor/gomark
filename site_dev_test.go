@@ -64,6 +64,28 @@ func TestLiveReloadMiddlewareSkipsReloadEndpoint(t *testing.T) {
 	}
 }
 
+func TestIsInjectablePath(t *testing.T) {
+	cases := map[string]bool{
+		"/":                    true,
+		"/getting-started":     true,
+		"/docs/alpha":          true,
+		"/runner.wasm":         false,
+		"/vendor/highlight.js": false,
+		"/styles.css":          false,
+		"/sitemap.xml":         false,
+		"/robots.txt":          false,
+		"/search-index.json":   false,
+		"/api/search":          false,
+		"/__gomark/livereload": false,
+		"/favicon.ico":         false,
+	}
+	for p, want := range cases {
+		if got := isInjectablePath(p); got != want {
+			t.Errorf("isInjectablePath(%q) = %v, want %v", p, got, want)
+		}
+	}
+}
+
 func TestWatchTreeDetectsChanges(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "page.md")

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -84,12 +85,14 @@ func (h *liveReloadHub) handler(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
-// liveReloadMiddleware injects the reload client into every HTML response so the
-// page can subscribe to change events. Non-HTML responses (assets, the wasm
-// module, the SSE stream itself) pass through untouched.
+// liveReloadMiddleware injects the reload client into HTML responses so the page
+// can subscribe to change events. Only extensionless content pages are candidates
+// for injection; assets (the wasm module, vendor JS/CSS, images), JSON APIs, and
+// the SSE stream are written straight through without buffering, preserving their
+// streaming/range semantics and avoiding a needless in-memory copy.
 func liveReloadMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/__gomark/") {
+		if !isInjectablePath(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -119,6 +122,18 @@ func liveReloadMiddleware(next http.Handler) http.Handler {
 		w.WriteHeader(status)
 		_, _ = w.Write(body)
 	})
+}
+
+// isInjectablePath reports whether a request could return an HTML document worth
+// buffering for reload-client injection. Content pages are served at extensionless
+// routes; anything with a file extension (assets, sitemap.xml, robots.txt,
+// search-index.json), the JSON search API, and the reserved SSE endpoint are not
+// HTML and stream straight through.
+func isInjectablePath(requestPath string) bool {
+	if strings.HasPrefix(requestPath, "/__gomark/") || strings.HasPrefix(requestPath, "/api/") {
+		return false
+	}
+	return path.Ext(requestPath) == ""
 }
 
 // injectLiveReload places the client script just before </body> (or appends it

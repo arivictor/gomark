@@ -103,7 +103,7 @@ func runServe(args []string) error {
 
 	addr := ":" + *port
 	if *live {
-		log.Printf("gomark dev server (live) on http://localhost:%s — watching %s, auto-reload on", *port, content)
+		log.Printf("gomark dev server (live) on http://localhost:%s — watching %s for changes, auto-reload enabled", *port, content)
 	} else {
 		log.Printf("gomark dev server on http://localhost:%s (run with --live to auto-reload on edits)", *port)
 	}
