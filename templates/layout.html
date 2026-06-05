@@ -52,10 +52,12 @@
     (function () {
       try {
         var stored = localStorage.getItem('theme');
-        var preferred = stored === 'light' || stored === 'dark'
+        var pref = stored === 'light' || stored === 'dark' || stored === 'system'
           ? stored
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', preferred);
+          : 'system';
+        var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var resolved = pref === 'system' ? (systemDark ? 'dark' : 'light') : pref;
+        document.documentElement.setAttribute('data-theme', resolved);
       } catch (err) {
         document.documentElement.setAttribute('data-theme', 'light');
       }
@@ -297,8 +299,7 @@
       align-items: center;
       gap: 8px;
     }
-    .search-trigger,
-    .theme-toggle {
+    .search-trigger {
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -335,15 +336,46 @@
       padding: 3px 5px;
       background: var(--surface);
     }
-    .theme-toggle:hover {
-      border-color: var(--border-strong);
-      color: var(--heading);
-      background: var(--surface-hover);
+    /* Segmented System / Light / Dark theme switcher */
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      height: 34px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
     }
-    .theme-toggle .theme-icon {
-      width: 14px;
-      height: 14px;
+    .theme-toggle .theme-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
       color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+    .theme-toggle .theme-option:hover {
+      color: var(--heading);
+    }
+    .theme-toggle .theme-option[aria-checked="true"] {
+      background: var(--background);
+      color: var(--heading);
+      box-shadow: var(--shadow);
+    }
+    .theme-toggle .theme-option svg {
+      width: 15px;
+      height: 15px;
+    }
+    .theme-toggle .theme-option:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
     }
 
     /* ---------- Docs layout (sidebar · content · toc) ---------- */
@@ -1279,10 +1311,17 @@
           <span>Search</span>
           <kbd>⌘+k</kbd>
         </button>
-        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch color theme">
-          <i class="theme-icon" data-lucide="sun-moon" aria-hidden="true"></i>
-          <span data-theme-label>Theme</span>
-        </button>
+        <div class="theme-toggle" role="radiogroup" aria-label="Color theme" data-theme-toggle>
+          <button type="button" class="theme-option" data-theme-option="system" role="radio" aria-checked="false" aria-label="System theme" title="System theme">
+            <i data-lucide="monitor" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="theme-option" data-theme-option="light" role="radio" aria-checked="false" aria-label="Light theme" title="Light theme">
+            <i data-lucide="sun" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="theme-option" data-theme-option="dark" role="radio" aria-checked="false" aria-label="Dark theme" title="Dark theme">
+            <i data-lucide="moon" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -1415,45 +1454,87 @@
       }
 
       var root = document.documentElement;
-      var themeButton = document.querySelector('[data-theme-toggle]');
-      var themeLabel = document.querySelector('[data-theme-label]');
+      var themeOptions = Array.prototype.slice.call(
+        document.querySelectorAll('[data-theme-option]')
+      );
+      var darkQuery = window.matchMedia
+        ? window.matchMedia('(prefers-color-scheme: dark)')
+        : null;
 
-      function syncThemeUI(theme) {
-        if (!themeButton) { return; }
+      function readThemePref() {
+        try {
+          var stored = localStorage.getItem('theme');
+          if (stored === 'light' || stored === 'dark' || stored === 'system') {
+            return stored;
+          }
+        } catch (err) {
+          // Ignore storage errors; fall through to the default.
+        }
+        return 'system';
+      }
+
+      function resolveTheme(pref) {
+        if (pref === 'light' || pref === 'dark') { return pref; }
+        return darkQuery && darkQuery.matches ? 'dark' : 'light';
+      }
+
+      function syncHighlightTheme(resolved) {
         var highlightLight = document.getElementById('hljs-theme-light');
         var highlightDark = document.getElementById('hljs-theme-dark');
         if (highlightLight && highlightDark) {
-          var useDark = theme === 'dark';
+          var useDark = resolved === 'dark';
           highlightLight.disabled = useDark;
           highlightDark.disabled = !useDark;
         }
-        var next = theme === 'dark' ? 'light' : 'dark';
-        themeButton.setAttribute('aria-label', 'Switch to ' + next + ' mode');
-        themeButton.setAttribute('title', 'Switch to ' + next + ' mode');
-        themeButton.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-        if (themeLabel) {
-          themeLabel.textContent = theme === 'dark' ? 'Dark' : 'Light';
-        }
       }
 
-      function setTheme(theme) {
-        root.setAttribute('data-theme', theme);
+      function applyTheme(pref) {
+        var resolved = resolveTheme(pref);
+        root.setAttribute('data-theme', resolved);
+        syncHighlightTheme(resolved);
+        themeOptions.forEach(function (option) {
+          var selected = option.getAttribute('data-theme-option') === pref;
+          option.setAttribute('aria-checked', selected ? 'true' : 'false');
+          option.tabIndex = selected ? 0 : -1;
+        });
+      }
+
+      function setThemePref(pref) {
         try {
-          localStorage.setItem('theme', theme);
+          localStorage.setItem('theme', pref);
         } catch (err) {
           // Ignore storage errors; theme still applies for the current page.
         }
-        syncThemeUI(theme);
+        applyTheme(pref);
       }
 
-      var currentTheme = root.getAttribute('data-theme') || 'light';
-      syncThemeUI(currentTheme);
+      applyTheme(readThemePref());
 
-      if (themeButton) {
-        themeButton.addEventListener('click', function () {
-          var now = root.getAttribute('data-theme') || 'light';
-          setTheme(now === 'dark' ? 'light' : 'dark');
+      themeOptions.forEach(function (option, index) {
+        option.addEventListener('click', function () {
+          setThemePref(option.getAttribute('data-theme-option'));
         });
+        option.addEventListener('keydown', function (event) {
+          if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') { return; }
+          event.preventDefault();
+          var step = event.key === 'ArrowRight' ? 1 : -1;
+          var next = (index + step + themeOptions.length) % themeOptions.length;
+          var nextOption = themeOptions[next];
+          nextOption.focus();
+          setThemePref(nextOption.getAttribute('data-theme-option'));
+        });
+      });
+
+      // Follow the OS preference live while "System" is selected.
+      if (darkQuery) {
+        var onSystemChange = function () {
+          if (readThemePref() === 'system') { applyTheme('system'); }
+        };
+        if (darkQuery.addEventListener) {
+          darkQuery.addEventListener('change', onSystemChange);
+        } else if (darkQuery.addListener) {
+          darkQuery.addListener(onSystemChange);
+        }
       }
 
       var searchOpenButton = document.querySelector('[data-search-open]');
