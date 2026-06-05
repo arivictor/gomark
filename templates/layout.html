@@ -640,6 +640,11 @@
       padding: 0.12em 0.4em;
       color: var(--foreground);
       word-break: break-word;
+      /* Inherited optimizeLegibility + Geist feature settings ligate code
+         sequences (e.g. `...`, `--`) into squished glyphs. Reset for code. */
+      font-variant-ligatures: none;
+      font-feature-settings: normal;
+      font-kerning: none;
     }
 
     /* Code blocks */
@@ -719,6 +724,10 @@
       border: 0;
       padding: 10px;
       display: block;
+      /* Keep code monospaced char-for-char: no ligatures/kerning. */
+      font-variant-ligatures: none;
+      font-feature-settings: normal;
+      font-kerning: none;
     }
     .prose .code-frame[data-code-editable="true"] pre code[contenteditable="true"] {
       cursor: text;
@@ -852,6 +861,9 @@
       word-break: break-word;
       max-height: 260px;
       overflow: auto;
+      font-variant-ligatures: none;
+      font-feature-settings: normal;
+      font-kerning: none;
     }
     .prose .runner-output:empty { display: none; }
     .prose .runner-output::selection,
