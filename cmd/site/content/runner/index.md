@@ -52,6 +52,6 @@ gomark serve ./content --live --no-runner
 gomark build ./content ./dist --no-runner
 ```
 
-From the [Go API](/getting-started/configuration#use-it-as-a-library) the equivalent is `gomark.WithSiteRunnerEnabled(false)`. You can also disable it from the environment with `PLAYGROUND_ENABLED=false`.
+You can also set `build.runner: false` in `gomark.yaml`. From the [Go API](/getting-started/configuration#library-options) the equivalent is `gomark.WithSiteRunnerEnabled(false)`, or set `PLAYGROUND_ENABLED=false` in the environment.
 
 To mark individual code fences as runnable or editable, see the [Runner Guide](/getting-started/runner).

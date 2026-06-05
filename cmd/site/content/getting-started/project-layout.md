@@ -1,12 +1,12 @@
 ---
 title: Project Layout
-description: Organize content, templates, and public assets for a GoMark site.
+description: Organize your content tree and optional gomark.yaml for a GoMark site.
 order: 4
 ---
 
 # Project Layout
 
-GoMark needs just one thing to render a site: a content directory. You point the `gomark` CLI at it — there's no project scaffold to generate and no entry point to write. Custom templates and public assets are optional — add them when you want more control, skip them and the embedded defaults take over.
+GoMark needs just one thing to render a site: a content directory. Everything else — the theme, assets, and runner — is built in. A `gomark.yaml` is optional; add it when you want to set a title, logo, SEO, navigation, or analytics.
 
 ## Recommended structure
 
@@ -14,22 +14,18 @@ You can organize your project however you like, but here's a recommended structu
 
 ```text
 project/
+  gomark.yaml   (optional — site config)
   content/
     index.md
-  templates/ (optional)
-    layout.html
-    markdown.html
-    error.html
-  public/ (optional)
-    favicon.ico
-    logo.png
+    guides/
+      index.md
+      install.md
 ```
 
-- `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required. Preview it with `gomark serve ./content --live` and build it with `gomark build ./content ./dist`.
-- `templates/` holds your custom templates. Only add this if you want to override the embedded defaults. Custom templates are wired up through the [Go API](/getting-started/customization).
-- `public/` holds your static assets. Only add this if you want to override the embedded defaults — also through the [Go API](/getting-started/customization).
+- `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required.
+- `gomark.yaml` configures the site (title, logo, SEO, nav, analytics, build options). It's auto-discovered by `gomark build` and `gomark serve`. See the [configuration guide](/getting-started/configuration).
 
-> Using GoMark as a [library](/getting-started/configuration#use-it-as-a-library) instead of the CLI? Add a `main.go` at the project root as your entry point and point `gomark.NewSite(...)` at these same directories.
+Driving GoMark from Go instead? Add a `main.go` that calls `gomark.NewSite(...)` — see [Getting Started](/getting-started).
 
 ## Choosing folders vs files
 

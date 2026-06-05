@@ -23,6 +23,10 @@ gomark build ./my_docs ./dist --url https://docs.example.com
 - `./dist` — the output directory to create.
 - `--url` — your public origin. Set it: it drives canonical URLs, `sitemap.xml`,
   `robots.txt`, and Open Graph / Twitter image URLs. SEO metadata is wrong without it.
+  (You can also set `url:` in `gomark.yaml`; the flag overrides it.)
+
+Title, logo, SEO, navigation, and analytics come from an optional `gomark.yaml` that
+`build` auto-discovers. See the [configuration guide](/getting-started/configuration).
 
 The output is self-contained. It includes your rendered pages (`<route>/index.html`),
 copied assets, `sitemap.xml`, `robots.txt`, `search-index.json` for client-side search,
@@ -163,4 +167,4 @@ under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.
 2. Pass `--url` (your public origin) for correct canonical links and SEO.
 3. Upload the output directory to your static host.
 4. Confirm `.wasm` is served as `application/wasm` (most hosts do this automatically).
-5. Drop the runner with `--no-runner` if your docs have no runnable examples — the build omits the decompressed `runner.wasm` and the run controls (the vendored `wasm_exec.js` and `runner.wasm.gz` are still copied as public assets).
+5. Pass `--no-runner` (or set `build.runner: false` in `gomark.yaml`) if you don't want the in-browser runner.

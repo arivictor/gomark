@@ -1,22 +1,23 @@
 {{define "layout"}}
 <!doctype html>
-<html lang="en">
+<html lang="{{if .Lang}}{{.Lang}}{{else}}en{{end}}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{if .Title}}{{.Title}} — {{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}</title>
-  <meta name="description" content="{{if .Description}}{{.Description}}{{else}}The patterns and principles that make Go code easier to read, test, and change.{{end}}" />
+  <meta name="description" content="{{if .Description}}{{.Description}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
   <meta name="robots" content="{{if .Robots}}{{.Robots}}{{else}}index,follow{{end}}" />
   {{if .CSRFToken}}<meta name="csrf-token" content="{{.CSRFToken}}" />{{end}}
+  {{if .ThemeColor}}<meta name="theme-color" content="{{.ThemeColor}}" />{{else}}
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />{{end}}
 
   {{if .CanonicalURL}}<link rel="canonical" href="{{.CanonicalURL}}" />{{end}}
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" />
   <meta property="og:title" content="{{if .Title}}{{.Title}} — {{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
-  <meta property="og:description" content="{{if .Description}}{{.Description}}{{else}}The patterns and principles that make Go code easier to read, test, and change.{{end}}" />
+  <meta property="og:description" content="{{if .Description}}{{.Description}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
   {{if .CanonicalURL}}<meta property="og:url" content="{{.CanonicalURL}}" />{{end}}
   {{if .OGImageURL}}
   <meta property="og:image" content="{{.OGImageURL}}" />
@@ -24,13 +25,23 @@
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="GoMark" />
+  <meta property="og:image:alt" content="{{if .ImageAlt}}{{.ImageAlt}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
   {{end}}
 
   <meta name="twitter:card" content="{{if .TwitterImageURL}}summary_large_image{{else}}summary{{end}}" />
+  {{if .TwitterSite}}<meta name="twitter:site" content="{{.TwitterSite}}" />{{end}}
+  {{if .TwitterCreator}}<meta name="twitter:creator" content="{{.TwitterCreator}}" />{{end}}
   <meta name="twitter:title" content="{{if .Title}}{{.Title}} — {{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
-  <meta name="twitter:description" content="{{if .Description}}{{.Description}}{{else}}The patterns and principles that make Go code easier to read, test, and change.{{end}}" />
+  <meta name="twitter:description" content="{{if .Description}}{{.Description}}{{else}}{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}{{end}}" />
   {{if .TwitterImageURL}}<meta name="twitter:image" content="{{.TwitterImageURL}}" />{{else if .OGImageURL}}<meta name="twitter:image" content="{{.OGImageURL}}" />{{end}}
+  {{if and .Analytics.Provider .Analytics.ID}}{{if eq .Analytics.Provider "plausible"}}
+  <script defer data-domain="{{.Analytics.ID}}" src="https://plausible.io/js/script.js"></script>
+  {{else if eq .Analytics.Provider "ga4"}}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{.Analytics.ID}}"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{.Analytics.ID}}');</script>
+  {{else if eq .Analytics.Provider "gtm"}}
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{.Analytics.ID}}');</script>
+  {{end}}{{end}}
 
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -251,6 +262,36 @@
       /* border: 1px solid var(--border); */
       object-fit: cover;
     }
+    [data-theme="light"] .brand-mark--dark { display: none; }
+    [data-theme="dark"] .brand-mark--light { display: none; }
+    .top-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      margin-left: 22px;
+    }
+    .top-nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .top-nav a:hover { color: var(--heading); }
+    @media (max-width: 720px) { .top-nav { display: none; } }
+    .social-links {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .social-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .social-links a:hover { color: var(--heading); }
     .header-actions {
       display: inline-flex;
       align-items: center;
@@ -1188,6 +1229,9 @@
   </style>
 </head>
 <body data-current-path="{{.CurrentPath}}" data-runner-enabled="{{if .RunnerEnabled}}true{{else}}false{{end}}" data-static="{{if .StaticBuild}}true{{else}}false{{end}}">
+  {{if and (eq .Analytics.Provider "gtm") .Analytics.ID}}
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{.Analytics.ID}}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  {{end}}
   <div class="scroll-progress" aria-hidden="true">
     <div class="scroll-progress__bar" data-scroll-progress></div>
   </div>
@@ -1195,9 +1239,19 @@
   <header class="site-header">
     <div class="container">
       <a class="brand" href="/" aria-label="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}} home">
-        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/logo-dark.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
+        {{if and .LogoLightURL .LogoDarkURL}}
+        <img class="brand-mark brand-mark--light" src="{{.LogoLightURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
+        <img class="brand-mark brand-mark--dark" src="{{.LogoDarkURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
+        {{else}}
+        <img class="brand-mark" src="{{or .LogoLightURL .LogoDarkURL "/logo-dark.png"}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="22" height="22" />
+        {{end}}
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
+      {{if .NavLinks}}
+      <nav class="top-nav" aria-label="Primary">
+        {{range .NavLinks}}<a href="{{.URL}}">{{.Label}}</a>{{end}}
+      </nav>
+      {{end}}
       <div class="header-actions">
         {{if .Nav}}
         <button type="button" class="nav-toggle" data-nav-toggle aria-label="Open navigation menu" aria-controls="mobile-nav" aria-expanded="false">
@@ -1280,10 +1334,20 @@
   <footer class="site-footer">
     <div class="container">
       <a class="brand" href="/">
-        <img class="brand-mark" src="{{if .LogoURL}}{{.LogoURL}}{{else}}/logo-dark.png{{end}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+        {{if and .LogoLightURL .LogoDarkURL}}
+        <img class="brand-mark brand-mark--light" src="{{.LogoLightURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+        <img class="brand-mark brand-mark--dark" src="{{.LogoDarkURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+        {{else}}
+        <img class="brand-mark" src="{{or .LogoLightURL .LogoDarkURL "/logo-dark.png"}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+        {{end}}
         <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
       </a>
-      <!-- <span class="footer-meta">Rendered {{.Time}}</span> -->
+      {{if .FooterText}}<span class="footer-meta">{{.FooterText}}</span>{{end}}
+      {{if .SocialLinks}}
+      <nav class="social-links" aria-label="Social">
+        {{range .SocialLinks}}<a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{if .Icon}}<i data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}{{.Label}}</a>{{end}}
+      </nav>
+      {{end}}
     </div>
   </footer>
 

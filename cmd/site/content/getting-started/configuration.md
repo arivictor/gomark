@@ -1,117 +1,125 @@
 ---
 title: Configuration
-description: Configure GoMark with the CLI commands and flags, control render modes, and drop down to the Go API when you need more.
+description: Configure GoMark with a gomark.yaml file, CLI flags, or Site options.
 order: 2
 ---
 
 # Configuration
 
-The `gomark` CLI is the configuration surface for most sites. There are two commands — `build` and `serve` — and a small set of flags. Set the flags you need and focus on writing content instead of wiring up features.
+GoMark is configured through a single declarative `gomark.yaml` file, read by both
+`gomark build` and `gomark serve`. Custom layouts and CSS are intentionally not
+configurable — every site uses the built-in theme, so you configure identity, SEO,
+navigation, and build behavior, then focus on writing content.
 
-## Commands
+## `gomark.yaml`
 
-```text
-gomark build <content-dir> <output-dir> [flags]   Render a static site to disk
-gomark serve <content-dir> [flags]                Preview locally
+Drop a `gomark.yaml` in your project root (or content directory). It is
+auto-discovered; pass `--config <path>` to point elsewhere.
+
+```yaml:title="gomark.yaml"
+title: My Docs
+url: https://docs.example.com
+lang: en
+theme_color: "#0070f3"
+footer: © 2026 Example, Inc.
+
+logo:
+  light: /logo-light.png
+  dark: /logo-dark.png
+
+seo:
+  description: Short default description for pages without their own.
+  og_image: /og-1200x630.png
+  twitter_image: /twitter-1200x628.png
+  twitter_site: "@myhandle"
+  twitter_creator: "@myhandle"
+  image_alt: My Docs
+
+nav:
+  - label: Home
+    url: /
+  - label: GitHub
+    url: https://github.com/me/my-docs
+
+social:
+  - label: X
+    url: https://x.com/myhandle
+    icon: twitter
+
+analytics:
+  provider: plausible   # ga4 | gtm | plausible
+  id: docs.example.com
+
+build:
+  content_dir: content
+  output_dir: dist
+  sidebar_depth: 2
+  runner: true          # in-browser Go runner
+  sitemap: true
+  robots: true
 ```
 
-`build` produces the static output you deploy. `serve` is a development tool only — see [Deployment](/getting-started/deployment) for how production works.
+Every field is optional; omit what you don't need.
 
-## Flags
+## Precedence
 
-| Flag | Commands | Description |
-| --- | --- | --- |
-| `--url` | `build`, `serve` | Public site URL. Drives canonical links, `sitemap.xml`, `robots.txt`, and SEO metadata. |
-| `--title` | `build`, `serve` | Site title shown in the layout and meta tags. |
-| `--no-runner` | `build`, `serve` | Disable the in-browser Go runner. |
-| `--live` | `serve` | Render on every request and auto-reload the browser as files change. |
-| `--port` | `serve` | Port to listen on. Default `8080`. |
+When the same setting comes from more than one place, the highest wins:
 
-Flags can appear before or after the positional arguments, so both of these work:
-
-```shell
-gomark serve --live ./content
-gomark serve ./content --live
 ```
+CLI flag  >  environment variable  >  gomark.yaml  >  built-in default
+```
+
+So `gomark build --url https://staging.example.com` overrides the `url:` in your
+config for a one-off build, while the file stays the durable home for everything
+else.
+
+## CLI flags
+
+```bash
+gomark build [<content-dir> [<output-dir>]] [flags]
+gomark serve [<content-dir>] [flags]
+```
+
+- `--config` — path to `gomark.yaml` (auto-discovered by default)
+- `--title` — site title
+- `--url` — public site URL (canonical links, sitemap, SEO)
+- `--no-runner` — disable the in-browser Go runner
+- `--live` (serve) — render live and auto-reload on file changes
+- `--port` (serve) — port to listen on, default `8080`
+
+Paths can come from the config too: with `build.content_dir` and
+`build.output_dir` set, `gomark build` needs no positional arguments.
+
+## Library options
+
+Driving GoMark from Go uses the matching `WithSite...` options:
+
+- `WithSiteTitle`, `WithSiteLang`, `WithSiteThemeColor`, `WithSiteFooter`
+- `WithSiteLogoLight`, `WithSiteLogoDark` (or `WithSiteLogo` for both)
+- `WithSiteDescription`, `WithSiteOGImage`, `WithSiteTwitterImage`,
+  `WithSiteTwitterSite`, `WithSiteTwitterCreator`, `WithSiteImageAlt`
+- `WithSiteNavLinks`, `WithSiteSocialLinks`, `WithSiteAnalytics`
+- `WithSiteContentDir`, `WithSiteURL`, `WithSiteSidebarDepth`, `WithSiteMode`
+- `WithSiteRunnerEnabled`, `WithSiteSitemapEnabled`, `WithSiteRobotsEnabled`
+
+`FileConfig` (loaded via `gomark.LoadConfigFile`) exposes `.Options()` so you can
+load `gomark.yaml` from your own program too.
 
 ## Render modes
 
-GoMark renders one of two ways, and the command you run picks the mode for you.
+GoMark renders one of two ways.
 
-### Live rendering (`gomark serve --live`)
+### `gomark.LiveRender`
 
 - Reads markdown from disk on each request
-- Reflects file edits — and structural changes — without a restart
-- Best for local development
+- Best for local development (`gomark serve --live`)
+- Reflects file edits without restart
 
-### Pre-rendering (`gomark build`, and `gomark serve` without `--live`)
+### `gomark.PreRender`
 
-- Builds all output up front
-- Fails fast on content issues
-- Best for production; it's exactly what `build` writes to disk
+- Builds markdown output up front at startup
+- Best for production or stable content (`gomark build` always pre-renders)
+- Fails fast on content issues during boot
 
-## Recommended flow
-
-Two commands cover most projects.
-
-While you write:
-
-```shell
-gomark serve ./content --live
-```
-
-When you ship:
-
-```shell
-gomark build ./content ./dist --url https://docs.example.com
-```
-
-## Use it as a library
-
-GoMark is also a single importable package, `github.com/arivictor/gomark`, if you'd rather drive it from Go — and it's the way to reach options the CLI doesn't expose, such as [custom templates and public assets](/getting-started/customization) and [sidebar depth](/getting-started/navigation#sidebar-depth).
-
-```shell
-go get github.com/arivictor/gomark
-```
-
-`gomark.NewSite(...)` with `gomark.With...` options is the configuration surface:
-
-```go:title="main.go"
-package main
-
-import (
-	"log"
-
-	gm "github.com/arivictor/gomark"
-)
-
-func main() {
-	s := gm.NewSite(
-		gm.WithSiteTitle("My Docs"),
-		gm.WithSiteLogo("/logo.svg"),
-		gm.WithSiteContentDir("content"),
-		gm.WithSiteURL("https://docs.example.com"),
-		gm.WithSiteMode(gm.PreRender),
-	)
-
-	// Build a static site...
-	if err := s.Export("dist"); err != nil {
-		log.Fatal(err)
-	}
-	// ...or run the dev server: s.Serve(":8080", true)
-}
-```
-
-Common options:
-
-- `WithSiteTitle` — site name used in layout and metadata
-- `WithSiteLogo` — optional logo URL shown in the header
-- `WithSiteContentDir` — markdown content root, default `content`
-- `WithSiteURL` — base URL used for sitemap and canonical URLs
-- `WithSiteMode` — `gomark.LiveRender` or `gomark.PreRender`
-- `WithSiteRunnerEnabled` — toggles the in-browser Go runner (on by default)
-- `WithSiteTemplatesDir`, `WithSiteLayoutPath`, `WithSiteTemplateGlob` — custom templates
-- `WithSitePublicDir` — static asset directory that overrides embedded defaults
-- `WithSiteSidebarDepth` — max sidebar depth, default `2`
-
-`s.Export("dist")` mirrors `gomark build`; `s.Serve(":8080", true)` mirrors `gomark serve --live`. GoMark also recognizes common environment aliases such as `prod`, `production`, `live`, and `development` when resolving the render mode.
+GoMark also recognizes common environment aliases such as `prod`, `production`,
+`live`, and `development` when resolving render mode.

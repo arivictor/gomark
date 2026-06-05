@@ -108,14 +108,29 @@ func (b *siteBuild) renderContentPage(w http.ResponseWriter, r *http.Request, ro
 	navTitle, nav := b.index.Sidebar(route, b.sidebarDepth)
 	baseURL := requestBaseURL(r, b.siteURL)
 
+	description := page.Description
+	if strings.TrimSpace(description) == "" {
+		description = b.description
+	}
+
 	return b.renderer.Render(w, "markdown", withCSRFToken(w, r, PageData{
 		Title:           title,
-		Description:     page.Description,
+		Description:     description,
 		SiteName:        b.siteName,
-		LogoURL:         b.logoURL,
+		Lang:            b.lang,
+		ThemeColor:      b.themeColor,
+		LogoLightURL:    b.logoLight,
+		LogoDarkURL:     b.logoDark,
 		CanonicalURL:    joinAbsoluteURL(baseURL, route),
 		OGImageURL:      joinAbsoluteURL(baseURL, b.ogImagePath),
 		TwitterImageURL: joinAbsoluteURL(baseURL, b.twitterImagePath),
+		TwitterSite:     b.twitterSite,
+		TwitterCreator:  b.twitterCreator,
+		ImageAlt:        b.imageAlt,
+		FooterText:      b.footer,
+		NavLinks:        b.navLinks,
+		SocialLinks:     b.socialLinks,
+		Analytics:       b.analytics,
 		RunnerEnabled:   b.runnerEnabled,
 		Robots:          "index,follow",
 		Time:            time.Now().UTC().Format(time.RFC3339),

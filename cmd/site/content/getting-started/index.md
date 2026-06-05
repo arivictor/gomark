@@ -1,28 +1,26 @@
 ---
 title: Getting Started
-description: Install the GoMark CLI, create a content tree, preview it live, and build a static site you can host anywhere.
+description: Install the GoMark package, create a content tree, and launch your first markdown-powered website.
 order: 2
 ---
 
 # Getting Started
 
-GoMark turns a folder of markdown into a real website. This guide walks through the whole flow: install the CLI, create a content tree, preview it live as you edit, and build a static site you can host anywhere.
+GoMark turns a folder of markdown into a real website. This guide walks through the basics: installing the package, creating a content tree, and launching your first markdown-powered site.
 
-## Install the CLI
+## Install
 
-The `gomark` command is the primary way to use GoMark. Install it with `go install`:
+GoMark is both a CLI and an importable Go package. For the quickest start, install the CLI:
 
 ```shell
 go install github.com/arivictor/gomark/cmd/gomark@latest
 ```
 
-This puts a `gomark` binary on your `PATH` (in `$(go env GOPATH)/bin`). Check it:
+Prefer to drive it from Go? Add the package to your module instead:
 
 ```shell
-gomark --help
+go get github.com/arivictor/gomark
 ```
-
-> Prefer to drive GoMark from Go instead of the CLI? It's also a single importable package — see [Use it as a library](/getting-started/configuration#use-it-as-a-library).
 
 ## Create a content tree
 
@@ -57,54 +55,67 @@ order: 0 # Optional: controls sidebar order
 This site is powered by GoMark.
 ```
 
-## Preview it live
+## Start your site
 
-Run the dev server with `--live` and GoMark renders pages on every request and auto-reloads your browser as you edit:
-
-```shell
-gomark serve ./content --live
-```
-
-Visit `http://localhost:8080`. Edit a markdown file and the page reloads on its own — including structural changes: adding, renaming, or deleting files updates routes, the sidebar, search, and the sitemap without a restart.
-
-Drop `--live` for a quick static-style preview, and use `--port` to listen elsewhere:
+The CLI previews your content with live reload — no code required:
 
 ```shell
-gomark serve ./content --port 3000
+gomark serve content --live
 ```
 
-> `gomark serve` is a **development tool**, not a production server. You deploy the static output of `gomark build` (next section).
+Visit `http://localhost:8080` and GoMark renders your markdown tree as a live website, reloading as you edit.
 
-## Build a static site
+### Configure it (optional)
 
-When you're ready to publish, render your content into an output directory:
+Site title, logo, SEO, navigation, and analytics live in an optional `gomark.yaml` that `serve` and `build` auto-discover. See the [configuration guide](/getting-started/configuration) for the full schema.
 
-```shell
-gomark build ./content ./dist --url https://docs.example.com
+```yaml:title="gomark.yaml"
+title: My Docs
+url: https://docs.example.com
+seo:
+  description: Docs for my project.
 ```
 
-- `./content` — your content directory.
-- `./dist` — the output directory to create.
-- `--url` — your public origin. Set it: it drives canonical URLs, `sitemap.xml`, `robots.txt`, and Open Graph / Twitter metadata.
+### Drive it from Go (optional)
 
-The output is plain HTML, CSS, JS, and assets — no server to run in production. Host it on GitHub Pages, Netlify, S3, nginx, or a container. See the [deployment guide](/getting-started/deployment) for ready-to-use recipes.
+Prefer code? The HTTP server is part of the package, so a few lines of Go does the same thing:
+
+```go:title="main.go"
+package main
+
+import (
+	"log"
+
+	gm "github.com/arivictor/gomark"
+)
+
+func main() {
+	s := gm.NewSite(
+		gm.WithSiteTitle("My Docs"),
+		gm.WithSiteContentDir("content"),
+		gm.WithSiteMode(gm.PreRender), // Use LiveRender for local development to see changes immediately
+	)
+
+	if err := s.Start(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
 
 ## Opinionated features out of the box
 
-No extra setup, no plugins — the moment your site renders, you have:
+No extra setup, no plugins — the moment your site boots, you have:
 
 - HTML rendering for every markdown page
 - Sidebar navigation built from your folders and pages
 - Top-level navigation from your top-level sections
-- Full-text search (a `/api/search` endpoint when serving, a client-side index when built)
+- A search endpoint at `/api/search`
 - Generated `sitemap.xml` and `robots.txt`
-- The in-browser Go runner for runnable code examples
-- Default templates and public assets
+- A presentable, responsive built-in theme — no frontend setup
 
 ## Next steps
 
-- [Configure the CLI and render modes](/getting-started/configuration)
 - [Understand the content layout](/getting-started/project-layout)
-- [Customize templates and assets](/getting-started/customization)
-- [Set up the Go runner](/getting-started/runner)
-- [Deploy your site](/getting-started/deployment)
+- [Configure the app](/getting-started/configuration)
+- [Customize branding & SEO](/getting-started/customization)
+- [Set up the Go runner](/runner)
