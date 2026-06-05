@@ -158,6 +158,11 @@ func buildOptions(fs *flag.FlagSet, cfg *gm.FileConfig, content, title, siteURL,
 	if env := strings.TrimSpace(os.Getenv("SITE_URL")); env != "" {
 		opts = append(opts, gm.WithSiteURL(env))
 	}
+	// Layer PUBLIC_DIR above gomark.yaml so env beats the file, matching the
+	// documented CLI > env > yaml precedence (a later option wins).
+	if env := strings.TrimSpace(os.Getenv("PUBLIC_DIR")); env != "" {
+		opts = append(opts, gm.WithSitePublicDir(env))
+	}
 
 	// The content dir always comes from the resolved positional/config value.
 	opts = append(opts, gm.WithSiteContentDir(content))

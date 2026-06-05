@@ -104,6 +104,22 @@ func TestAppPublicFSFallsBackWhenDirMissing(t *testing.T) {
 	}
 }
 
+func TestAppPublicFSFallsBackWhenDirIsAFile(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "public")
+	if err := os.WriteFile(file, []byte("not a dir"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	a := App{PublicDir: file}
+	publicFS, err := a.publicFS()
+	if err != nil {
+		t.Fatalf("public fs: %v", err)
+	}
+	// A non-directory public dir is tolerated: embedded assets are used.
+	if _, err := fs.Stat(publicFS, "favicon.ico"); err != nil {
+		t.Fatalf("expected embedded favicon fallback: %v", err)
+	}
+}
+
 func TestStaticFileExistsUsesFSAndBlocksTraversal(t *testing.T) {
 	a := App{}
 	publicFS, err := a.publicFS()
