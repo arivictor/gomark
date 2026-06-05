@@ -89,33 +89,31 @@ func (s *Site) run(addr string, live bool) error {
 	}
 
 	dir := b.contentDir
-	renderer := b.renderer
-	appTitle := b.siteName
-	appLogo := b.logoURL
-	ogImagePath := b.ogImagePath
-	twitterImagePath := b.twitterImagePath
 	siteURL := b.siteURL
 	RunnerEnabled := b.runnerEnabled
 	searchIndex := b.searchIndex
-	topNav := b.topNav
 	sitemapRoutes := b.sitemapRoutes
 	sitemapXML := b.sitemapXML
 	robotsTXT := b.robotsTXT
 
-	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
+	httpApp := NewServer(b.errorResponder(log.Default()))
 	httpApp.Use(LoggingMiddleware)
 	httpApp.Use(CSRFProtectionMiddleware(siteURL))
 	log.Printf("seo sitemap generated with %d routes", len(sitemapRoutes))
-	httpApp.Handle("GET", "/sitemap.xml", func(w http.ResponseWriter, r *http.Request) error {
-		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
-		_, writeErr := w.Write([]byte(sitemapXML))
-		return writeErr
-	})
-	httpApp.Handle("GET", "/robots.txt", func(w http.ResponseWriter, r *http.Request) error {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		_, writeErr := w.Write([]byte(robotsTXT))
-		return writeErr
-	})
+	if sitemapXML != "" {
+		httpApp.Handle("GET", "/sitemap.xml", func(w http.ResponseWriter, r *http.Request) error {
+			w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+			_, writeErr := w.Write([]byte(sitemapXML))
+			return writeErr
+		})
+	}
+	if robotsTXT != "" {
+		httpApp.Handle("GET", "/robots.txt", func(w http.ResponseWriter, r *http.Request) error {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			_, writeErr := w.Write([]byte(robotsTXT))
+			return writeErr
+		})
+	}
 	httpApp.Handle("GET", "/api/search", func(w http.ResponseWriter, r *http.Request) error {
 		return serveSearch(w, r, searchIndex)
 	})

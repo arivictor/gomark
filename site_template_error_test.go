@@ -57,13 +57,14 @@ func TestLayoutRendersCustomSiteTitleAndLogo(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	data := PageData{
-		Title:       "Welcome",
-		SiteName:    "My Docs",
-		LogoURL:     "https://example.com/logo.svg",
-		BodyHTML:    template.HTML("<p>content</p>"),
-		Nav:         nil,
-		TopNav:      nil,
-		CurrentPath: "/",
+		Title:        "Welcome",
+		SiteName:     "My Docs",
+		LogoLightURL: "https://example.com/logo.svg",
+		LogoDarkURL:  "https://example.com/logo.svg",
+		BodyHTML:     template.HTML("<p>content</p>"),
+		Nav:          nil,
+		TopNav:       nil,
+		CurrentPath:  "/",
 	}
 	if err := renderer.Render(rec, "markdown", data); err != nil {
 		t.Fatalf("render markdown template: %v", err)

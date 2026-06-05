@@ -1,118 +1,88 @@
 ---
 title: Customization
-description: Override GoMark templates and public assets while keeping the built-in defaults as a fallback.
+description: Brand your GoMark site with a logo, SEO metadata, navigation, social links, and analytics.
 order: 3
 ---
 
 # Customization
 
-GoMark ships with embedded templates and public assets, so you get a presentable site with zero frontend setup. When you're ready to make it yours, point the app at your own templates and assets — and anything you don't override keeps falling back to the built-in defaults.
+GoMark uses a single built-in theme, so there are no layouts or CSS to wire up —
+you get a presentable, responsive site with zero frontend setup. What you *do*
+customize is the site's identity: its name, logo, SEO metadata, navigation,
+social links, and analytics. All of it lives in [`gomark.yaml`](/getting-started/configuration).
 
-## Custom templates
+> Custom layouts and CSS are intentionally out of scope for now. If your project
+> needs them, open an issue describing the use case.
 
-The simplest override is a directory holding `layout.html` and the page templates GoMark expects.
+## Branding
 
-```go:title="main.go"
-s := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteTemplatesDir("templates"),
-	gomark.WithSiteMode(gomark.PreRender),
-)
+```yaml:title="gomark.yaml"
+title: My Docs
+footer: © 2026 Example, Inc.
+theme_color: "#0070f3"
+
+logo:
+  light: /logo-light.png   # shown in light theme
+  dark: /logo-dark.png     # shown in dark theme
 ```
 
-If you need explicit paths instead of a directory convention, use `LayoutPath` and `TemplateGlob`.
+The logo swaps automatically with the active theme. Set just one of `light` /
+`dark` (or use a single `WithSiteLogo` from Go) to use the same mark for both. If
+you omit the logo entirely, the bundled GoMark mark is used.
 
-```go:title="main.go"
-s := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteLayoutPath("templates/layout.html"),
-	gomark.WithSiteTemplateGlob("templates/*.html"),
-)
+## SEO
+
+Page-level `title` and `description` come from each markdown file's frontmatter.
+Everything else — and the defaults for pages that omit a description — comes from
+the `seo` block.
+
+```yaml:title="gomark.yaml"
+url: https://docs.example.com   # canonical links + sitemap
+
+seo:
+  description: Default description for pages without their own.
+  og_image: /og-1200x630.png
+  twitter_image: /twitter-1200x628.png
+  twitter_site: "@myhandle"
+  twitter_creator: "@myhandle"
+  image_alt: My Docs            # defaults to the site title
 ```
 
-### Required template files
+GoMark emits canonical links, Open Graph, and Twitter card tags on every page,
+plus `sitemap.xml` and `robots.txt` (toggle them under `build`).
 
-When using custom templates, make sure your template set includes:
+## Navigation and social links
 
-- `layout.html` defining `layout`
-- `markdown.html` defining `content` (used for docs pages)
-- `error.html` defining `content` (used for error pages)
+The sidebar is derived from your content tree. Top-of-page navigation and footer
+social links are explicit:
 
-Template names are derived from file names, so `markdown.html` is rendered as `markdown`, and `error.html` as `error`.
+```yaml:title="gomark.yaml"
+nav:
+  - label: Home
+    url: /
+  - label: GitHub
+    url: https://github.com/me/my-docs
 
-The layout template must render the content block, for example:
-
-```html
-{{define "layout"}}
-  <main>{{block "content" .}}{{end}}</main>
-{{end}}
+social:
+  - label: X
+    url: https://x.com/myhandle
+    icon: twitter          # optional lucide icon name
 ```
 
-### Data available in templates
+## Analytics
 
-All templates receive the same `PageData` object.
+Drop in an analytics snippet without touching any HTML. Supported providers are
+`plausible`, `ga4` (Google Analytics 4), and `gtm` (Google Tag Manager).
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `StatusCode` | `int` | HTTP status code (primarily for error pages). |
-| `Title` | `string` | Page title. |
-| `Description` | `string` | Meta description / page subtitle text. |
-| `SiteName` | `string` | Site branding text. |
-| `LogoURL` | `string` | Logo image URL. |
-| `CanonicalURL` | `string` | Absolute canonical URL for the page. |
-| `OGImageURL` | `string` | Open Graph image URL. |
-| `TwitterImageURL` | `string` | Twitter image URL. |
-| `RunnerEnabled` | `bool` | Whether runner UI is enabled. |
-| `Robots` | `string` | Robots meta value (for example `index,follow`). |
-| `Time` | `string` | Render timestamp (RFC3339 UTC). |
-| `MarkdownFile` | `string` | Source markdown path (content pages). |
-| `BodyHTML` | `template.HTML` | Rendered markdown HTML (content pages). |
-| `Headings` | `[]Heading` | In-page headings for TOC. |
-| `NavTitle` | `string` | Sidebar section title. |
-| `Nav` | `[]NavNode` | Sidebar navigation tree. |
-| `TopNav` | `[]NavLink` | Top-level navigation links. |
-| `CurrentPath` | `string` | Current route path. |
-
-`Heading` contains:
-
-- `Level` (`int`)
-- `Text` (`string`)
-- `ID` (`string`)
-
-`NavNode` contains:
-
-- `Title` (`string`)
-- `Path` (`string`)
-- `NodeID` (`string`)
-- `Folder` (`bool`)
-- `Active` (`bool`)
-- `Open` (`bool`)
-- `Children` (`[]NavNode`)
-
-`NavLink` contains:
-
-- `Title` (`string`)
-- `Path` (`string`)
-- `Active` (`bool`)
-
-## Custom public assets
-
-Set `PublicDir` to serve your own favicons, OG images, or any additional static files.
-
-```go:title="main.go"
-s := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSitePublicDir("public"),
-)
+```yaml:title="gomark.yaml"
+analytics:
+  provider: plausible
+  id: docs.example.com
 ```
 
-If `PublicDir` is empty, GoMark serves embedded defaults baked into the `gomark` package.
+## Default assets
 
-## What embedded defaults cover
-
-Out of the box, GoMark serves:
-
-- `favicon.ico`
-- PNG favicon variants
-- Apple touch icon
-- Default OG images
+Out of the box, GoMark serves bundled `favicon.ico` and PNG variants, an Apple
+touch icon, a web manifest, and default Open Graph / Twitter images. Override the
+images by setting `seo.og_image` / `seo.twitter_image` to your own files served
+from your site root.

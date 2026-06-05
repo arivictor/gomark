@@ -97,20 +97,11 @@ func (ls *liveServer) rebuild() error {
 	}
 
 	ls.current.Store(&liveBuild{
-		build:   b,
-		routes:  routes,
-		landing: landingRoute(routes),
-		oldBase: "/" + filepath.ToSlash(strings.Trim(b.contentDir, "/")),
-		responder: HTMLErrorResponder{
-			Renderer:         b.renderer,
-			TopNav:           b.topNav,
-			SiteName:         b.siteName,
-			LogoURL:          b.logoURL,
-			SiteURL:          b.siteURL,
-			OGImagePath:      b.ogImagePath,
-			TwitterImagePath: b.twitterImagePath,
-			Logger:           log.Default(),
-		},
+		build:     b,
+		routes:    routes,
+		landing:   landingRoute(routes),
+		oldBase:   "/" + filepath.ToSlash(strings.Trim(b.contentDir, "/")),
+		responder: b.errorResponder(log.Default()),
 	})
 	return nil
 }
@@ -134,10 +125,16 @@ func (ls *liveServer) serve(w http.ResponseWriter, r *http.Request, lb *liveBuil
 	case liveReloadPath:
 		return ls.hub.handler(w, r)
 	case "/sitemap.xml":
+		if b.sitemapXML == "" {
+			return &HTTPError{Status: http.StatusNotFound, Message: "page not found"}
+		}
 		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 		_, err := w.Write([]byte(b.sitemapXML))
 		return err
 	case "/robots.txt":
+		if b.robotsTXT == "" {
+			return &HTTPError{Status: http.StatusNotFound, Message: "page not found"}
+		}
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, err := w.Write([]byte(b.robotsTXT))
 		return err

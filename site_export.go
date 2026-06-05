@@ -53,14 +53,29 @@ func (s *Site) Export(outputDir string) error {
 		}
 		navTitle, nav := b.index.Sidebar(route, b.sidebarDepth)
 
+		description := page.Description
+		if strings.TrimSpace(description) == "" {
+			description = b.description
+		}
+
 		data := PageData{
 			Title:           title,
-			Description:     page.Description,
+			Description:     description,
 			SiteName:        b.siteName,
-			LogoURL:         b.logoURL,
+			Lang:            b.lang,
+			ThemeColor:      b.themeColor,
+			LogoLightURL:    b.logoLight,
+			LogoDarkURL:     b.logoDark,
 			CanonicalURL:    joinAbsoluteURL(b.siteURL, route),
 			OGImageURL:      joinAbsoluteURL(b.siteURL, b.ogImagePath),
 			TwitterImageURL: joinAbsoluteURL(b.siteURL, b.twitterImagePath),
+			TwitterSite:     b.twitterSite,
+			TwitterCreator:  b.twitterCreator,
+			ImageAlt:        b.imageAlt,
+			FooterText:      b.footer,
+			NavLinks:        b.navLinks,
+			SocialLinks:     b.socialLinks,
+			Analytics:       b.analytics,
 			RunnerEnabled:   b.runnerEnabled,
 			Robots:          "index,follow",
 			Time:            time.Now().UTC().Format(time.RFC3339),
@@ -101,12 +116,17 @@ func (s *Site) Export(outputDir string) error {
 		}
 	}
 
-	// Generated files win over any bundled copies (e.g. public/robots.txt).
-	if err := os.WriteFile(filepath.Join(outputDir, "sitemap.xml"), []byte(b.sitemapXML), 0o644); err != nil {
-		return err
+	// Generated files win over any bundled copies (e.g. public/robots.txt). An
+	// empty string means the file is disabled via config and is not written.
+	if b.sitemapXML != "" {
+		if err := os.WriteFile(filepath.Join(outputDir, "sitemap.xml"), []byte(b.sitemapXML), 0o644); err != nil {
+			return err
+		}
 	}
-	if err := os.WriteFile(filepath.Join(outputDir, "robots.txt"), []byte(b.robotsTXT), 0o644); err != nil {
-		return err
+	if b.robotsTXT != "" {
+		if err := os.WriteFile(filepath.Join(outputDir, "robots.txt"), []byte(b.robotsTXT), 0o644); err != nil {
+			return err
+		}
 	}
 
 	indexJSON, err := json.Marshal(b.searchIndex.Entries())

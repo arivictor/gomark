@@ -4,22 +4,16 @@ import (
 	"embed"
 	"errors"
 	"io/fs"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 )
 
 //go:embed public/*
 var embeddedPublicFS embed.FS
 
-// publicFS returns the filesystem serving static public assets: an on-disk
-// directory when configured, otherwise the embedded public/ tree.
+// publicFS returns the embedded public/ tree that serves static assets
+// (favicons, og images, vendored JS/CSS, the runner module).
 func (a *App) publicFS() (fs.FS, error) {
-	if dir := strings.TrimSpace(a.PublicDir); dir != "" {
-		return os.DirFS(filepath.Clean(dir)), nil
-	}
-
 	publicFS, err := fs.Sub(embeddedPublicFS, "public")
 	if err != nil {
 		return nil, err

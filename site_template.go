@@ -24,10 +24,20 @@ type PageData struct {
 	Title           string
 	Description     string
 	SiteName        string
-	LogoURL         string
+	Lang            string
+	ThemeColor      string
+	LogoLightURL    string
+	LogoDarkURL     string
 	CanonicalURL    string
 	OGImageURL      string
 	TwitterImageURL string
+	TwitterSite     string
+	TwitterCreator  string
+	ImageAlt        string
+	FooterText      string
+	NavLinks        []ConfigLink
+	SocialLinks     []ConfigLink
+	Analytics       AnalyticsConfig
 	RunnerEnabled   bool
 	Robots          string
 	Time            string

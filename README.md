@@ -63,6 +63,35 @@ runner executes entirely in the reader's browser. See the
 [deployment guide](https://gomark.dev/getting-started/deployment) for GitHub Pages,
 container, and other host recipes.
 
+## Configure
+
+Site title, logo, SEO (Open Graph / Twitter / description), navigation, social
+links, analytics, and build options live in an optional `gomark.yaml` that both
+`build` and `serve` read. It's auto-discovered in your project (or pass
+`--config`):
+
+```yaml:title="gomark.yaml"
+title: My Docs
+url: https://docs.example.com
+logo:
+  light: /logo-light.png
+  dark: /logo-dark.png
+seo:
+  description: Docs for my Go library.
+  twitter_site: "@myhandle"
+nav:
+  - label: GitHub
+    url: https://github.com/me/my-docs
+analytics:
+  provider: plausible
+  id: docs.example.com
+```
+
+CLI flags override the file, which overrides environment variables, which override
+the defaults. There are no custom layouts or CSS — every site uses the built-in
+theme. See the [configuration guide](https://gomark.dev/getting-started/configuration)
+for the full schema.
+
 ## Use it as a library
 
 GoMark is also a single importable package, `github.com/arivictor/gomark`, if you'd

@@ -29,10 +29,20 @@ type HTMLErrorResponder struct {
 	Renderer         TemplateRenderer
 	TopNav           []NavLink
 	SiteName         string
-	LogoURL          string
+	Lang             string
+	ThemeColor       string
+	LogoLight        string
+	LogoDark         string
 	SiteURL          string
 	OGImagePath      string
 	TwitterImagePath string
+	TwitterSite      string
+	TwitterCreator   string
+	ImageAlt         string
+	Footer           string
+	NavLinks         []ConfigLink
+	SocialLinks      []ConfigLink
+	Analytics        AnalyticsConfig
 	Logger           *log.Logger
 }
 
@@ -72,17 +82,27 @@ func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err
 	}
 
 	renderErr := r.Renderer.RenderStatus(w, status, "error", withCSRFToken(w, req, PageData{
-		StatusCode:  status,
-		Title:       title,
-		Description: description,
-		SiteName:    firstNonEmpty(r.SiteName, defaultSiteName),
-		LogoURL:     strings.TrimSpace(r.LogoURL),
+		StatusCode:   status,
+		Title:        title,
+		Description:  description,
+		SiteName:     firstNonEmpty(r.SiteName, defaultSiteName),
+		Lang:         firstNonEmpty(strings.TrimSpace(r.Lang), "en"),
+		ThemeColor:   strings.TrimSpace(r.ThemeColor),
+		LogoLightURL: strings.TrimSpace(r.LogoLight),
+		LogoDarkURL:  strings.TrimSpace(r.LogoDark),
 		CanonicalURL: joinAbsoluteURL(
 			requestBaseURL(req, r.SiteURL),
 			req.URL.Path,
 		),
 		OGImageURL:      joinAbsoluteURL(requestBaseURL(req, r.SiteURL), firstNonEmpty(strings.TrimSpace(r.OGImagePath), defaultOGImagePath)),
 		TwitterImageURL: joinAbsoluteURL(requestBaseURL(req, r.SiteURL), firstNonEmpty(strings.TrimSpace(r.TwitterImagePath), defaultTwitterImagePath)),
+		TwitterSite:     strings.TrimSpace(r.TwitterSite),
+		TwitterCreator:  strings.TrimSpace(r.TwitterCreator),
+		ImageAlt:        firstNonEmpty(strings.TrimSpace(r.ImageAlt), firstNonEmpty(r.SiteName, defaultSiteName)),
+		FooterText:      strings.TrimSpace(r.Footer),
+		NavLinks:        r.NavLinks,
+		SocialLinks:     r.SocialLinks,
+		Analytics:       r.Analytics,
 		Robots:          "noindex,nofollow",
 		TopNav:          r.TopNav,
 		CurrentPath:     req.URL.Path,
