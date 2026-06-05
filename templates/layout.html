@@ -882,15 +882,16 @@
     .prose blockquote p { margin: 0; }
     .prose blockquote strong { color: var(--heading); }
 
-    /* GitHub-style callouts / admonitions */
+    /* GitHub-style callouts / admonitions — full tonal design.
+       Background and border are tinted with the callout accent, mixed against
+       the page background so the tone adapts automatically to light/dark. */
     .prose .callout {
       margin: 24px 0;
       padding: 14px 18px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--callout-accent, var(--border-strong));
+      background: color-mix(in srgb, var(--callout-accent, var(--border-strong)) 10%, var(--background));
+      border: 1px solid color-mix(in srgb, var(--callout-accent, var(--border-strong)) 28%, var(--background));
       border-radius: var(--radius);
-      color: var(--muted-strong);
+      color: var(--foreground);
     }
     .prose .callout p { margin: 0; }
     .prose .callout p + p { margin-top: 8px; }
@@ -900,7 +901,10 @@
       font-size: 13px;
       letter-spacing: 0.01em;
       text-transform: uppercase;
-      color: var(--callout-accent, var(--heading));
+      /* Pull the title toward the foreground so it keeps the accent hue while
+         staying above WCAG AA contrast on the tinted background — darkens in
+         light theme, lightens in dark theme. */
+      color: color-mix(in srgb, var(--callout-accent, var(--heading)) 60%, var(--foreground));
       margin-bottom: 6px !important;
     }
     .prose .callout-note      { --callout-accent: #3b82f6; }
