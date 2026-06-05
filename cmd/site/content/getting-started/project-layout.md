@@ -23,7 +23,7 @@ project/
 ```
 
 - `content/` is your markdown tree. GoMark maps files and folders directly to routes — no config required.
-- `gomark.yaml` configures the site (title, logo, SEO, nav, analytics, build options). It's auto-discovered by `gomark build` and `gomark serve`. See the [configuration guide](/guides/configuration).
+- `gomark.yaml` configures the site (title, logo, SEO, nav, analytics, build options). It's auto-discovered by `gomark build` and `gomark serve`. See the [configuration guide](/getting-started/configuration).
 
 Driving GoMark from Go instead? Add a `main.go` that calls `gomark.NewSite(...)` — see [Getting Started](/getting-started).
 

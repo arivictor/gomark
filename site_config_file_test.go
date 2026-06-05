@@ -190,6 +190,32 @@ func TestExportWithConfigRendersMetadataAndDropsSitemap(t *testing.T) {
 	}
 }
 
+func TestAnalyticsRequiresIDToRender(t *testing.T) {
+	// A provider without an id is treated as unset: no option, no script tag.
+	cfg := &FileConfig{Analytics: AnalyticsConfig{Provider: "ga4"}}
+	s := NewSite(cfg.Options()...)
+	if s.App.Analytics.Provider != "" {
+		t.Fatalf("expected analytics dropped when id is empty, got %+v", s.App.Analytics)
+	}
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "content", "index.md"), "# Home\n")
+	out := filepath.Join(dir, "dist")
+	// Even if a provider somehow reaches the App without an id, the template must
+	// not emit a broken analytics tag.
+	site := NewSite(
+		WithSiteContentDir(filepath.Join(dir, "content")),
+		WithSiteAnalytics("ga4", ""),
+	)
+	if err := site.Export(out); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+	html := readFileString(t, filepath.Join(out, "index.html"))
+	if strings.Contains(html, "googletagmanager.com/gtag/js") {
+		t.Fatalf("expected no analytics script when id is empty\n---\n%s", html)
+	}
+}
+
 func readFileString(t *testing.T, path string) string {
 	t.Helper()
 	data, err := os.ReadFile(path)

@@ -41,12 +41,17 @@ url: https://docs.example.com   # canonical links + sitemap
 
 seo:
   description: Default description for pages without their own.
-  og_image: /og-1200x630.png
-  twitter_image: /twitter-1200x628.png
+  og_image: /og-1200x630.png          # a file you provide at your site root
+  twitter_image: /twitter-1200x628.png # a file you provide at your site root
   twitter_site: "@myhandle"
   twitter_creator: "@myhandle"
   image_alt: My Docs            # defaults to the site title
 ```
+
+`og_image` and `twitter_image` point to image files **you** add at your site root —
+the paths above are examples. Omit them and GoMark falls back to its bundled
+`/gomark-og-1200x630.png` and `/gomark-twitter-1200x628.png` defaults (which carry
+GoMark branding, so you'll usually want your own).
 
 GoMark emits canonical links, Open Graph, and Twitter card tags on every page,
 plus `sitemap.xml` and `robots.txt` (toggle them under `build`).

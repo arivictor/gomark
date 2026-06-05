@@ -87,7 +87,7 @@ analytics:
   id: docs.example.com
 ```
 
-CLI flags override the file, which overrides environment variables, which override
+CLI flags override environment variables, which override the file, which overrides
 the defaults. There are no custom layouts or CSS — every site uses the built-in
 theme. See the [configuration guide](https://gomark.dev/getting-started/configuration)
 for the full schema.

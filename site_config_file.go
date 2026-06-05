@@ -159,7 +159,7 @@ func (c *FileConfig) Options() []SiteOption {
 	if len(c.Social) > 0 {
 		add(WithSiteSocialLinks(c.Social...))
 	}
-	if c.Analytics.Provider != "" {
+	if c.Analytics.Provider != "" && c.Analytics.ID != "" {
 		add(WithSiteAnalytics(c.Analytics.Provider, c.Analytics.ID))
 	}
 

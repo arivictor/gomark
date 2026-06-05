@@ -26,7 +26,7 @@ gomark build ./my_docs ./dist --url https://docs.example.com
   (You can also set `url:` in `gomark.yaml`; the flag overrides it.)
 
 Title, logo, SEO, navigation, and analytics come from an optional `gomark.yaml` that
-`build` auto-discovers. See the [configuration guide](/guides/configuration).
+`build` auto-discovers. See the [configuration guide](/getting-started/configuration).
 
 The output is self-contained. It includes your rendered pages (`<route>/index.html`),
 copied assets, `sitemap.xml`, `robots.txt`, `search-index.json` for client-side search,

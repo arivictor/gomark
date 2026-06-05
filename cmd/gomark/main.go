@@ -77,7 +77,7 @@ func runBuild(args []string) error {
 		return err
 	}
 	log.Printf("built static site: %s -> %s", content, output)
-	if *siteURL == "" && cfg.URL == "" {
+	if *siteURL == "" && cfg.URL == "" && strings.TrimSpace(os.Getenv("SITE_URL")) == "" {
 		log.Printf("tip: set --url (or `url:` in gomark.yaml) for correct canonical links and SEO metadata")
 	}
 	return nil
@@ -168,6 +168,9 @@ func buildOptions(fs *flag.FlagSet, cfg *gm.FileConfig, content, title, siteURL 
 		opts = append(opts, gm.WithSiteURL(siteURL))
 	}
 	if set["no-runner"] {
+		// GetRunnerEnabled consults PLAYGROUND_ENABLED before the option, so an
+		// explicit flag must clear the env var to actually take precedence over it.
+		os.Unsetenv("PLAYGROUND_ENABLED")
 		opts = append(opts, gm.WithSiteRunnerEnabled(!noRunner))
 	}
 	return opts

@@ -67,7 +67,7 @@ Visit `http://localhost:8080` and GoMark renders your markdown tree as a live we
 
 ### Configure it (optional)
 
-Site title, logo, SEO, navigation, and analytics live in an optional `gomark.yaml` that `serve` and `build` auto-discover. See the [configuration guide](/guides/configuration) for the full schema.
+Site title, logo, SEO, navigation, and analytics live in an optional `gomark.yaml` that `serve` and `build` auto-discover. See the [configuration guide](/getting-started/configuration) for the full schema.
 
 ```yaml:title="gomark.yaml"
 title: My Docs
@@ -115,7 +115,7 @@ No extra setup, no plugins — the moment your site boots, you have:
 
 ## Next steps
 
-- [Understand the content layout](/guides/project-layout)
-- [Configure the app](/guides/configuration)
-- [Customize branding & SEO](/guides/customization)
+- [Understand the content layout](/getting-started/project-layout)
+- [Configure the app](/getting-started/configuration)
+- [Customize branding & SEO](/getting-started/customization)
 - [Set up the Go runner](/runner)
