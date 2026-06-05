@@ -10,16 +10,16 @@ This guide covers marking code blocks as runnable so readers can run and edit Go
 
 ## Enable the feature
 
-The runner is **enabled by default**. There is no service to run and nothing to configure — a standard site already has it on:
+The runner is **enabled by default**. There is no service to run and nothing to configure — `gomark serve` and `gomark build` ship it automatically, and `gomark build` even bundles the runtime into your static output.
 
-```go:title="cmd/site/main.go"
-s := gomark.NewSite(
-	gomark.WithSiteContentDir("cmd/site/content"),
-	gomark.WithSiteMode(gomark.PreRender),
-)
+To turn the run controls off across the whole site, pass `--no-runner` to either command:
+
+```shell
+gomark serve ./content --live --no-runner
+gomark build ./content ./dist --no-runner
 ```
 
-To turn the run controls off across the whole site, pass `--no-runner` on the CLI, set `build.runner: false` in `gomark.yaml`, or — from Go — pass `gomark.WithSiteRunnerEnabled(false)` (or set `PLAYGROUND_ENABLED=false`).
+From the [Go API](/getting-started/configuration#use-it-as-a-library) the equivalent is `gomark.WithSiteRunnerEnabled(false)` (or set `PLAYGROUND_ENABLED=false`).
 
 ## Mark runnable code fences
 

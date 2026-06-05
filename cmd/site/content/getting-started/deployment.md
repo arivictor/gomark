@@ -167,4 +167,4 @@ under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.
 2. Pass `--url` (your public origin) for correct canonical links and SEO.
 3. Upload the output directory to your static host.
 4. Confirm `.wasm` is served as `application/wasm` (most hosts do this automatically).
-5. Pass `--no-runner` (or set `build.runner: false` in `gomark.yaml`) if you don't want the in-browser runner.
+5. Drop the runner with `--no-runner` if your docs have no runnable examples — the build omits the decompressed `runner.wasm` and the run controls (the vendored `wasm_exec.js` and `runner.wasm.gz` are still copied as public assets).

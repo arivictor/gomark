@@ -28,14 +28,7 @@ You keep the full page title while showing a cleaner label in navigation.
 
 ## Sidebar depth
 
-Keep the sidebar tidy by capping how deep it nests. Set it in `gomark.yaml`:
-
-```yaml:title="gomark.yaml"
-build:
-  sidebar_depth: 3
-```
-
-Or, driving GoMark from Go, with `WithSiteSidebarDepth`:
+Keep the sidebar tidy by capping how deep it nests. The default is `2`. This option isn't exposed on the CLI, so reach for the [Go API](/getting-started/configuration#use-it-as-a-library):
 
 ```go:title="main.go"
 s := gomark.NewSite(
@@ -44,22 +37,4 @@ s := gomark.NewSite(
 )
 ```
 
-Use a smaller depth when your content tree is broad and you want a simpler sidebar.
-
-## Top navigation and social links
-
-The sidebar comes from your content tree, but the top-of-page navigation and footer
-social links are explicit — set them in `gomark.yaml`:
-
-```yaml:title="gomark.yaml"
-nav:
-  - label: Home
-    url: /
-  - label: GitHub
-    url: https://github.com/me/my-docs
-
-social:
-  - label: X
-    url: https://x.com/myhandle
-    icon: twitter
-```
+Use a smaller depth when your content tree is broad and you want a simpler sidebar. Everything else on this page works the same whether you preview with `gomark serve` or build with `gomark build`.

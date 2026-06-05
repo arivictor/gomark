@@ -11,8 +11,9 @@ you get a presentable, responsive site with zero frontend setup. What you *do*
 customize is the site's identity: its name, logo, SEO metadata, navigation,
 social links, and analytics. All of it lives in [`gomark.yaml`](/getting-started/configuration).
 
-> Custom layouts and CSS are intentionally out of scope for now. If your project
-> needs them, open an issue describing the use case.
+> Custom templates and public assets are configured through the [Go API](/getting-started/configuration#use-it-as-a-library) — the `gomark` CLI doesn't expose these options. Use a small `main.go` that calls `gomark.NewSite(...)`, then `s.Export("dist")` to build or `s.Serve(":8080", true)` to preview, in place of the `gomark build`/`gomark serve` commands.
+
+## Custom templates
 
 ## Branding
 
