@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const defaultSiteName = "GoMark"
@@ -57,10 +58,25 @@ func (s *Site) Start() error {
 		addr = ":" + port
 	}
 
-	return s.run(addr)
+	return s.run(addr, false)
 }
 
-func (s *Site) run(addr string) error {
+// Serve runs the local development server on addr. When live is true it renders
+// each page on every request and live-reloads connected browsers as files under
+// the content dir change. Serve is a development tool — production deployments
+// build a static site with Export (see the `gomark build` CLI command).
+func (s *Site) Serve(addr string, live bool) error {
+	if s == nil {
+		return fmt.Errorf("site is nil")
+	}
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		addr = ":8080"
+	}
+	return s.run(addr, live)
+}
+
+func (s *Site) run(addr string, live bool) error {
 	a := &s.App
 
 	b, err := a.buildSite(false)
@@ -84,6 +100,13 @@ func (s *Site) run(addr string) error {
 	robotsTXT := b.robotsTXT
 
 	httpApp := NewServer(HTMLErrorResponder{Renderer: renderer, TopNav: topNav, SiteName: appTitle, LogoURL: appLogo, SiteURL: siteURL, OGImagePath: ogImagePath, TwitterImagePath: twitterImagePath, Logger: log.Default()})
+	// In live mode the reload middleware is outermost so it can inject the
+	// client into the final HTML (including error pages) before it ships.
+	var hub *liveReloadHub
+	if live {
+		hub = newLiveReloadHub()
+		httpApp.Use(liveReloadMiddleware)
+	}
 	httpApp.Use(LoggingMiddleware)
 	httpApp.Use(CSRFProtectionMiddleware(siteURL))
 	log.Printf("seo sitemap generated with %d routes", len(sitemapRoutes))
@@ -203,6 +226,14 @@ func (s *Site) run(addr string) error {
 
 		return &HTTPError{Status: http.StatusNotFound, Message: "page not found"}
 	})
+
+	if live {
+		httpApp.Handle("GET", liveReloadPath, hub.handler)
+		stop := make(chan struct{})
+		defer close(stop)
+		go watchTree(dir, 400*time.Millisecond, hub.broadcast, stop)
+		log.Printf("live reload enabled; watching %s for changes", dir)
+	}
 
 	return httpApp.Run(addr)
 }
