@@ -22,17 +22,17 @@ Set `nav_title` in frontmatter when the navigation label should be shorter than 
 
 ## Content changes do not appear immediately
 
-Use `gm.LiveRender` for local development. `gm.PreRender` takes a snapshot at startup.
+Run the dev server with `gomark serve ./content --live`. Without `--live` (and in anything `gomark build` produces) GoMark takes a snapshot up front, so edits won't show until you rebuild.
 
 ## Search returns no results
 
-Make sure your content exists under the configured `ContentDir` and that the site started successfully. The search index is built from the same content tree.
+Make sure your content exists under the content directory you passed to `gomark serve`/`gomark build` and that the command started successfully. The search index is built from the same content tree.
 
 ## The runner run button does not appear
 
 Check all of the following:
 
-1. The runner is not disabled (`gomark.WithSiteRunnerEnabled(false)` or `PLAYGROUND_ENABLED=false`)
+1. The runner is not disabled (no `--no-runner` flag — or, via the Go API, `gomark.WithSiteRunnerEnabled(false)` / `PLAYGROUND_ENABLED=false`)
 2. The code fence language is `go`
 3. The fence includes `run=true` (or `editable=true`)
 

@@ -8,6 +8,8 @@ order: 3
 
 GoMark ships with embedded templates and public assets, so you get a presentable site with zero frontend setup. When you're ready to make it yours, point the app at your own templates and assets — and anything you don't override keeps falling back to the built-in defaults.
 
+> Custom templates and public assets are configured through the [Go API](/getting-started/configuration#use-it-as-a-library) — the `gomark` CLI doesn't expose these options. Use a small `main.go` that calls `gomark.NewSite(...)`, then `s.Export("dist")` to build or `s.Serve(":8080", true)` to preview, in place of the `gomark build`/`gomark serve` commands.
+
 ## Custom templates
 
 The simplest override is a directory holding `layout.html` and the page templates GoMark expects.

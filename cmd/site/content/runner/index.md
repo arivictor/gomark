@@ -45,15 +45,13 @@ Because this is an interpreter compiled to WebAssembly rather than the `gc` tool
 
 ## Enabling and disabling
 
-The runner is **on by default** — there is nothing to provision. To turn the run controls off across the site:
+The runner is **on by default** — there is nothing to provision. To turn the run controls off across the site, pass `--no-runner` to the CLI:
 
-```go:title="cmd/site/main.go"
-s := gomark.NewSite(
-	gomark.WithSiteContentDir("content"),
-	gomark.WithSiteRunnerEnabled(false),
-)
+```shell
+gomark serve ./content --live --no-runner
+gomark build ./content ./dist --no-runner
 ```
 
-You can also disable it from the environment with `PLAYGROUND_ENABLED=false`.
+From the [Go API](/getting-started/configuration#use-it-as-a-library) the equivalent is `gomark.WithSiteRunnerEnabled(false)`. You can also disable it from the environment with `PLAYGROUND_ENABLED=false`.
 
 To mark individual code fences as runnable or editable, see the [Runner Guide](/getting-started/runner).

@@ -163,4 +163,4 @@ under `cmd/wasm`, regenerate it with `scripts/build-wasm.sh` before building.
 2. Pass `--url` (your public origin) for correct canonical links and SEO.
 3. Upload the output directory to your static host.
 4. Confirm `.wasm` is served as `application/wasm` (most hosts do this automatically).
-5. Provide custom assets with `--no-runner` or a public dir only if you need them.
+5. Drop the runner with `--no-runner` if your docs have no runnable examples — the build skips `runner.wasm` entirely.
