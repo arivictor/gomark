@@ -13,7 +13,7 @@ RUN go mod download
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/gomark ./cmd/gomark
-RUN /out/gomark build ./cmd/site/content /out/site --url https://gomark.dev
+RUN /out/gomark build ./docs /out/site --url https://gomark.dev
 
 # Stage 2: serve the static output. Caddy sends the correct application/wasm
 # content type for the runner module automatically.
