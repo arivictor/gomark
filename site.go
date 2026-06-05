@@ -2,14 +2,12 @@ package gomark
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -57,10 +55,32 @@ func (s *Site) Start() error {
 		addr = ":" + port
 	}
 
-	return s.run(addr)
+	return s.run(addr, false)
 }
 
-func (s *Site) run(addr string) error {
+// Serve runs the local development server on addr. When live is true it renders
+// each page on every request and live-reloads connected browsers as files under
+// the content dir change. Serve is a development tool — production deployments
+// build a static site with Export (see the `gomark build` CLI command).
+func (s *Site) Serve(addr string, live bool) error {
+	if s == nil {
+		return fmt.Errorf("site is nil")
+	}
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		addr = ":8080"
+	}
+	return s.run(addr, live)
+}
+
+func (s *Site) run(addr string, live bool) error {
+	// The live development server rebuilds routes, navigation, search, and the
+	// sitemap whenever files change, so it dispatches dynamically rather than
+	// registering a fixed route table. Production serving stays static below.
+	if live {
+		return s.runLive(addr)
+	}
+
 	a := &s.App
 
 	b, err := a.buildSite(false)
@@ -70,7 +90,6 @@ func (s *Site) run(addr string) error {
 
 	dir := b.contentDir
 	renderer := b.renderer
-	index := b.index
 	appTitle := b.siteName
 	appLogo := b.logoURL
 	ogImagePath := b.ogImagePath
@@ -98,28 +117,7 @@ func (s *Site) run(addr string) error {
 		return writeErr
 	})
 	httpApp.Handle("GET", "/api/search", func(w http.ResponseWriter, r *http.Request) error {
-		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		limit := 8
-		if rawLimit := strings.TrimSpace(r.URL.Query().Get("limit")); rawLimit != "" {
-			parsed, parseErr := strconv.Atoi(rawLimit)
-			if parseErr == nil {
-				if parsed < 1 {
-					parsed = 1
-				}
-				if parsed > 25 {
-					parsed = 25
-				}
-				limit = parsed
-			}
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if q == "" {
-			return json.NewEncoder(w).Encode(map[string]any{"query": "", "results": []SearchResult{}})
-		}
-
-		results := searchIndex.Query(q, limit)
-		return json.NewEncoder(w).Encode(map[string]any{"query": q, "results": results})
+		return serveSearch(w, r, searchIndex)
 	})
 	// publicFS serves static assets: an on-disk directory when configured,
 	// otherwise the embedded public/ tree. The runner module is sourced from
@@ -152,7 +150,7 @@ func (s *Site) run(addr string) error {
 		})
 	}
 
-	landing, err := a.registerContentRoutes(httpApp, renderer, dir, index, topNav, siteURL, appTitle, appLogo, ogImagePath, twitterImagePath, b.provider, RunnerEnabled)
+	landing, err := registerContentRoutes(httpApp, b)
 	if err != nil {
 		return err
 	}

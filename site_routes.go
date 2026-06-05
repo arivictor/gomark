@@ -57,11 +57,10 @@ func eachContentRoute(contentDir string, fn func(slug, route, path string) error
 	})
 }
 
-func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer, dir string, index *ContentIndex, topNav []NavLink, siteURL, siteName, logoURL, ogImagePath, twitterImagePath string, provider contentPageProvider, RunnerEnabled bool) (string, error) {
-	depth := a.sidebarDepth()
+func registerContentRoutes(app *Server, b *siteBuild) (string, error) {
 	registered := map[string]string{}
 
-	err := eachContentRoute(dir, func(serviceSlug, pageRoute, path string) error {
+	err := eachContentRoute(b.contentDir, func(serviceSlug, pageRoute, path string) error {
 		if existing, exists := registered[pageRoute]; exists {
 			return fmt.Errorf("route collision for %s between %s and %s", pageRoute, existing, path)
 		}
@@ -74,41 +73,9 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 			registerPath = "/{$}"
 		}
 
-		pageTitle := pageTitleFromSlug(serviceSlug)
+		route, slug := pageRoute, serviceSlug
 		app.Handle("GET", registerPath, func(w http.ResponseWriter, r *http.Request) error {
-			page, getErr := provider.Get(serviceSlug)
-			if getErr != nil {
-				return mapContentProviderError(getErr)
-			}
-
-			title := page.Title
-			if strings.TrimSpace(title) == "" {
-				title = pageTitle
-			}
-
-			navTitle, nav := index.Sidebar(pageRoute, depth)
-			baseURL := requestBaseURL(r, siteURL)
-
-			return renderer.Render(w, "markdown", withCSRFToken(w, r, PageData{
-				Title:           title,
-				Description:     page.Description,
-				SiteName:        siteName,
-				LogoURL:         logoURL,
-				CanonicalURL:    joinAbsoluteURL(baseURL, pageRoute),
-				OGImageURL:      joinAbsoluteURL(baseURL, ogImagePath),
-				TwitterImageURL: joinAbsoluteURL(baseURL, twitterImagePath),
-				RunnerEnabled:   RunnerEnabled,
-				Robots:          "index,follow",
-				Time:            time.Now().UTC().Format(time.RFC3339),
-				MarkdownFile:    page.Path,
-				BodyHTML:        template.HTML(page.HTML),
-				Headings:        page.Headings,
-				HideTOC:         page.HideTOC,
-				NavTitle:        navTitle,
-				Nav:             nav,
-				TopNav:          topNav,
-				CurrentPath:     pageRoute,
-			}))
+			return b.renderContentPage(w, r, route, slug)
 		})
 
 		return nil
@@ -118,10 +85,49 @@ func (a *App) registerContentRoutes(app *Server, renderer *FileTemplateRenderer,
 	}
 
 	if len(registered) == 0 {
-		return "", fmt.Errorf("no markdown files found in content dir %s", filepath.Clean(dir))
+		return "", fmt.Errorf("no markdown files found in content dir %s", filepath.Clean(b.contentDir))
 	}
 
 	return landingRoute(registered), nil
+}
+
+// renderContentPage renders the page for route (served from serviceSlug) using
+// the shared build artifacts. Both the static route registrar and the live
+// development server call it, so served and live pages can never drift.
+func (b *siteBuild) renderContentPage(w http.ResponseWriter, r *http.Request, route, serviceSlug string) error {
+	page, getErr := b.provider.Get(serviceSlug)
+	if getErr != nil {
+		return mapContentProviderError(getErr)
+	}
+
+	title := page.Title
+	if strings.TrimSpace(title) == "" {
+		title = pageTitleFromSlug(serviceSlug)
+	}
+
+	navTitle, nav := b.index.Sidebar(route, b.sidebarDepth)
+	baseURL := requestBaseURL(r, b.siteURL)
+
+	return b.renderer.Render(w, "markdown", withCSRFToken(w, r, PageData{
+		Title:           title,
+		Description:     page.Description,
+		SiteName:        b.siteName,
+		LogoURL:         b.logoURL,
+		CanonicalURL:    joinAbsoluteURL(baseURL, route),
+		OGImageURL:      joinAbsoluteURL(baseURL, b.ogImagePath),
+		TwitterImageURL: joinAbsoluteURL(baseURL, b.twitterImagePath),
+		RunnerEnabled:   b.runnerEnabled,
+		Robots:          "index,follow",
+		Time:            time.Now().UTC().Format(time.RFC3339),
+		MarkdownFile:    page.Path,
+		BodyHTML:        template.HTML(page.HTML),
+		Headings:        page.Headings,
+		HideTOC:         page.HideTOC,
+		NavTitle:        navTitle,
+		Nav:             nav,
+		TopNav:          b.topNav,
+		CurrentPath:     route,
+	}))
 }
 
 func (a *App) newContentPageProvider(contentDir string, renderer MarkdownRenderer) (contentPageProvider, error) {
