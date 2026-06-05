@@ -53,6 +53,7 @@ analytics:
 build:
   content_dir: content
   output_dir: dist
+  public_dir: public    # your own favicons, og-image, logos, …
   sidebar_depth: 2
   runner: true          # in-browser Go runner
   sitemap: true
@@ -60,6 +61,35 @@ build:
 ```
 
 Every field is optional; omit what you don't need.
+
+## Static assets (logos & SEO images)
+
+The `logo:` and `seo:` settings above only set the **URLs** written into the HTML
+(`<img>` and `<meta>` tags). They do not, by themselves, ship any files — so a
+value like `og_image: /og-image.png` produces a `<meta property="og:image">`
+pointing at `/og-image.png`, but that file still has to exist on the site.
+
+Point `build.public_dir` at a directory of your own assets and GoMark overlays it
+on top of the bundled defaults: a file there **overrides** the built-in asset of
+the same name (favicons, `og-image`, logos, `site.webmanifest`, …), and any extra
+files are served and exported alongside them.
+
+```
+my-docs/
+  gomark.yaml          # build.public_dir: public
+  content/
+  public/
+    favicon.ico        # overrides the bundled favicon
+    favicon-32x32.png
+    og-image.png       # referenced by seo.og_image: /og-image.png
+    logo-light.png     # referenced by logo.light: /logo-light.png
+    logo-dark.png
+```
+
+Reference the files by their root-relative path (`/og-image.png`, matching how
+they sit at the top of `public_dir`). Without a `public_dir`, only GoMark's
+bundled assets exist, so a custom `og_image`/`logo` path that has no matching
+bundled file will 404.
 
 ## Precedence
 
@@ -83,6 +113,7 @@ gomark serve [<content-dir>] [flags]
 - `--config` — path to `gomark.yaml` (auto-discovered by default)
 - `--title` — site title
 - `--url` — public site URL (canonical links, sitemap, SEO)
+- `--public-dir` — directory of static assets overlaid on the bundled ones (your favicons, og-image, logos)
 - `--no-runner` — disable the in-browser Go runner
 - `--live` (serve) — render live and auto-reload on file changes
 - `--port` (serve) — port to listen on, default `8080`
@@ -99,7 +130,7 @@ Driving GoMark from Go uses the matching `WithSite...` options:
 - `WithSiteDescription`, `WithSiteOGImage`, `WithSiteTwitterImage`,
   `WithSiteTwitterSite`, `WithSiteTwitterCreator`, `WithSiteImageAlt`
 - `WithSiteNavLinks`, `WithSiteSocialLinks`, `WithSiteAnalytics`
-- `WithSiteContentDir`, `WithSiteURL`, `WithSiteSidebarDepth`, `WithSiteMode`
+- `WithSiteContentDir`, `WithSitePublicDir`, `WithSiteURL`, `WithSiteSidebarDepth`, `WithSiteMode`
 - `WithSiteRunnerEnabled`, `WithSiteSitemapEnabled`, `WithSiteRobotsEnabled`
 
 `FileConfig` (loaded via `gomark.LoadConfigFile`) exposes `.Options()` so you can

@@ -117,10 +117,10 @@ func (s *Site) run(addr string, live bool) error {
 	httpApp.Handle("GET", "/api/search", func(w http.ResponseWriter, r *http.Request) error {
 		return serveSearch(w, r, searchIndex)
 	})
-	// publicFS serves static assets: an on-disk directory when configured,
-	// otherwise the embedded public/ tree. The runner module is sourced from
-	// here too, so overriding assets via PublicDir keeps runner.wasm and
-	// wasm_exec.js consistent with each other.
+	// publicFS serves static assets: the embedded public/ tree, with an on-disk
+	// PublicDir overlaid on top when configured (a site's own favicons, og-image,
+	// logos, … override the bundled ones). The runner module is sourced from here
+	// too, so the overlay keeps runner.wasm and wasm_exec.js consistent.
 	publicFS := b.publicFS
 
 	if RunnerEnabled {

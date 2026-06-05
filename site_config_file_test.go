@@ -39,6 +39,7 @@ seo:
 build:
   content_dir: content
   output_dir: dist
+  public_dir: public
   sidebar_depth: 3
   runner: false
   sitemap: false
@@ -73,6 +74,9 @@ analytics:
 	}
 	if cfg.Build.SidebarDepth != 3 || cfg.Build.Runner == nil || *cfg.Build.Runner {
 		t.Fatalf("unexpected build: %+v", cfg.Build)
+	}
+	if cfg.Build.PublicDir != "public" {
+		t.Fatalf("unexpected public_dir: %q", cfg.Build.PublicDir)
 	}
 	if cfg.Build.Sitemap == nil || *cfg.Build.Sitemap {
 		t.Fatalf("expected sitemap=false, got %+v", cfg.Build.Sitemap)
@@ -116,7 +120,7 @@ func TestFileConfigOptionsApply(t *testing.T) {
 		ThemeColor: "#111",
 		Logo:       LogoConfig{Light: "/l.png", Dark: "/d.png"},
 		SEO:        SEOConfig{TwitterSite: "@x", ImageAlt: "Alt"},
-		Build:      BuildConfig{SidebarDepth: 4, Runner: &runner},
+		Build:      BuildConfig{SidebarDepth: 4, Runner: &runner, PublicDir: "assets"},
 		Nav:        []ConfigLink{{Label: "Home", URL: "/"}},
 		Analytics:  AnalyticsConfig{Provider: "GA4", ID: "G-123"},
 	}
@@ -134,6 +138,9 @@ func TestFileConfigOptionsApply(t *testing.T) {
 	}
 	if a.SidebarDepth != 4 || !a.DisableRunner {
 		t.Fatalf("build opts not applied: %+v", a)
+	}
+	if a.PublicDir != "assets" {
+		t.Fatalf("public dir not applied: %q", a.PublicDir)
 	}
 	if len(a.NavLinks) != 1 || a.NavLinks[0].Label != "Home" {
 		t.Fatalf("nav not applied: %+v", a.NavLinks)

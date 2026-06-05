@@ -40,6 +40,12 @@ type App struct {
 	SidebarDepth int
 	SiteURL      string
 	ExportDir    string
+	// PublicDir is an optional on-disk directory whose files are overlaid on
+	// top of the bundled assets: a file present here wins over the built-in one
+	// of the same name, and new files are served/exported alongside them. Use it
+	// to supply your own favicons, og-image, logos, or site.webmanifest without
+	// forking gomark. When empty only the embedded assets are used.
+	PublicDir string
 	Mode         RenderMode
 	// DisableRunner turns off the in-browser Go runner. Execution is
 	// client-side (a WebAssembly build of the yaegi interpreter), so the
@@ -203,6 +209,16 @@ func WithSiteContentDir(dir string) SiteOption {
 	}
 }
 
+// WithSitePublicDir overlays an on-disk directory on top of the bundled static
+// assets. Files in dir override the built-in asset of the same name (favicons,
+// og-image, logos, site.webmanifest, …) and any extra files are served and
+// exported too. This is how a site supplies its own SEO images and logos.
+func WithSitePublicDir(dir string) SiteOption {
+	return func(s *Site) {
+		s.App.PublicDir = strings.TrimSpace(dir)
+	}
+}
+
 func WithSiteSidebarDepth(depth int) SiteOption {
 	return func(s *Site) {
 		s.App.SidebarDepth = depth
@@ -328,6 +344,15 @@ func (a *App) logoLight() string {
 
 func (a *App) logoDark() string {
 	return strings.TrimSpace(a.LogoDark)
+}
+
+// publicDir resolves the on-disk asset-overlay directory, falling back to the
+// PUBLIC_DIR environment variable. An empty result means "embedded assets only".
+func (a *App) publicDir() string {
+	if d := strings.TrimSpace(a.PublicDir); d != "" {
+		return d
+	}
+	return strings.TrimSpace(os.Getenv("PUBLIC_DIR"))
 }
 
 func (a *App) lang() string {

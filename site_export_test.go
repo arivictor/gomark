@@ -33,6 +33,40 @@ func writeExportFile(t *testing.T, root, rel, content string) {
 	}
 }
 
+func TestSiteExportCopiesPublicDirOverlay(t *testing.T) {
+	content := t.TempDir()
+	writeExportFile(t, content, "index.md", "# Home\n")
+
+	public := t.TempDir()
+	// favicon.ico overrides the bundled one; og-image.png is additive.
+	if err := os.WriteFile(filepath.Join(public, "favicon.ico"), []byte("custom-icon"), 0o644); err != nil {
+		t.Fatalf("write favicon: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(public, "og-image.png"), []byte("custom-og"), 0o644); err != nil {
+		t.Fatalf("write og: %v", err)
+	}
+
+	out := t.TempDir()
+	site := NewSite(
+		WithSiteContentDir(content),
+		WithSitePublicDir(public),
+	)
+	if err := site.Export(out); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+
+	if got := readFileString(t, filepath.Join(out, "favicon.ico")); got != "custom-icon" {
+		t.Fatalf("expected overlaid favicon in export, got %q", got)
+	}
+	if got := readFileString(t, filepath.Join(out, "og-image.png")); got != "custom-og" {
+		t.Fatalf("expected additive og-image in export, got %q", got)
+	}
+	// A bundled asset the overlay doesn't touch is still exported.
+	if _, err := os.Stat(filepath.Join(out, "wasm_exec.js")); err != nil {
+		t.Fatalf("expected bundled wasm_exec.js in export: %v", err)
+	}
+}
+
 func TestSiteExportProducesStaticSite(t *testing.T) {
 	content := t.TempDir()
 	writeExportFile(t, content, "index.md", "---\ntitle: Home\n---\n# Home\n\nWelcome.")
