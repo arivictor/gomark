@@ -27,10 +27,12 @@ COPY . .
 WORKDIR /src/docs
 RUN go tool gomark build . /out/site
 
-# Stage 2: serve the static output. Caddy sends the correct application/wasm
-# content type for the runner module automatically.
+# Stage 2: serve the static output. The Caddyfile binds to Cloud Run's $PORT
+# (falling back to 80 locally) and sets the application/wasm content type for
+# the in-browser runner module.
 FROM caddy:2-alpine AS site
 
+COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=builder /out/site /usr/share/caddy
 
-EXPOSE 80
+EXPOSE 8080
