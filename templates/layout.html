@@ -901,7 +901,10 @@
       font-size: 13px;
       letter-spacing: 0.01em;
       text-transform: uppercase;
-      color: var(--callout-accent, var(--heading));
+      /* Pull the title toward the foreground so it keeps the accent hue while
+         staying above WCAG AA contrast on the tinted background — darkens in
+         light theme, lightens in dark theme. */
+      color: color-mix(in srgb, var(--callout-accent, var(--heading)) 60%, var(--foreground));
       margin-bottom: 6px !important;
     }
     .prose .callout-note      { --callout-accent: #3b82f6; }
