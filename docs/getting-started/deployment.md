@@ -132,7 +132,8 @@ RUN go install github.com/arivictor/gomark/cmd/gomark@latest
 
 WORKDIR /src
 COPY . .
-RUN gomark build ./my_docs /out/site --url https://docs.example.com # or use gomark.yaml
+RUN gomark build ./my_docs /out/site --url https://docs.example.com 
+# or use gomark.yaml
 
 # Stage 2: serve the static output with Caddy.
 FROM caddy:2-alpine AS site
