@@ -15,9 +15,7 @@ WORKDIR /src
 # changes. docs/ replaces gomark with ../, so the root go.mod must be present for
 # the module graph to resolve; go mod download then fetches only what the CLI
 # compiles against (yaml.v3 — yaegi is wasm-only and not pulled).
-COPY go.mod go.sum ./
-COPY docs/go.mod docs/go.sum ./docs/
-RUN cd docs && go mod download
+RUN go install github.com/arivictor/gomark/cmd/gomark@v0.1.13
 
 COPY . .
 
@@ -25,7 +23,7 @@ COPY . .
 # directive (replace => ../, i.e. this repo). Output and URL come from
 # docs/gomark.yaml; the positional output dir below overrides it for the image.
 WORKDIR /src/docs
-RUN go tool gomark build . /out/site
+RUN go tool gomark build
 
 # Stage 2: serve the static output. The Caddyfile binds to Cloud Run's $PORT
 # (falling back to 80 locally) and sets the application/wasm content type for
