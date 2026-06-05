@@ -51,6 +51,7 @@ type SEOConfig struct {
 type BuildConfig struct {
 	ContentDir   string `yaml:"content_dir"`
 	OutputDir    string `yaml:"output_dir"`
+	PublicDir    string `yaml:"public_dir"`
 	SidebarDepth int    `yaml:"sidebar_depth"`
 	Runner       *bool  `yaml:"runner"`
 	Sitemap      *bool  `yaml:"sitemap"`
@@ -140,6 +141,9 @@ func (c *FileConfig) Options() []SiteOption {
 	}
 	if c.Build.OutputDir != "" {
 		add(WithSiteExportDir(c.Build.OutputDir))
+	}
+	if c.Build.PublicDir != "" {
+		add(WithSitePublicDir(c.Build.PublicDir))
 	}
 	if c.Build.SidebarDepth > 0 {
 		add(WithSiteSidebarDepth(c.Build.SidebarDepth))

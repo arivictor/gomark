@@ -48,6 +48,7 @@ func runBuild(args []string) error {
 	configPath := fs.String("config", "", "path to a gomark.yaml config file (auto-discovered in the content dir by default)")
 	title := fs.String("title", "", "site title")
 	siteURL := fs.String("url", "", "public site URL, used for canonical links, sitemap, and SEO metadata")
+	publicDir := fs.String("public-dir", "", "directory of static assets overlaid on the bundled ones (your favicons, og-image, logos, …)")
 	noRunner := fs.Bool("no-runner", false, "disable the in-browser Go runner")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: gomark build [<content-dir> [<output-dir>]] [flags]")
@@ -71,7 +72,7 @@ func runBuild(args []string) error {
 		return fmt.Errorf("expected an output dir (positional arg or build.output_dir in %s)", orNone(cfgPath))
 	}
 
-	opts := append(buildOptions(fs, cfg, content, *title, *siteURL, *noRunner), gm.WithSiteMode(gm.PreRender))
+	opts := append(buildOptions(fs, cfg, content, *title, *siteURL, *publicDir, *noRunner), gm.WithSiteMode(gm.PreRender))
 
 	if err := gm.NewSite(opts...).Export(output); err != nil {
 		return err
@@ -90,6 +91,7 @@ func runServe(args []string) error {
 	port := fs.String("port", "8080", "port to listen on")
 	title := fs.String("title", "", "site title")
 	siteURL := fs.String("url", "", "public site URL, used for canonical links and SEO metadata")
+	publicDir := fs.String("public-dir", "", "directory of static assets overlaid on the bundled ones (your favicons, og-image, logos, …)")
 	noRunner := fs.Bool("no-runner", false, "disable the in-browser Go runner")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: gomark serve [<content-dir>] [flags]")
@@ -112,7 +114,7 @@ func runServe(args []string) error {
 	if *live {
 		mode = gm.LiveRender
 	}
-	opts := append(buildOptions(fs, cfg, content, *title, *siteURL, *noRunner), gm.WithSiteMode(mode))
+	opts := append(buildOptions(fs, cfg, content, *title, *siteURL, *publicDir, *noRunner), gm.WithSiteMode(mode))
 
 	addr := ":" + *port
 	if *live {
@@ -150,7 +152,7 @@ func loadConfig(configPath string, positionals []string) (*gm.FileConfig, string
 // buildOptions layers configuration sources so that, highest precedence first,
 // CLI flags > environment variables > gomark.yaml > defaults. Later options win,
 // so the YAML options are appended first, then env, then explicitly-set flags.
-func buildOptions(fs *flag.FlagSet, cfg *gm.FileConfig, content, title, siteURL string, noRunner bool) []gm.SiteOption {
+func buildOptions(fs *flag.FlagSet, cfg *gm.FileConfig, content, title, siteURL, publicDir string, noRunner bool) []gm.SiteOption {
 	opts := cfg.Options()
 
 	if env := strings.TrimSpace(os.Getenv("SITE_URL")); env != "" {
@@ -166,6 +168,9 @@ func buildOptions(fs *flag.FlagSet, cfg *gm.FileConfig, content, title, siteURL 
 	}
 	if set["url"] && siteURL != "" {
 		opts = append(opts, gm.WithSiteURL(siteURL))
+	}
+	if set["public-dir"] && publicDir != "" {
+		opts = append(opts, gm.WithSitePublicDir(publicDir))
 	}
 	if set["no-runner"] {
 		// GetRunnerEnabled consults PLAYGROUND_ENABLED before the option, so an
@@ -236,15 +241,16 @@ Configuration:
     CLI flag  >  environment variable  >  gomark.yaml  >  default
 
 Build flags:
-  --config      path to gomark.yaml (auto-discovered by default)
-  --title       site title
-  --url         public site URL (canonical links, sitemap, SEO)
-  --no-runner   disable the in-browser Go runner
+  --config       path to gomark.yaml (auto-discovered by default)
+  --title        site title
+  --url          public site URL (canonical links, sitemap, SEO)
+  --public-dir   static assets overlaid on the bundled ones (favicons, og-image, logos)
+  --no-runner    disable the in-browser Go runner
 
 Serve flags:
-  --live        render live and auto-reload the browser on file changes
-  --port        port to listen on (default 8080)
-  --config, --title, --url, --no-runner   as above
+  --live         render live and auto-reload the browser on file changes
+  --port         port to listen on (default 8080)
+  --config, --title, --url, --public-dir, --no-runner   as above
 
 Examples:
   gomark serve ./my_docs --live
