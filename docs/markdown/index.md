@@ -123,9 +123,21 @@ Admonition-style callouts are supported.
 > This is a note callout.
 
 > [!TIP] Use **bold** text inside a callout.
+
+> [!IMPORTANT] This is an important callout.
+
+> [!WARNING] This is a warning callout.
+
+> [!CAUTION] This is a caution callout.
 ```
 
 > [!NOTE]
 > This is a note callout.
 
 > [!TIP] Use **bold** text inside a callout.
+
+> [!IMPORTANT] This is an important callout.
+
+> [!WARNING] This is a warning callout.
+
+> [!CAUTION] This is a caution callout.
