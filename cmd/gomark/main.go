@@ -12,9 +12,20 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	gm "github.com/arivictor/gomark"
+)
+
+// Build metadata, overridable at release time via
+// -ldflags "-X main.version=… -X main.commit=… -X main.date=…".
+// For `go install`-ed builds these stay empty and are filled from the embedded
+// build info instead.
+var (
+	version = "dev"
+	commit  = ""
+	date    = ""
 )
 
 func main() {
@@ -34,6 +45,8 @@ func main() {
 		if err := runServe(os.Args[2:]); err != nil {
 			log.Fatalf("gomark serve: %v", err)
 		}
+	case "version", "-v", "--version":
+		fmt.Println(versionString())
 	case "-h", "--help", "help":
 		usage()
 	default:
@@ -231,12 +244,54 @@ func parseArgs(fs *flag.FlagSet, args []string) ([]string, error) {
 	return positionals, nil
 }
 
+// versionString reports the CLI version. It prefers ldflags-injected values
+// (release builds) and otherwise falls back to the module version and VCS stamps
+// embedded by `go install`.
+func versionString() string {
+	v, c, d := version, commit, date
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if (v == "" || v == "dev") && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			v = info.Main.Version
+		}
+		for _, s := range info.Settings {
+			switch s.Key {
+			case "vcs.revision":
+				if c == "" {
+					c = s.Value
+				}
+			case "vcs.time":
+				if d == "" {
+					d = s.Value
+				}
+			}
+		}
+	}
+	if v == "" {
+		v = "dev"
+	}
+	if len(c) > 12 {
+		c = c[:12]
+	}
+
+	out := "gomark " + v
+	switch {
+	case c != "" && d != "":
+		out += " (" + c + ", " + d + ")"
+	case c != "":
+		out += " (" + c + ")"
+	case d != "":
+		out += " (" + d + ")"
+	}
+	return out
+}
+
 func usage() {
 	fmt.Fprint(os.Stderr, `gomark — build and preview markdown documentation sites
 
 Usage:
   gomark build [<content-dir> [<output-dir>]] [flags]   Render a static site
   gomark serve [<content-dir>] [flags]                  Preview locally
+  gomark version                                        Print version information
 
 Configuration:
   Site title, logo, SEO (Open Graph / Twitter / description), navigation,

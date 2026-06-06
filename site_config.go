@@ -46,7 +46,7 @@ type App struct {
 	// to supply your own favicons, og-image, logos, or site.webmanifest without
 	// forking gomark. When empty only the embedded assets are used.
 	PublicDir string
-	Mode         RenderMode
+	Mode      RenderMode
 	// DisableRunner turns off the in-browser Go runner. Execution is
 	// client-side (a WebAssembly build of the yaegi interpreter), so the
 	// runner is on by default and needs no external service; set this to hide
