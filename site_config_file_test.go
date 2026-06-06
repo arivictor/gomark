@@ -92,6 +92,48 @@ analytics:
 	}
 }
 
+// TestLoadConfigFileToleratesUnknownKeys ensures a typo'd key (e.g. `tittle:`)
+// is warned about but does not fail the load, and the valid keys still apply.
+func TestLoadConfigFileToleratesUnknownKeys(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gomark.yaml")
+	writeFile(t, path, "tittle: Oops\ntitle: Real Title\nurl: https://example.com\n")
+
+	cfg, err := LoadConfigFile(path)
+	if err != nil {
+		t.Fatalf("unknown keys should not fail the load: %v", err)
+	}
+	if cfg.Title != "Real Title" || cfg.URL != "https://example.com" {
+		t.Fatalf("valid keys should still parse alongside an unknown one: %+v", cfg)
+	}
+}
+
+// TestLoadConfigFileRejectsTypeMismatch ensures a genuine type error (not an
+// unknown key) is surfaced rather than silently downgraded to a warning.
+func TestLoadConfigFileRejectsTypeMismatch(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gomark.yaml")
+	writeFile(t, path, "build:\n  sidebar_depth: not-a-number\n")
+
+	if _, err := LoadConfigFile(path); err == nil {
+		t.Fatalf("expected a type-mismatch error, got nil")
+	}
+}
+
+func TestLoadConfigFileEmpty(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gomark.yaml")
+	writeFile(t, path, "")
+
+	cfg, err := LoadConfigFile(path)
+	if err != nil {
+		t.Fatalf("empty config should be valid: %v", err)
+	}
+	if cfg == nil || cfg.Title != "" {
+		t.Fatalf("expected empty config, got %+v", cfg)
+	}
+}
+
 func TestDiscoverConfigFile(t *testing.T) {
 	dir := t.TempDir()
 	if got := DiscoverConfigFile(dir); got != "" {
