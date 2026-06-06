@@ -47,7 +47,7 @@ Because this is an interpreter compiled to WebAssembly rather than the `gc` tool
 
 The runner is **on by default** — there is nothing to provision. To turn the run controls off across the site, pass `--no-runner` to the CLI:
 
-```shell
+```bash:title="terminal"
 gomark serve ./content --live --no-runner
 gomark build ./content ./dist --no-runner
 ```

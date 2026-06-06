@@ -12,13 +12,13 @@ GoMark turns a folder of markdown into a real website. This guide walks through 
 
 GoMark is both a CLI and an importable Go package. For the quickest start, install the CLI:
 
-```shell
+```bash:title="terminal"
 go install github.com/arivictor/gomark/cmd/gomark@latest
 ```
 
 Prefer to drive it from Go? Add the package to your module instead:
 
-```shell
+```bash:title="terminal"
 go get github.com/arivictor/gomark
 ```
 
@@ -59,7 +59,7 @@ This site is powered by GoMark.
 
 The CLI previews your content with live reload — no code required:
 
-```shell
+```bash:title="terminal"
 gomark serve content --live
 ```
 
