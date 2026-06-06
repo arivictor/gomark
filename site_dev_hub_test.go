@@ -107,7 +107,7 @@ func (n *nonFlushWriter) Header() http.Header {
 	return n.header
 }
 func (n *nonFlushWriter) Write(p []byte) (int, error) { return len(p), nil }
-func (n *nonFlushWriter) WriteHeader(code int)         { n.code = code }
+func (n *nonFlushWriter) WriteHeader(code int)        { n.code = code }
 
 func TestLiveReloadHubHandlerRequiresFlusher(t *testing.T) {
 	hub := newLiveReloadHub()

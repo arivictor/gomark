@@ -8,11 +8,11 @@ import (
 
 func TestBuildRoutePath(t *testing.T) {
 	cases := map[string]string{
-		"":            "/",
-		"  ":          "/",
-		"/go/about/":  "/go/about",
-		"guide":       "/guide",
-		"a/b/c":       "/a/b/c",
+		"":           "/",
+		"  ":         "/",
+		"/go/about/": "/go/about",
+		"guide":      "/guide",
+		"a/b/c":      "/a/b/c",
 	}
 	for in, want := range cases {
 		if got := buildRoutePath(in); got != want {
@@ -23,11 +23,11 @@ func TestBuildRoutePath(t *testing.T) {
 
 func TestPageTitleFromSlug(t *testing.T) {
 	cases := map[string]string{
-		"getting-started":     "Getting Started",
-		"guides/install":      "Install",
-		"guides/index":        "Guides", // index uses parent folder name
-		"":                    "Content",
-		"index":               "Index",
+		"getting-started": "Getting Started",
+		"guides/install":  "Install",
+		"guides/index":    "Guides", // index uses parent folder name
+		"":                "Content",
+		"index":           "Index",
 	}
 	for in, want := range cases {
 		if got := pageTitleFromSlug(in); got != want {
