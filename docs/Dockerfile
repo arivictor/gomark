@@ -3,7 +3,7 @@
 # process in production, and the in-browser Go runner needs no backend.
 
 # Stage 1: render the static site by consuming gomark from the docs module.
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ENV CGO_ENABLED=0
 WORKDIR /src

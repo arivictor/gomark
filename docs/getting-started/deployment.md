@@ -69,7 +69,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.25'
       - name: Build site
         run: |
           go install github.com/arivictor/gomark/cmd/gomark@latest
@@ -126,7 +126,7 @@ Save it as `Dockerfile` next to your content directory:
 
 ```dockerfile:title="Dockerfile"
 # Stage 1: install the gomark CLI and render your content to static files.
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 ENV CGO_ENABLED=0
 RUN go install github.com/arivictor/gomark/cmd/gomark@latest
 
