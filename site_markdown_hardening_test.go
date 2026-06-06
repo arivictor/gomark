@@ -93,6 +93,27 @@ func TestStdlibMarkdownRendererAutolinkInsideMarkdownLinkUnaffected(t *testing.T
 	}
 }
 
+// TestStdlibMarkdownRendererAdjacentDelimitersStayLiteral ensures empty spans
+// like "****" are not emitted as <strong></strong> (CommonMark requires
+// non-empty content between delimiters).
+func TestStdlibMarkdownRendererAdjacentDelimitersStayLiteral(t *testing.T) {
+	for _, in := range []string{"****", "Heading ** ** spaced", "a ~~~~ b"} {
+		output, _ := StdlibMarkdownRenderer{}.Render(in)
+		if strings.Contains(output, "<strong></strong>") || strings.Contains(output, "<em></em>") || strings.Contains(output, "<del></del>") {
+			t.Fatalf("did not expect an empty emphasis span for %q: %s", in, output)
+		}
+	}
+}
+
+// TestStdlibMarkdownRendererOrderedListStartsAtZero checks that a list explicitly
+// starting at 0 keeps its numbering via <ol start="0">.
+func TestStdlibMarkdownRendererOrderedListStartsAtZero(t *testing.T) {
+	output, _ := StdlibMarkdownRenderer{}.Render("0. zero\n1. one")
+	if !strings.Contains(output, `<ol start="0">`) {
+		t.Fatalf("expected list to carry start=0: %s", output)
+	}
+}
+
 // TestStdlibMarkdownRendererInterruptedOrderedListResumesNumbering guards the
 // regression where an ordered list resumed after a paragraph restarted at 1.
 func TestStdlibMarkdownRendererInterruptedOrderedListResumesNumbering(t *testing.T) {

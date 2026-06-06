@@ -2155,6 +2155,9 @@
           }
           if (data.type === 'error') {
             if (runnerReadyReject) { runnerReadyReject(new Error(data.error || 'runner failed to load')); }
+            // A load error leaves a broken worker running; tear it down and reset
+            // state just like the onerror path so it can't leak.
+            discardRunnerWorker();
             return;
           }
           if (data.type === 'result') {

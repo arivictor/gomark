@@ -12,7 +12,7 @@ self.importScripts('/wasm_exec.js');
 
 var readyPromise = null;
 
-// init loads and starts the wasm module once, resolving when window.runGo (set by
+// init loads and starts the wasm module once, resolving when self.runGo (set by
 // the module) becomes callable. The module parks on select{} and never returns,
 // so go.run is not awaited; a startup trap is surfaced as a rejection.
 function init() {

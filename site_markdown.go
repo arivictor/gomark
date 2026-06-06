@@ -1182,7 +1182,10 @@ func applyDelim(s, delim, openTag, closeTag string, underscore bool) string {
 
 		closeIdx := -1
 		for j := i + dl; j+dl <= len(s); j++ {
-			if strings.HasPrefix(s[j:], delim) && delimCanClose(s, j, dl, underscore) {
+			// j > i+dl guarantees non-empty content between the delimiters, so
+			// adjacent runs like "****" stay literal rather than becoming an empty
+			// <strong></strong> span (CommonMark requires non-empty content).
+			if j > i+dl && strings.HasPrefix(s[j:], delim) && delimCanClose(s, j, dl, underscore) {
 				closeIdx = j
 				break
 			}
@@ -1361,9 +1364,9 @@ func emitList(out *strings.Builder, items []listItem, start, depth int) int {
 	out.WriteString("<")
 	out.WriteString(tag)
 	// An ordered list that does not start at 1 (e.g. one resumed after an
-	// intervening paragraph) carries its source number through a start attribute
-	// so the rendered numbering matches the markdown.
-	if ordered && items[start].num > 1 {
+	// intervening paragraph, or one that explicitly starts at 0) carries its
+	// source number through a start attribute so the rendered numbering matches.
+	if ordered && items[start].num != 1 {
 		fmt.Fprintf(out, " start=\"%d\"", items[start].num)
 	}
 	out.WriteString(">\n")
