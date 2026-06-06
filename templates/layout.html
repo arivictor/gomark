@@ -2274,7 +2274,11 @@
               // the worker; force a fresh one on the next job.
               discardRunnerWorker();
               runnerPending = null;
-              reject(new Error('execution timed out after ' + (RUNNER_EXEC_TIMEOUT_MS / 1000) + 's (possible infinite loop)'));
+              // "infinite loop" only makes sense for a run; gofmt that stalls is
+              // some other fault, so keep the hint job-type specific.
+              var verb = type === 'format' ? 'formatting' : 'execution';
+              var hint = type === 'run' ? ' (possible infinite loop)' : '';
+              reject(new Error(verb + ' timed out after ' + (RUNNER_EXEC_TIMEOUT_MS / 1000) + 's' + hint));
             }, RUNNER_EXEC_TIMEOUT_MS);
             runnerPending = { id: id, resolve: resolve, reject: reject, timer: timer };
             runnerWorker.postMessage({ type: type, id: id, source: source });

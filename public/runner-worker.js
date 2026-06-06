@@ -65,9 +65,17 @@ self.onmessage = function (event) {
   if (msg.type === 'run' || msg.type === 'format') {
     var fnName = msg.type === 'format' ? 'formatGo' : 'runGo';
     init().then(function () {
+      var fn = self[fnName];
+      if (typeof fn !== 'function') {
+        // The wasm module registers runGo/formatGo synchronously, so this should
+        // not happen once 'ready' fires — but guard anyway so a missing export
+        // surfaces a clear error instead of a raw "self[fnName] is not a function".
+        self.postMessage({ type: 'result', id: msg.id, error: fnName + ' is not available' });
+        return;
+      }
       var result;
       try {
-        result = self[fnName](msg.source || '') || {};
+        result = fn(msg.source || '') || {};
       } catch (err) {
         self.postMessage({ type: 'result', id: msg.id, error: errorText(err) });
         return;
