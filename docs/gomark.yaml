@@ -23,3 +23,7 @@ build:
   runner: true
   sitemap: true
   robots: true
+
+analytics:
+  provider: ga4
+  id: G-H70KWCJQ5S
