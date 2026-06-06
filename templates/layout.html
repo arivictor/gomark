@@ -759,6 +759,32 @@
       cursor: wait;
       opacity: 0.65;
     }
+    .prose .code-frame .code-format {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--background);
+      color: var(--muted-strong);
+      height: 28px;
+      padding: 0 10px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+    .prose .code-frame .code-format:hover {
+      background: var(--surface-hover);
+      color: var(--heading);
+      border-color: var(--border-strong);
+    }
+    .prose .code-frame .code-format:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
     .prose .code-frame pre {
       margin: 0;
       padding: 10px 12px;
@@ -779,13 +805,13 @@
       font-feature-settings: normal;
       font-kerning: none;
     }
-    .prose .code-frame[data-code-editable="true"] pre code[contenteditable="true"] {
+    .prose .code-frame[data-code-editable="true"] pre code[contenteditable] {
       cursor: text;
       outline: none;
       display: block;
       min-height: 1.4em;
     }
-    .prose .code-frame[data-code-editable="true"] pre code[contenteditable="true"]:focus {
+    .prose .code-frame[data-code-editable="true"] pre code[contenteditable]:focus {
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
       border-radius: 6px;
     }
@@ -1443,6 +1469,7 @@
   </div>
 
   <script src="/vendor/highlight.min.js"></script>
+  <script src="/vendor/codejar.min.js"></script>
   <script src="/vendor/lucide.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -2077,6 +2104,22 @@
           selection.addRange(endRange);
         }
 
+        // Re-highlight the editor's current text in place. Used as CodeJar's
+        // highlight callback and for the legacy fallback path below.
+        function highlightInto(code, language) {
+          if (!window.hljs) {
+            return;
+          }
+          var source = code.textContent || '';
+          var html;
+          if (language && window.hljs.getLanguage && window.hljs.getLanguage(language)) {
+            html = window.hljs.highlight(source, { language: language, ignoreIllegals: true }).value;
+          } else {
+            html = window.hljs.highlightAuto(source).value;
+          }
+          code.innerHTML = html;
+        }
+
         var frames = Array.prototype.slice.call(document.querySelectorAll('.code-frame[data-code-editable="true"]'));
         frames.forEach(function (frame) {
           if (frame.getAttribute('data-editable-bound') === 'true') {
@@ -2088,29 +2131,45 @@
             return;
           }
 
+          var language = detectLanguage(code);
+
+          // Preferred path: CodeJar gives the contenteditable real editor
+          // behaviour — Tab inserts indentation (instead of moving focus),
+          // Enter preserves and increases indent, brackets/quotes auto-close,
+          // and undo/redo are tracked — while reusing highlight.js for colours.
+          if (window.CodeJar) {
+            var jar = window.CodeJar(code, function (editor) {
+              highlightInto(editor, language);
+            }, {
+              tab: '\t',           // Go is tab-indented; matches gofmt output.
+              spellcheck: false,
+              catchTab: true,
+              addClosing: true,
+              preserveIdent: true
+            });
+            highlightInto(code, language); // colour the initial snippet
+            frame.__codejar = jar;
+            frame.setAttribute('data-editable-bound', 'true');
+            return;
+          }
+
+          // Fallback: plain contenteditable with debounced re-highlighting and
+          // manual caret restoration, for browsers where CodeJar failed to load.
           code.setAttribute('contenteditable', 'true');
           code.setAttribute('spellcheck', 'false');
           code.setAttribute('autocapitalize', 'off');
           code.setAttribute('autocorrect', 'off');
 
-          var language = detectLanguage(code);
           var highlightTimer = null;
           code.addEventListener('input', function () {
             if (!window.hljs || !language) {
               return;
             }
 
-            var source = code.textContent || '';
             var caretOffset = getCaretOffset(code);
             clearTimeout(highlightTimer);
             highlightTimer = setTimeout(function () {
-              var highlighted = '';
-              if (window.hljs.getLanguage && window.hljs.getLanguage(language)) {
-                highlighted = window.hljs.highlight(source, { language: language, ignoreIllegals: true }).value;
-              } else {
-                highlighted = window.hljs.highlightAuto(source).value;
-              }
-              code.innerHTML = highlighted;
+              highlightInto(code, language);
               setCaretOffset(code, Math.min(caretOffset, (code.textContent || '').length));
             }, 40);
           });
@@ -2202,29 +2261,72 @@
         return runnerReady;
       }
 
-      function runGoInWorker(source) {
+      // dispatchToWorker posts a single job ('run' or 'format') to the worker and
+      // resolves with its result. A timeout kills a wedged worker so a runaway
+      // 'run' (infinite loop) can't freeze the page; 'format' is fast but shares
+      // the same guard for simplicity.
+      function dispatchToWorker(type, source) {
         return ensureRunnerReady().then(function () {
           return new Promise(function (resolve, reject) {
             var id = ++runnerJobSeq;
             var timer = setTimeout(function () {
               // The only way to stop a synchronous wasm infinite loop is to kill
-              // the worker; force a fresh one on the next run.
+              // the worker; force a fresh one on the next job.
               discardRunnerWorker();
               runnerPending = null;
               reject(new Error('execution timed out after ' + (RUNNER_EXEC_TIMEOUT_MS / 1000) + 's (possible infinite loop)'));
             }, RUNNER_EXEC_TIMEOUT_MS);
             runnerPending = { id: id, resolve: resolve, reject: reject, timer: timer };
-            runnerWorker.postMessage({ type: 'run', id: id, source: source });
+            runnerWorker.postMessage({ type: type, id: id, source: source });
           });
         });
       }
 
-      // runGoSnippet serializes runs so the single worker handles one at a time.
-      function runGoSnippet(source) {
-        var run = runnerChain.then(function () { return runGoInWorker(source); },
-                                   function () { return runGoInWorker(source); });
-        runnerChain = run.then(function () {}, function () {});
-        return run;
+      // Serialize jobs so the single worker handles one at a time, whether it is
+      // a run or a gofmt request (both share the worker and its wasm module).
+      function queueWorkerJob(type, source) {
+        var job = runnerChain.then(function () { return dispatchToWorker(type, source); },
+                                   function () { return dispatchToWorker(type, source); });
+        runnerChain = job.then(function () {}, function () {});
+        return job;
+      }
+
+      function runGoSnippet(source) { return queueWorkerJob('run', source); }
+      function formatGoSnippet(source) { return queueWorkerJob('format', source); }
+
+      // ensureRunnerPanel returns the per-frame output panel, creating it on first
+      // use. Shared by the Run and Format buttons so format errors surface in the
+      // same place run output does.
+      function ensureRunnerPanel(frame) {
+        var panel = frame.querySelector('.runner-panel');
+        if (panel) {
+          return panel;
+        }
+
+        panel = document.createElement('div');
+        panel.className = 'runner-panel';
+
+        var toolbar = document.createElement('div');
+        toolbar.className = 'runner-toolbar';
+
+        var label = document.createElement('span');
+        label.className = 'runner-label';
+        label.textContent = 'Output';
+        toolbar.appendChild(label);
+
+        var status = document.createElement('span');
+        status.className = 'status';
+        toolbar.appendChild(status);
+
+        var output = document.createElement('pre');
+        output.className = 'runner-output';
+        output.textContent = '';
+
+        panel.appendChild(toolbar);
+        panel.appendChild(output);
+        frame.appendChild(panel);
+
+        return panel;
       }
 
       function setupRunnerRunButtons() {
@@ -2245,47 +2347,9 @@
             return;
           }
 
-          var panel = null;
-
-          function ensurePanel() {
-            if (panel) {
-              return panel;
-            }
-
-            panel = frame.querySelector('.runner-panel');
-            if (panel) {
-              return panel;
-            }
-
-            panel = document.createElement('div');
-            panel.className = 'runner-panel';
-
-            var toolbar = document.createElement('div');
-            toolbar.className = 'runner-toolbar';
-
-            var label = document.createElement('span');
-            label.className = 'runner-label';
-            label.textContent = 'Output';
-            toolbar.appendChild(label);
-
-            var status = document.createElement('span');
-            status.className = 'status';
-            toolbar.appendChild(status);
-
-            var output = document.createElement('pre');
-            output.className = 'runner-output';
-            output.textContent = '';
-
-            panel.appendChild(toolbar);
-            panel.appendChild(output);
-            frame.appendChild(panel);
-
-            return panel;
-          }
-
           button.setAttribute('data-run-bound', 'true');
           button.addEventListener('click', function () {
-            var panelNode = ensurePanel();
+            var panelNode = ensureRunnerPanel(frame);
             var statusNode = panelNode.querySelector('.status');
             var outputNode = panelNode.querySelector('.runner-output');
             var source = codeNode.textContent || '';
@@ -2331,8 +2395,73 @@
         });
       }
 
+      // setupFormatButtons wires each editable Go block's "Format" button to the
+      // in-browser gofmt (go/format compiled into the runner wasm). On success the
+      // snippet is rewritten through its CodeJar instance (so highlighting and
+      // undo history stay consistent); a gofmt parse error is shown in the output
+      // panel without touching the source.
+      function setupFormatButtons() {
+        var RunnerEnabled = document.body.getAttribute('data-runner-enabled') === 'true';
+        if (!RunnerEnabled) {
+          return;
+        }
+
+        var formatButtons = Array.prototype.slice.call(document.querySelectorAll('[data-format-code]'));
+        formatButtons.forEach(function (button) {
+          if (button.getAttribute('data-format-bound') === 'true') {
+            return;
+          }
+
+          var frame = button.closest('.code-frame');
+          var codeNode = frame ? frame.querySelector('code') : null;
+          if (!frame || !codeNode) {
+            return;
+          }
+
+          button.setAttribute('data-format-bound', 'true');
+          button.addEventListener('click', function () {
+            var source = codeNode.textContent || '';
+            button.disabled = true;
+
+            ensureRunnerReady().then(function () {
+              return formatGoSnippet(source);
+            }).then(function (result) {
+              result = result || {};
+              var errorMessage = (result.error || '').trim();
+              if (errorMessage) {
+                var panelNode = ensureRunnerPanel(frame);
+                panelNode.querySelector('.runner-output').textContent = errorMessage;
+                panelNode.setAttribute('data-state', 'error');
+                panelNode.querySelector('.status').textContent = 'Format failed';
+                return;
+              }
+
+              var formatted = result.formatted || '';
+              if (formatted && formatted !== source) {
+                // Prefer CodeJar so its highlight callback and undo history run;
+                // fall back to a direct rewrite if CodeJar is unavailable.
+                if (frame.__codejar && typeof frame.__codejar.updateCode === 'function') {
+                  frame.__codejar.updateCode(formatted);
+                } else {
+                  codeNode.textContent = formatted;
+                  if (window.hljs) { hljs.highlightElement(codeNode); }
+                }
+              }
+            }).catch(function (err) {
+              var panelNode = ensureRunnerPanel(frame);
+              panelNode.querySelector('.runner-output').textContent = (err && err.message) || 'format failed';
+              panelNode.setAttribute('data-state', 'error');
+              panelNode.querySelector('.status').textContent = 'Format failed';
+            }).finally(function () {
+              button.disabled = false;
+            });
+          });
+        });
+      }
+
       setupEditableCodeFramesGlobal();
       setupRunnerRunButtons();
+      setupFormatButtons();
 
       var navFolders = Array.prototype.slice.call(document.querySelectorAll('[data-nav-folder]'));
       navFolders.forEach(function (trigger) {

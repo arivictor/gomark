@@ -6,11 +6,17 @@
 // execution. Source runs through the yaegi interpreter, so it covers a large
 // subset of Go (stdlib, generics, goroutines) but is not the full gc toolchain.
 //
-// It exposes a single global function, runGo(source) -> { output, error },
-// which the front-end calls when a reader clicks "Run".
+// It exposes two global functions the front-end calls:
+//
+//	runGo(source)    -> { output, error }      when a reader clicks "Run"
+//	formatGo(source) -> { formatted, error }   when a reader clicks "Format"
+//
+// formatGo runs the standard library's gofmt engine (go/format) entirely in the
+// browser, so editable snippets can be tidied without a server round-trip.
 package main
 
 import (
+	"go/format"
 	"syscall/js"
 
 	"github.com/traefik/yaegi/interp"
@@ -58,8 +64,30 @@ func runGo(this js.Value, args []js.Value) any {
 	return js.ValueOf(result)
 }
 
+// formatGo runs gofmt over a snippet and returns the formatted source. A parse
+// error (invalid Go) is reported as an error string and the original source is
+// left untouched by the caller.
+func formatGo(this js.Value, args []js.Value) any {
+	result := map[string]any{"formatted": "", "error": ""}
+	if len(args) == 0 {
+		result["error"] = "no source provided"
+		return js.ValueOf(result)
+	}
+
+	src := args[0].String()
+	formatted, err := format.Source([]byte(src))
+	if err != nil {
+		result["error"] = err.Error()
+		return js.ValueOf(result)
+	}
+
+	result["formatted"] = string(formatted)
+	return js.ValueOf(result)
+}
+
 func main() {
 	js.Global().Set("runGo", js.FuncOf(runGo))
+	js.Global().Set("formatGo", js.FuncOf(formatGo))
 	// Keep the wasm instance alive so runGo stays callable for the page's life.
 	select {}
 }

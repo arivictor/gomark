@@ -7,6 +7,7 @@
 // Protocol (postMessage):
 //   in:  { type: 'init' }                      -> { type: 'ready' } | { type: 'error', error }
 //   in:  { type: 'run', id, source }           -> { type: 'result', id, result } | { type: 'result', id, error }
+//   in:  { type: 'format', id, source }        -> { type: 'result', id, result } | { type: 'result', id, error }
 
 self.importScripts('/wasm_exec.js');
 
@@ -61,11 +62,12 @@ self.onmessage = function (event) {
     return;
   }
 
-  if (msg.type === 'run') {
+  if (msg.type === 'run' || msg.type === 'format') {
+    var fnName = msg.type === 'format' ? 'formatGo' : 'runGo';
     init().then(function () {
       var result;
       try {
-        result = self.runGo(msg.source || '') || {};
+        result = self[fnName](msg.source || '') || {};
       } catch (err) {
         self.postMessage({ type: 'result', id: msg.id, error: errorText(err) });
         return;
