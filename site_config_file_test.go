@@ -108,6 +108,18 @@ func TestLoadConfigFileToleratesUnknownKeys(t *testing.T) {
 	}
 }
 
+// TestLoadConfigFileRejectsTypeMismatch ensures a genuine type error (not an
+// unknown key) is surfaced rather than silently downgraded to a warning.
+func TestLoadConfigFileRejectsTypeMismatch(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gomark.yaml")
+	writeFile(t, path, "build:\n  sidebar_depth: not-a-number\n")
+
+	if _, err := LoadConfigFile(path); err == nil {
+		t.Fatalf("expected a type-mismatch error, got nil")
+	}
+}
+
 func TestLoadConfigFileEmpty(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "gomark.yaml")

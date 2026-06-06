@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -81,21 +82,36 @@ func LoadConfigFile(path string) (*FileConfig, error) {
 		// An empty config file is valid: fall back to defaults.
 		return &FileConfig{}, nil
 	default:
+		// KnownFields raises a *yaml.TypeError for both unknown keys and genuine
+		// type mismatches. Only the former (a likely typo) is downgraded to a
+		// warning; a real type error (e.g. a string where a number is expected) is
+		// returned so the misconfiguration is not silently swallowed.
 		var typeErr *yaml.TypeError
-		if !errors.As(err, &typeErr) {
+		if !errors.As(err, &typeErr) || !allUnknownFieldErrors(typeErr) {
 			return nil, fmt.Errorf("parse %s: %w", path, err)
 		}
-		// Unknown/mistyped keys: warn, then re-parse leniently so the rest of the
-		// configuration is still honored instead of failing the whole build.
 		for _, msg := range typeErr.Errors {
 			log.Printf("%s: %s (ignored)", filepath.Base(path), msg)
 		}
+		// Re-parse leniently so the remaining valid keys still apply.
 		var lenient FileConfig
 		if err := yaml.Unmarshal(data, &lenient); err != nil {
 			return nil, fmt.Errorf("parse %s: %w", path, err)
 		}
 		return &lenient, nil
 	}
+}
+
+// allUnknownFieldErrors reports whether every error in a yaml.TypeError is an
+// unknown-field error (as opposed to a type mismatch). yaml.v3 phrases unknown
+// keys as "field <name> not found in type ...".
+func allUnknownFieldErrors(typeErr *yaml.TypeError) bool {
+	for _, msg := range typeErr.Errors {
+		if !strings.Contains(msg, "not found in type") {
+			return false
+		}
+	}
+	return len(typeErr.Errors) > 0
 }
 
 // DiscoverConfigFile returns the path to the first gomark.yaml (or gomark.yml)

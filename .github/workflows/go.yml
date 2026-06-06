@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           check-latest: true
           cache: true
 
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           check-latest: true
           cache: true
 
@@ -59,19 +59,25 @@ jobs:
 
   vuln:
     runs-on: ubuntu-latest
+    # Report-only: govulncheck surfaces vulnerabilities — notably real ones in our
+    # dependencies — but does not block merges. Standard-library findings track the
+    # Go release cadence (their only fix is a newer Go), so they must not gate every
+    # PR; we build and release on current stable Go to stay clear of them.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           check-latest: true
           cache: true
 
       - name: govulncheck
+        # Pinned for reproducible CI; bump intentionally.
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
+          go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
           govulncheck ./...
 
   release-config:
@@ -82,8 +88,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           check-latest: true
+          cache: true
 
       # Catch GoReleaser config errors and deprecations on every PR, long before
       # a release tag is pushed.

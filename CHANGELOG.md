@@ -17,8 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   runaway snippet (e.g. an infinite loop) no longer freezes the reader's tab.
 - `gomark.yaml`: unknown or mistyped keys are reported as warnings instead of
   being silently ignored.
-- CI now runs `govulncheck` vulnerability scanning and validates the GoReleaser
-  configuration on every change.
+- CI now runs `govulncheck` vulnerability scanning (report-only) and validates
+  the GoReleaser configuration on every change.
+
+### Changed
+- Build and release now target Go 1.25 (current stable), picking up the latest
+  standard-library security fixes.
 
 ### Fixed
 - Markdown: space-flanked asterisks (e.g. `2 * 3 * 4`) are no longer rendered as
