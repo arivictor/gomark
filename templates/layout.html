@@ -668,6 +668,8 @@
 
     .prose ul, .prose ol { margin: 0 0 20px; padding-left: 1.4em; }
     .prose li { margin: 8px 0; padding-left: 4px; }
+    .prose li.task-list-item { list-style: none; }
+    .prose li.task-list-item > input { margin: 0 0.5em 0 -1.45em; vertical-align: middle; }
     .prose li::marker { color: var(--muted); }
     .prose ul ul, .prose ol ol, .prose ul ol, .prose ol ul { margin: 8px 0; }
 
@@ -2117,55 +2119,109 @@
         });
       }
 
-      // Lazy-loads the client-side Go runner: a WebAssembly build of the yaegi
-      // interpreter. The ~8MB module is fetched once on the first "Run" click,
-      // then cached for the life of the page. Execution happens entirely in the
-      // browser — there is no server round-trip and no auth.
-      var wasmRunnerPromise = null;
-      function loadWasmRunner() {
-        if (wasmRunnerPromise) {
-          return wasmRunnerPromise;
+      // The client-side Go runner (a WebAssembly build of the yaegi interpreter)
+      // runs in a Web Worker. Keeping execution off the main thread means a
+      // runaway snippet — an infinite loop, a deadlock — can be stopped by
+      // terminating the worker instead of freezing the reader's tab. The ~8MB
+      // module is fetched once on the first "Run" and cached by the worker for
+      // the life of the page. Everything is client-side: no server, no auth.
+      var RUNNER_EXEC_TIMEOUT_MS = 5000;
+      var RUNNER_LOAD_TIMEOUT_MS = 20000;
+      var runnerWorker = null;
+      var runnerReady = null;        // Promise resolved once the worker reports 'ready'
+      var runnerReadyResolve = null;
+      var runnerReadyReject = null;
+      var runnerPending = null;      // { id, resolve, reject, timer } for the in-flight run
+      var runnerChain = Promise.resolve(); // serializes runs onto the single worker
+      var runnerJobSeq = 0;
+
+      function discardRunnerWorker() {
+        if (runnerWorker) {
+          try { runnerWorker.terminate(); } catch (err) {}
+          runnerWorker = null;
         }
-        wasmRunnerPromise = new Promise(function (resolve, reject) {
-          var script = document.createElement('script');
-          script.src = '/wasm_exec.js';
-          script.onerror = function () { reject(new Error('failed to load wasm_exec.js')); };
-          script.onload = function () {
-            try {
-              var go = new window.Go();
-              var instantiate;
-              if (WebAssembly.instantiateStreaming) {
-                instantiate = WebAssembly.instantiateStreaming(fetch('/runner.wasm'), go.importObject)
-                  .catch(function () {
-                    return fetch('/runner.wasm').then(function (r) { return r.arrayBuffer(); })
-                      .then(function (buf) { return WebAssembly.instantiate(buf, go.importObject); });
-                  });
-              } else {
-                instantiate = fetch('/runner.wasm').then(function (r) { return r.arrayBuffer(); })
-                  .then(function (buf) { return WebAssembly.instantiate(buf, go.importObject); });
-              }
-              instantiate.then(function (result) {
-                // go.run resolves when the program exits and rejects if the
-                // instance traps during startup; surface that as a load failure
-                // instead of waiting out the readiness timeout.
-                go.run(result.instance).catch(reject); // registers window.runGo, then parks on select{}
-                var startedAt = Date.now();
-                (function waitReady() {
-                  if (typeof window.runGo === 'function') { resolve(); return; }
-                  if (Date.now() - startedAt > 8000) { reject(new Error('runtime did not initialize')); return; }
-                  setTimeout(waitReady, 15);
-                })();
-              }).catch(reject);
-            } catch (err) {
-              reject(err);
-            }
-          };
-          document.head.appendChild(script);
+        runnerReady = null;
+        runnerReadyResolve = null;
+        runnerReadyReject = null;
+      }
+
+      function spawnRunnerWorker() {
+        var w = new Worker('/runner-worker.js');
+        w.onmessage = function (event) {
+          var data = event.data || {};
+          if (data.type === 'ready') {
+            if (runnerReadyResolve) { runnerReadyResolve(); }
+            return;
+          }
+          if (data.type === 'error') {
+            if (runnerReadyReject) { runnerReadyReject(new Error(data.error || 'runner failed to load')); }
+            return;
+          }
+          if (data.type === 'result') {
+            if (!runnerPending || runnerPending.id !== data.id) { return; }
+            var p = runnerPending;
+            runnerPending = null;
+            clearTimeout(p.timer);
+            if (data.error) { p.reject(new Error(data.error)); }
+            else { p.resolve(data.result || {}); }
+          }
+        };
+        w.onerror = function () {
+          if (runnerReadyReject) { runnerReadyReject(new Error('runner failed to load')); }
+          if (runnerPending) {
+            var p = runnerPending;
+            runnerPending = null;
+            clearTimeout(p.timer);
+            p.reject(new Error('runner crashed'));
+          }
+          discardRunnerWorker();
+        };
+        return w;
+      }
+
+      function ensureRunnerReady() {
+        if (runnerReady) { return runnerReady; }
+        if (typeof Worker === 'undefined') {
+          return Promise.reject(new Error('Web Workers are not available in this browser'));
+        }
+        runnerReady = new Promise(function (resolve, reject) {
+          runnerWorker = spawnRunnerWorker();
+          var loadTimer = setTimeout(function () {
+            discardRunnerWorker();
+            reject(new Error('runner failed to load'));
+          }, RUNNER_LOAD_TIMEOUT_MS);
+          runnerReadyResolve = function () { clearTimeout(loadTimer); resolve(); };
+          runnerReadyReject = function (err) { clearTimeout(loadTimer); runnerReady = null; reject(err); };
+          runnerWorker.postMessage({ type: 'init' });
         });
-        // If loading fails, clear the cached promise so a later click can retry
-        // instead of being stuck with a permanently rejected promise.
-        wasmRunnerPromise.catch(function () { wasmRunnerPromise = null; });
-        return wasmRunnerPromise;
+        // Drop a failed readiness promise so a later click retries from scratch.
+        runnerReady.catch(function () { runnerReady = null; });
+        return runnerReady;
+      }
+
+      function runGoInWorker(source) {
+        return ensureRunnerReady().then(function () {
+          return new Promise(function (resolve, reject) {
+            var id = ++runnerJobSeq;
+            var timer = setTimeout(function () {
+              // The only way to stop a synchronous wasm infinite loop is to kill
+              // the worker; force a fresh one on the next run.
+              discardRunnerWorker();
+              runnerPending = null;
+              reject(new Error('execution timed out after ' + (RUNNER_EXEC_TIMEOUT_MS / 1000) + 's (possible infinite loop)'));
+            }, RUNNER_EXEC_TIMEOUT_MS);
+            runnerPending = { id: id, resolve: resolve, reject: reject, timer: timer };
+            runnerWorker.postMessage({ type: 'run', id: id, source: source });
+          });
+        });
+      }
+
+      // runGoSnippet serializes runs so the single worker handles one at a time.
+      function runGoSnippet(source) {
+        var run = runnerChain.then(function () { return runGoInWorker(source); },
+                                   function () { return runGoInWorker(source); });
+        runnerChain = run.then(function () {}, function () {});
+        return run;
       }
 
       function setupRunnerRunButtons() {
@@ -2232,17 +2288,15 @@
             var source = codeNode.textContent || '';
             button.disabled = true;
             panelNode.setAttribute('data-state', 'running');
-            statusNode.textContent = window.runGo ? 'Running…' : 'Loading runtime…';
+            statusNode.textContent = runnerReady ? 'Running…' : 'Loading runtime…';
 
             var startedAt = (window.performance && performance.now) ? performance.now() : Date.now();
 
-            loadWasmRunner().then(function () {
+            ensureRunnerReady().then(function () {
               statusNode.textContent = 'Running…';
-              // Yield once so the "Running…" state paints before the
-              // interpreter runs synchronously on the main thread.
-              return new Promise(function (resolve) { setTimeout(resolve, 0); });
-            }).then(function () {
-              var result = window.runGo(source) || {};
+              return runGoSnippet(source);
+            }).then(function (result) {
+              result = result || {};
               var now = (window.performance && performance.now) ? performance.now() : Date.now();
               var suffix = ' · ' + Math.round(now - startedAt) + 'ms';
               var errorMessage = (result.error || '').trim();
@@ -2259,10 +2313,14 @@
                 panelNode.setAttribute('data-state', 'ok');
                 statusNode.textContent = 'Completed' + suffix;
               }
-            }).catch(function () {
-              outputNode.textContent = 'runner failed to load';
+            }).catch(function (err) {
+              var now = (window.performance && performance.now) ? performance.now() : Date.now();
+              var suffix = ' · ' + Math.round(now - startedAt) + 'ms';
+              var message = (err && err.message) || 'runner failed';
+              var timedOut = message.indexOf('timed out') !== -1;
+              outputNode.textContent = message;
               panelNode.setAttribute('data-state', 'error');
-              statusNode.textContent = 'Failed';
+              statusNode.textContent = (timedOut ? 'Timed out' : 'Failed') + suffix;
             }).finally(function () {
               button.disabled = false;
             });

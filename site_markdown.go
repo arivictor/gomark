@@ -47,8 +47,6 @@ var (
 	ErrMarkdownNotFound    = errors.New("markdown file not found")
 )
 
-var boldRe = regexp.MustCompile(`\*\*([^*]+)\*\*`)
-var italicRe = regexp.MustCompile(`\*([^*]+)\*`)
 var orderedListRe = regexp.MustCompile(`^(\d+)\.\s+(.+)$`)
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
 
@@ -61,10 +59,14 @@ var calloutRe = regexp.MustCompile(`(?i)^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)
 var tableSepCellRe = regexp.MustCompile(`^:?-+:?$`)
 
 // listItem is one collected list entry. depth is the nesting level derived from leading
-// indentation (two spaces per level); ordered distinguishes <ol> from <ul>.
+// indentation (two spaces per level); ordered distinguishes <ol> from <ul>. num is the
+// source number of an ordered item (so an interrupted list resumes via <ol start>), and
+// task is 0 for a plain item, 1 for an unchecked task ([ ]), or 2 for a checked one ([x]).
 type listItem struct {
 	depth   int
 	ordered bool
+	num     int
+	task    int
 	text    string
 }
 
@@ -660,24 +662,19 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 			}
 		}
 
-		if strings.HasPrefix(trimmed, "- ") {
+		if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") {
 			flushParagraph()
 			flushQuote()
-			listItems = append(listItems, listItem{depth: depth, ordered: false, text: strings.TrimSpace(trimmed[2:])})
-			continue
-		}
-
-		if strings.HasPrefix(trimmed, "* ") {
-			flushParagraph()
-			flushQuote()
-			listItems = append(listItems, listItem{depth: depth, ordered: false, text: strings.TrimSpace(trimmed[2:])})
+			task, text := parseTaskListItem(strings.TrimSpace(trimmed[2:]))
+			listItems = append(listItems, listItem{depth: depth, ordered: false, task: task, text: text})
 			continue
 		}
 
 		if matches := orderedListRe.FindStringSubmatch(trimmed); len(matches) == 3 {
 			flushParagraph()
 			flushQuote()
-			listItems = append(listItems, listItem{depth: depth, ordered: true, text: strings.TrimSpace(matches[2])})
+			num, _ := strconv.Atoi(matches[1])
+			listItems = append(listItems, listItem{depth: depth, ordered: true, num: num, text: strings.TrimSpace(matches[2])})
 			continue
 		}
 
@@ -791,7 +788,8 @@ func renderInline(input string) string {
 }
 
 func renderInlineText(input string) string {
-	remaining := input
+	var escapes []rune
+	remaining := protectBackslashEscapes(input, &escapes)
 	var out strings.Builder
 	var links []struct {
 		token string
@@ -803,9 +801,10 @@ func renderInlineText(input string) string {
 		imgAt := strings.Index(remaining, "![")
 		wikiAt := strings.Index(remaining, "[[")
 		mdAt := strings.Index(remaining, "[")
+		urlAt := indexAutolink(remaining)
 
 		next := -1
-		for _, p := range []int{imgAt, wikiAt, mdAt} {
+		for _, p := range []int{imgAt, wikiAt, mdAt, urlAt} {
 			if p >= 0 && (next == -1 || p < next) {
 				next = p
 			}
@@ -887,6 +886,24 @@ func renderInlineText(input string) string {
 			continue
 		}
 
+		// Bare URL autolink (GFM): a http(s):// run not introduced by a "[" link.
+		if strings.HasPrefix(remaining, "http://") || strings.HasPrefix(remaining, "https://") {
+			end := autolinkEnd(remaining)
+			url := remaining[:end]
+			token := fmt.Sprintf("@@LINK%d@@", linkIndex)
+			linkIndex++
+			links = append(links, struct {
+				token string
+				html  string
+			}{
+				token: token,
+				html:  `<a href="` + html.EscapeString(url) + `">` + html.EscapeString(url) + `</a>`,
+			})
+			out.WriteString(token)
+			remaining = remaining[end:]
+			continue
+		}
+
 		labelEnd := strings.Index(remaining[1:], "]")
 		if labelEnd == -1 {
 			out.WriteString(html.EscapeString("["))
@@ -929,12 +946,91 @@ func renderInlineText(input string) string {
 	}
 
 	escaped := html.EscapeString(out.String())
-	withEmphasis := applyEmphasis(escaped)
+	formatted := applyInlineFormatting(escaped)
 	for _, link := range links {
-		withEmphasis = strings.ReplaceAll(withEmphasis, html.EscapeString(link.token), link.html)
+		formatted = strings.ReplaceAll(formatted, link.token, link.html)
 	}
 
-	return withEmphasis
+	return restoreBackslashEscapes(formatted, escapes)
+}
+
+// protectBackslashEscapes replaces each backslash-escaped ASCII-punctuation
+// character ("\*", "\_", "\[" …) with an opaque placeholder, recording the literal
+// rune in escapes. This runs before link and emphasis parsing so an escaped
+// delimiter is treated as plain text; restoreBackslashEscapes swaps the
+// placeholders back (HTML-escaped) once formatting is complete.
+func protectBackslashEscapes(input string, escapes *[]rune) string {
+	if !strings.ContainsRune(input, '\\') {
+		return input
+	}
+	var b strings.Builder
+	for i := 0; i < len(input); i++ {
+		if input[i] == '\\' && i+1 < len(input) && isASCIIPunct(input[i+1]) {
+			fmt.Fprintf(&b, "@@ESC%d@@", len(*escapes))
+			*escapes = append(*escapes, rune(input[i+1]))
+			i++
+			continue
+		}
+		b.WriteByte(input[i])
+	}
+	return b.String()
+}
+
+func restoreBackslashEscapes(s string, escapes []rune) string {
+	for n, r := range escapes {
+		s = strings.ReplaceAll(s, fmt.Sprintf("@@ESC%d@@", n), html.EscapeString(string(r)))
+	}
+	return s
+}
+
+// indexAutolink returns the index of the next bare http(s):// URL in s that begins
+// at a word boundary, or -1 if there is none. The boundary check keeps it from
+// firing inside tokens like "xhttps://…".
+func indexAutolink(s string) int {
+	from := 0
+	for {
+		i := strings.Index(s[from:], "://")
+		if i == -1 {
+			return -1
+		}
+		i += from
+		start := -1
+		if strings.HasSuffix(s[:i], "https") {
+			start = i - len("https")
+		} else if strings.HasSuffix(s[:i], "http") {
+			start = i - len("http")
+		}
+		if start >= 0 && (start == 0 || !isWordByte(s[start-1])) {
+			return start
+		}
+		from = i + 3
+	}
+}
+
+// autolinkEnd returns the length of the URL run at the start of s, stopping at
+// whitespace or a quote/angle bracket and trimming trailing sentence punctuation
+// and unbalanced closing parens (matching GFM's autolink boundary behavior).
+func autolinkEnd(s string) int {
+	i := 0
+	for i < len(s) {
+		c := s[i]
+		if isSpaceByte(c) || c == '<' || c == '>' || c == '"' || c == '\'' || c == '`' {
+			break
+		}
+		i++
+	}
+	for i > 0 {
+		switch c := s[i-1]; {
+		case c == '.' || c == ',' || c == ';' || c == ':' || c == '!' || c == '?':
+			i--
+			continue
+		case c == ')' && strings.Count(s[:i], ")") > strings.Count(s[:i], "("):
+			i--
+			continue
+		}
+		break
+	}
+	return i
 }
 
 func parseWikiLink(raw string) (string, string) {
@@ -1054,9 +1150,131 @@ func findMatchingParen(input string, openIdx int) int {
 	return -1
 }
 
-func applyEmphasis(input string) string {
-	withBold := boldRe.ReplaceAllString(input, "<strong>$1</strong>")
-	return italicRe.ReplaceAllString(withBold, "<em>$1</em>")
+// applyInlineFormatting turns emphasis and strikethrough delimiters into tags.
+// It runs on the already HTML-escaped, link-tokenized text, so the only delimiter
+// runes it sees are literal "*", "_" and "~". Double delimiters are processed
+// before single ones (so "**" beats "*"), and underscores follow CommonMark's
+// intraword rule so identifiers like some_var_name are never emphasized.
+func applyInlineFormatting(s string) string {
+	s = applyDelim(s, "~~", "<del>", "</del>", false)
+	s = applyDelim(s, "**", "<strong>", "</strong>", false)
+	s = applyDelim(s, "__", "<strong>", "</strong>", true)
+	s = applyDelim(s, "*", "<em>", "</em>", false)
+	s = applyDelim(s, "_", "<em>", "</em>", true)
+	return s
+}
+
+// applyDelim wraps the shortest non-empty span between a matching open/close pair
+// of delim in openTag/closeTag. A delimiter only opens when the character after it
+// is non-space and only closes when the character before it is non-space; for
+// underscore delimiters the outer side must also be a non-word boundary. Unmatched
+// or space-flanked delimiters (e.g. the "*" in "2 * 3") are left as literal text.
+func applyDelim(s, delim, openTag, closeTag string, underscore bool) string {
+	dl := len(delim)
+	var b strings.Builder
+	i := 0
+	for i < len(s) {
+		if !strings.HasPrefix(s[i:], delim) || !delimCanOpen(s, i, dl, underscore) {
+			b.WriteByte(s[i])
+			i++
+			continue
+		}
+
+		closeIdx := -1
+		for j := i + dl; j+dl <= len(s); j++ {
+			if strings.HasPrefix(s[j:], delim) && delimCanClose(s, j, dl, underscore) {
+				closeIdx = j
+				break
+			}
+		}
+		if closeIdx == -1 {
+			b.WriteByte(s[i])
+			i++
+			continue
+		}
+
+		b.WriteString(openTag)
+		b.WriteString(s[i+dl : closeIdx])
+		b.WriteString(closeTag)
+		i = closeIdx + dl
+	}
+	return b.String()
+}
+
+func delimCanOpen(s string, i, dl int, underscore bool) bool {
+	after := i + dl
+	if after >= len(s) || isSpaceByte(s[after]) {
+		return false
+	}
+	if underscore && i > 0 && isWordByte(s[i-1]) {
+		return false
+	}
+	return true
+}
+
+func delimCanClose(s string, j, dl int, underscore bool) bool {
+	if j == 0 || isSpaceByte(s[j-1]) {
+		return false
+	}
+	if underscore {
+		if after := j + dl; after < len(s) && isWordByte(s[after]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isSpaceByte(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
+}
+
+// isASCIIPunct reports whether b is an ASCII punctuation character — the set of
+// runes that a backslash may escape per CommonMark.
+func isASCIIPunct(b byte) bool {
+	switch {
+	case b >= '!' && b <= '/':
+		return true
+	case b >= ':' && b <= '@':
+		return true
+	case b >= '[' && b <= '`':
+		return true
+	case b >= '{' && b <= '~':
+		return true
+	}
+	return false
+}
+
+// parseTaskListItem detects a GitHub task-list marker ("[ ]", "[x]", "[X]") at the
+// start of an unordered list item, returning its state (0 none, 1 unchecked, 2
+// checked) and the item text with the marker stripped.
+func parseTaskListItem(text string) (int, string) {
+	if len(text) < 3 || text[0] != '[' || text[2] != ']' {
+		return 0, text
+	}
+	if len(text) > 3 && text[3] != ' ' {
+		return 0, text
+	}
+	switch text[1] {
+	case ' ':
+		return 1, strings.TrimSpace(text[3:])
+	case 'x', 'X':
+		return 2, strings.TrimSpace(text[3:])
+	}
+	return 0, text
+}
+
+// writeListItemOpen writes the opening <li> for an item, rendering a disabled
+// checkbox for task-list items.
+func writeListItemOpen(out *strings.Builder, item listItem) {
+	if item.task == 0 {
+		out.WriteString("  <li>")
+		return
+	}
+	out.WriteString(`  <li class="task-list-item"><input type="checkbox" disabled`)
+	if item.task == 2 {
+		out.WriteString(" checked")
+	}
+	out.WriteString("> ")
 }
 
 // calloutLabel returns the human-readable title for an admonition kind.
@@ -1142,6 +1360,12 @@ func emitList(out *strings.Builder, items []listItem, start, depth int) int {
 
 	out.WriteString("<")
 	out.WriteString(tag)
+	// An ordered list that does not start at 1 (e.g. one resumed after an
+	// intervening paragraph) carries its source number through a start attribute
+	// so the rendered numbering matches the markdown.
+	if ordered && items[start].num > 1 {
+		fmt.Fprintf(out, " start=\"%d\"", items[start].num)
+	}
 	out.WriteString(">\n")
 
 	i := start
@@ -1157,7 +1381,7 @@ func emitList(out *strings.Builder, items []listItem, start, depth int) int {
 			break
 		}
 
-		out.WriteString("  <li>")
+		writeListItemOpen(out, items[i])
 		out.WriteString(renderInline(items[i].text))
 		if i+1 < len(items) && items[i+1].depth > depth {
 			i = emitList(out, items, i+1, items[i+1].depth)

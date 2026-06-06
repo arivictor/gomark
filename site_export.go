@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -103,6 +104,13 @@ func (s *Site) Export(outputDir string) error {
 		return fmt.Errorf("no markdown pages found in %s", b.contentDir)
 	}
 
+	// A themed 404 page for static hosts. GitHub Pages and Netlify serve
+	// /404.html automatically for unknown paths; other hosts can point their
+	// not-found handler at it.
+	if err := writeNotFoundPage(b, outputDir); err != nil {
+		return fmt.Errorf("write 404 page: %w", err)
+	}
+
 	// Copy public assets (favicons, og images, vendored JS, wasm_exec.js, …).
 	if err := copyFS(outputDir, b.publicFS); err != nil {
 		return fmt.Errorf("copy public assets: %w", err)
@@ -134,6 +142,46 @@ func (s *Site) Export(outputDir string) error {
 		return err
 	}
 	return os.WriteFile(filepath.Join(outputDir, "search-index.json"), indexJSON, 0o644)
+}
+
+// writeNotFoundPage renders the themed error template to outputDir/404.html so
+// static hosts can serve a branded not-found page. It mirrors the fields the live
+// server's error responder sets, with the runner and canonical URL omitted.
+func writeNotFoundPage(b *siteBuild, outputDir string) error {
+	data := PageData{
+		StatusCode:      http.StatusNotFound,
+		Title:           "Page not found",
+		Description:     "The page you're looking for doesn't exist or has moved.",
+		SiteName:        b.siteName,
+		Lang:            b.lang,
+		ThemeColor:      b.themeColor,
+		LogoLightURL:    b.logoLight,
+		LogoDarkURL:     b.logoDark,
+		OGImageURL:      joinAbsoluteURL(b.siteURL, b.ogImagePath),
+		TwitterImageURL: joinAbsoluteURL(b.siteURL, b.twitterImagePath),
+		TwitterSite:     b.twitterSite,
+		TwitterCreator:  b.twitterCreator,
+		ImageAlt:        b.imageAlt,
+		FooterText:      b.footer,
+		NavLinks:        b.navLinks,
+		SocialLinks:     b.socialLinks,
+		Analytics:       b.analytics,
+		Robots:          "noindex,nofollow",
+		Time:            time.Now().UTC().Format(time.RFC3339),
+		TopNav:          b.topNav,
+		CurrentPath:     "/404.html",
+		StaticBuild:     true,
+	}
+
+	f, err := os.Create(filepath.Join(outputDir, "404.html"))
+	if err != nil {
+		return err
+	}
+	if err := b.renderer.RenderTo(f, "error", data); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 // writePageFile renders one page to file, closing it explicitly so a write/flush

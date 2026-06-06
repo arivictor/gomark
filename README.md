@@ -1,5 +1,10 @@
 # gomark
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/arivictor/gomark.svg)](https://pkg.go.dev/github.com/arivictor/gomark)
+[![Go Report Card](https://goreportcard.com/badge/github.com/arivictor/gomark)](https://goreportcard.com/report/github.com/arivictor/gomark)
+[![CI](https://github.com/arivictor/gomark/actions/workflows/go.yml/badge.svg)](https://github.com/arivictor/gomark/actions/workflows/go.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 ![GoMark splash](public/gomark-twitter-1200x628.png)
 
 **Docs for Go libraries where every example actually runs.**
@@ -20,9 +25,6 @@ func main() {
 
 > _The block above is runnable on [gomark.dev](https://gomark.dev) — a site built with
 > GoMark itself. Try editing it and clicking **Run**._
-
-<!-- TODO: replace the static splash above with a short GIF of a reader editing and
-running this snippet — the differentiator should be visible in the first 3 seconds. -->
 
 Point it at your markdown and ship. Routing, navigation, search, sitemap, robots, and
 the in-browser runner are all built in.
