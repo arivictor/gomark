@@ -1,7 +1,11 @@
 package gomark
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -58,17 +62,40 @@ type BuildConfig struct {
 	Robots       *bool  `yaml:"robots"`
 }
 
-// LoadConfigFile reads and parses a gomark.yaml file.
+// LoadConfigFile reads and parses a gomark.yaml file. Unknown keys (usually a
+// typo such as `tittle:`) are reported as warnings rather than silently ignored,
+// then the file is parsed leniently so the remaining valid keys still apply.
 func LoadConfigFile(path string) (*FileConfig, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
+
 	var c FileConfig
-	if err := yaml.Unmarshal(data, &c); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", path, err)
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	switch err := dec.Decode(&c); {
+	case err == nil:
+		return &c, nil
+	case errors.Is(err, io.EOF):
+		// An empty config file is valid: fall back to defaults.
+		return &FileConfig{}, nil
+	default:
+		var typeErr *yaml.TypeError
+		if !errors.As(err, &typeErr) {
+			return nil, fmt.Errorf("parse %s: %w", path, err)
+		}
+		// Unknown/mistyped keys: warn, then re-parse leniently so the rest of the
+		// configuration is still honored instead of failing the whole build.
+		for _, msg := range typeErr.Errors {
+			log.Printf("%s: %s (ignored)", filepath.Base(path), msg)
+		}
+		var lenient FileConfig
+		if err := yaml.Unmarshal(data, &lenient); err != nil {
+			return nil, fmt.Errorf("parse %s: %w", path, err)
+		}
+		return &lenient, nil
 	}
-	return &c, nil
 }
 
 // DiscoverConfigFile returns the path to the first gomark.yaml (or gomark.yml)
