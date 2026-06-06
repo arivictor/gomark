@@ -468,6 +468,9 @@ func (s StdlibMarkdownRenderer) Render(markdown string) (string, []Heading) {
 		out.WriteString(html.EscapeString(title))
 		out.WriteString("</span>")
 		out.WriteString("<div class=\"code-frame-actions\">")
+		if allowRun && codeEditable {
+			out.WriteString("<button type=\"button\" class=\"code-format\" data-format-code=\"\" aria-label=\"Format code block\" title=\"Format with gofmt\">Format</button>")
+		}
 		if allowRun {
 			out.WriteString("<button type=\"button\" class=\"code-run\" data-run-code=\"\" aria-label=\"Run code block\" title=\"Run in runner\">Run</button>")
 		}

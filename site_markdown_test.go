@@ -198,4 +198,19 @@ func TestStdlibMarkdownRendererRunnerEditableEnablesRunnerUI(t *testing.T) {
 	if !strings.Contains(output, `class="code-run"`) {
 		t.Fatalf("expected run button for editable block: %s", output)
 	}
+	if !strings.Contains(output, `class="code-format"`) {
+		t.Fatalf("expected format button for editable block: %s", output)
+	}
+}
+
+func TestStdlibMarkdownRendererFormatButtonRequiresEditable(t *testing.T) {
+	renderer := StdlibMarkdownRenderer{RunnerEnabled: true}
+	output, _ := renderer.Render("```go run=true\npackage gomark\nfunc main(){}\n```")
+
+	if !strings.Contains(output, `class="code-run"`) {
+		t.Fatalf("expected run button for runnable block: %s", output)
+	}
+	if strings.Contains(output, `class="code-format"`) {
+		t.Fatalf("did not expect format button for non-editable block: %s", output)
+	}
 }
