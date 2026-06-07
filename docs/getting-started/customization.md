@@ -30,6 +30,11 @@ The logo swaps automatically with the active theme. Set just one of `light` /
 `dark` (or use a single `WithSiteLogo` from Go) to use the same mark for both. If
 you omit the logo entirely, the bundled GoMark mark is used.
 
+The footer shows your brand, the optional `footer` text, and a "Built with
+GoMark" badge, plus a row of links to your site's top-level documentation
+sections (the same sections shown in the top navigation — see
+[Navigation](/getting-started/navigation)) and any configured social links.
+
 ## SEO
 
 Page-level `title` and `description` come from each markdown file's frontmatter.

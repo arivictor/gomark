@@ -15,6 +15,7 @@ const unordered = 1 << 30
 type NavNode struct {
 	Title    string
 	Path     string // link target; empty for a folder without an index.md
+	Icon     string // optional Lucide icon name from frontmatter
 	NodeID   string // stable id for folder accordion controls
 	Folder   bool   // a directory (styled as a header) vs. a leaf page
 	Active   bool
@@ -33,6 +34,7 @@ type NavLink struct {
 type contentPage struct {
 	Title    string
 	NavTitle string
+	Icon     string   // optional Lucide icon name from frontmatter "icon"/"nav_icon"
 	Route    string   // clean route; index pages map to their folder path ("/", "/go")
 	Parts    []string // slug segments, e.g. ["go","patterns","creational","singleton"]
 	IsIndex  bool
@@ -44,6 +46,7 @@ type contentPage struct {
 type dirEntry struct {
 	Name  string
 	Title string
+	Icon  string
 	Route string // index route if the dir has an index.md, else empty
 	Order int
 }
@@ -97,6 +100,7 @@ func BuildContentIndex(dir string) (*ContentIndex, error) {
 		if navTitle == "" {
 			navTitle = title
 		}
+		icon := strings.TrimSpace(firstNonEmpty(meta["icon"], meta["nav_icon"]))
 		order := unordered
 		if o, convErr := strconv.Atoi(strings.TrimSpace(meta["order"])); convErr == nil {
 			order = o
@@ -105,6 +109,7 @@ func BuildContentIndex(dir string) (*ContentIndex, error) {
 		idx.pages = append(idx.pages, contentPage{
 			Title:    title,
 			NavTitle: navTitle,
+			Icon:     icon,
 			Route:    route,
 			Parts:    parts,
 			IsIndex:  isIndex,
@@ -171,6 +176,44 @@ func (idx *ContentIndex) Sidebar(currentRoute string, depth int) (string, []NavN
 	return rootTitle, idx.buildNodes(nil, current.Parts, cur, depth)
 }
 
+// Siblings returns the "previous" and "next" entries for route, drawn from its
+// sibling pages (same parent folder), in the same order the sidebar lists them
+// (frontmatter "order", falling back to NavTitle — nav_title when set, else
+// title — to match the sidebar). Either may be nil
+// at the ends of the list, or if the route isn't a recognized page.
+func (idx *ContentIndex) Siblings(route string) (prev, next *NavLink) {
+	cur, ok := idx.byRoute(cleanRoute(route))
+	if !ok || len(cur.Parts) == 0 {
+		return nil, nil
+	}
+
+	prefix := cur.Parts[:len(cur.Parts)-1]
+	siblings := idx.childPages(prefix)
+	sort.SliceStable(siblings, func(i, j int) bool {
+		if siblings[i].Order != siblings[j].Order {
+			return siblings[i].Order < siblings[j].Order
+		}
+		return siblings[i].NavTitle < siblings[j].NavTitle
+	})
+
+	for i, p := range siblings {
+		if p.Route != cur.Route {
+			continue
+		}
+		if i > 0 {
+			s := siblings[i-1]
+			prev = &NavLink{Title: s.NavTitle, Path: s.Route}
+		}
+		if i+1 < len(siblings) {
+			s := siblings[i+1]
+			next = &NavLink{Title: s.NavTitle, Path: s.Route}
+		}
+		return prev, next
+	}
+
+	return nil, nil
+}
+
 // buildNodes returns the nav nodes for the children of prefix: sub-folders
 // (expanded only when on the current path) and pages, interleaved by order then
 // title so a page and a folder compete for position on equal footing.
@@ -178,7 +221,7 @@ func (idx *ContentIndex) buildNodes(prefix, curParts []string, cur string, depth
 	var nodes []NavNode
 	if len(prefix) == 0 {
 		if root, ok := idx.indexFor(nil); ok {
-			nodes = append(nodes, NavNode{Title: root.NavTitle, Path: root.Route, Active: root.Route == cur})
+			nodes = append(nodes, NavNode{Title: root.NavTitle, Path: root.Route, Icon: root.Icon, Active: root.Route == cur})
 		}
 	}
 
@@ -200,6 +243,7 @@ func (idx *ContentIndex) buildNodes(prefix, curParts []string, cur string, depth
 			node: NavNode{
 				Title:    dir.Title,
 				Path:     dir.Route,
+				Icon:     dir.Icon,
 				NodeID:   navNodeID(childPrefix),
 				Folder:   true,
 				Active:   dir.Route == cur,
@@ -212,7 +256,7 @@ func (idx *ContentIndex) buildNodes(prefix, curParts []string, cur string, depth
 		entries = append(entries, ordered{
 			order: p.Order,
 			title: p.NavTitle,
-			node:  NavNode{Title: p.NavTitle, Path: p.Route, Active: p.Route == cur},
+			node:  NavNode{Title: p.NavTitle, Path: p.Route, Icon: p.Icon, Active: p.Route == cur},
 		})
 	}
 	sort.SliceStable(entries, func(i, j int) bool {
@@ -277,6 +321,7 @@ func (idx *ContentIndex) childDirs(prefix []string) []dirEntry {
 		if p.IsIndex && len(p.Parts) == len(prefix)+1 {
 			isDir[name] = true
 			entry.Title = p.NavTitle
+			entry.Icon = p.Icon
 			entry.Route = p.Route
 		}
 	}

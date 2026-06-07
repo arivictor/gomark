@@ -53,6 +53,7 @@ func (s *Site) Export(outputDir string) error {
 			title = pageTitleFromSlug(slug)
 		}
 		navTitle, nav := b.index.Sidebar(route, b.sidebarDepth)
+		prevPage, nextPage := b.index.Siblings(route)
 
 		description := page.Description
 		if strings.TrimSpace(description) == "" {
@@ -84,11 +85,14 @@ func (s *Site) Export(outputDir string) error {
 			BodyHTML:        template.HTML(page.HTML),
 			Headings:        page.Headings,
 			HideTOC:         page.HideTOC,
+			HideNav:         page.HideNav,
 			NavTitle:        navTitle,
 			Nav:             nav,
 			TopNav:          b.topNav,
 			CurrentPath:     route,
 			StaticBuild:     true,
+			PrevPage:        prevPage,
+			NextPage:        nextPage,
 		}
 
 		if err := writePageFile(b.renderer, exportFilePath(outputDir, route), data); err != nil {
@@ -114,6 +118,13 @@ func (s *Site) Export(outputDir string) error {
 	// Copy public assets (favicons, og images, vendored JS, wasm_exec.js, …).
 	if err := copyFS(outputDir, b.publicFS); err != nil {
 		return fmt.Errorf("copy public assets: %w", err)
+	}
+
+	// Route unknown paths to the themed 404 page on hosts that don't pick up
+	// /404.html automatically (Cloudflare Pages, Render, Surge, …). Skipped if
+	// the public dir already supplies its own _redirects, so user config wins.
+	if err := writeRedirectsFile(outputDir); err != nil {
+		return fmt.Errorf("write _redirects: %w", err)
 	}
 
 	// The runner module is served gzipped at /runner.wasm by the live server; a
@@ -182,6 +193,22 @@ func writeNotFoundPage(b *siteBuild, outputDir string) error {
 		return err
 	}
 	return f.Close()
+}
+
+// writeRedirectsFile writes a Netlify-style _redirects file that routes every
+// unmatched path to the themed 404 page (a convention also honored by
+// Cloudflare Pages, Render, and Surge). GitHub Pages and Netlify already pick
+// up /404.html by filename alone, so this is a no-op there but fills the gap
+// elsewhere. It never overwrites a _redirects file the user already ships via
+// their public dir overlay.
+func writeRedirectsFile(outputDir string) error {
+	path := filepath.Join(outputDir, "_redirects")
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	return os.WriteFile(path, []byte("/*    /404.html   404\n"), 0o644)
 }
 
 // writePageFile renders one page to file, closing it explicitly so a write/flush

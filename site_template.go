@@ -46,11 +46,14 @@ type PageData struct {
 	BodyHTML        template.HTML
 	Headings        []Heading
 	HideTOC         bool
+	HideNav         bool
 	NavTitle        string
 	Nav             []NavNode
 	TopNav          []NavLink
 	CurrentPath     string
 	StaticBuild     bool
+	PrevPage        *NavLink
+	NextPage        *NavLink
 }
 
 type FileTemplateRenderer struct {

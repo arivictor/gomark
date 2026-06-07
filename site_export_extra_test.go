@@ -87,6 +87,45 @@ func TestExportSitemapAndRobotsDisabled(t *testing.T) {
 	}
 }
 
+func TestExportWritesRedirectsFile(t *testing.T) {
+	dir := t.TempDir()
+	writeExportFile(t, dir, "index.md", "# Home")
+	out := t.TempDir()
+	s := NewSite(WithSiteContentDir(dir))
+	if err := s.Export(out); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(out, "_redirects"))
+	if err != nil {
+		t.Fatalf("expected _redirects: %v", err)
+	}
+	if !strings.Contains(string(data), "/404.html") {
+		t.Fatalf("expected _redirects to route to /404.html, got %q", data)
+	}
+}
+
+func TestExportPreservesUserProvidedRedirectsFile(t *testing.T) {
+	dir := t.TempDir()
+	writeExportFile(t, dir, "index.md", "# Home")
+	publicDir := t.TempDir()
+	custom := "/api/* https://api.example.com/:splat 200\n"
+	if err := os.WriteFile(filepath.Join(publicDir, "_redirects"), []byte(custom), 0o644); err != nil {
+		t.Fatalf("write custom _redirects: %v", err)
+	}
+	out := t.TempDir()
+	s := NewSite(WithSiteContentDir(dir), WithSitePublicDir(publicDir))
+	if err := s.Export(out); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(out, "_redirects"))
+	if err != nil {
+		t.Fatalf("expected _redirects: %v", err)
+	}
+	if string(data) != custom {
+		t.Fatalf("expected user-provided _redirects to be preserved, got %q", data)
+	}
+}
+
 func TestWritePageFileMkdirError(t *testing.T) {
 	renderer, err := NewFileTemplateRenderer("", "")
 	if err != nil {

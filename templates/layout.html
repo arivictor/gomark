@@ -392,38 +392,11 @@
       outline-offset: 1px;
     }
 
-    /* Focus / reader mode toggle */
-    .focus-toggle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      padding: 0;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--muted);
-      cursor: pointer;
-      transition: color 0.15s ease, background-color 0.15s ease;
-    }
-    .focus-toggle:hover {
-      color: var(--heading);
-    }
-    .focus-toggle[aria-pressed="true"] {
-      background: var(--background);
+    /* Focus / reader mode toggle (lives in the TOC tools, above "Copy as Markdown") */
+    .toc-tools .tool-btn.focus-toggle[aria-pressed="true"] {
       color: var(--accent);
-      box-shadow: var(--shadow);
     }
-    .focus-toggle svg {
-      width: 15px;
-      height: 15px;
-    }
-    .focus-toggle:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-    /* Floating control to leave focus mode, since the regular toggle lives in the (now hidden) header */
+    /* Floating control to leave focus mode, since the toggle lives in the (now hidden) TOC */
     .focus-exit {
       position: fixed;
       top: 16px;
@@ -508,6 +481,58 @@
       min-width: 0;
       padding: 56px 0 96px;
     }
+
+    /* ---------- Prev/next page pager ---------- */
+    .page-pager {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 56px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .pager-link {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      transition: border-color 0.12s ease, background-color 0.12s ease;
+    }
+    .pager-link:hover {
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+    }
+    .pager-next {
+      grid-column: 2;
+      text-align: right;
+      align-items: flex-end;
+    }
+    .pager-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .pager-label svg {
+      width: 13px;
+      height: 13px;
+    }
+    .pager-title {
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--heading);
+    }
+    @media (max-width: 640px) {
+      .page-pager { grid-template-columns: 1fr; }
+      .pager-next { grid-column: 1; text-align: left; align-items: flex-start; }
+    }
     .docs.docs--error main {
       max-width: 640px;
       margin: 0 auto;
@@ -547,6 +572,15 @@
     .nav-tree .navitem:hover {
       color: var(--heading);
       background: var(--surface-hover);
+    }
+    .nav-tree .nav-icon {
+      display: inline-flex;
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      margin-right: 7px;
+      vertical-align: -2px;
+      color: var(--muted);
     }
     .nav-tree .navrow .navitem { flex: 1 1 auto; min-width: 0; }
     .nav-tree .navitem.folder.has-children {
@@ -1129,16 +1163,48 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 16px 32px;
       flex-wrap: wrap;
       padding-top: 28px;
       padding-bottom: 28px;
       max-width: 1400px;
     }
+    .site-footer .container > * { flex: 1 1 auto; }
+    .footer-aside { justify-content: flex-end; }
+    @media (max-width: 720px) {
+      .footer-aside { justify-content: flex-start; }
+    }
     .site-footer, .site-footer a { color: var(--muted); font-size: 13px; }
     .site-footer .brand { font-size: 13px; color: var(--muted); }
     .site-footer .brand-mark { width: 17px; height: 17px; border-radius: 5px; }
     .footer-meta { font-variant-numeric: tabular-nums; }
+    .footer-main, .footer-aside {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .footer-badge {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      transition: color 0.12s ease, border-color 0.12s ease;
+    }
+    .footer-badge:hover {
+      color: var(--heading);
+      border-color: var(--border-strong);
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+    }
+    .footer-links a { text-decoration: none; }
+    .footer-links a:hover { color: var(--heading); }
 
     /* ---------- Command palette ---------- */
     .command-palette {
@@ -1432,7 +1498,7 @@
       </nav>
       {{end}}
       <div class="header-actions">
-        {{if .Nav}}
+        {{if and .Nav (not .HideNav)}}
         <button type="button" class="nav-toggle" data-nav-toggle aria-label="Open navigation menu" aria-controls="mobile-nav" aria-expanded="false">
           <i data-lucide="menu" aria-hidden="true"></i>
         </button>
@@ -1441,9 +1507,6 @@
           <i class="search-icon" data-lucide="search" aria-hidden="true"></i>
           <span>Search</span>
           <kbd>⌘+k</kbd>
-        </button>
-        <button type="button" class="focus-toggle" data-focus-toggle aria-pressed="false" aria-label="Toggle focus mode" title="Focus mode (hide navigation and show only the page content)">
-          <i data-lucide="book-open" aria-hidden="true"></i>
         </button>
         <div class="theme-toggle" role="radiogroup" aria-label="Color theme" data-theme-toggle>
           <button type="button" class="theme-option" data-theme-option="system" role="radio" aria-checked="false" aria-label="System theme" title="System theme">
@@ -1460,7 +1523,7 @@
     </div>
   </header>
 
-  {{if .Nav}}
+  {{if and .Nav (not .HideNav)}}
   <div class="mobile-nav" data-mobile-nav hidden>
     <button type="button" class="mobile-nav__backdrop" data-nav-close aria-label="Close navigation"></button>
     <aside class="mobile-nav__panel" id="mobile-nav">
@@ -1478,7 +1541,7 @@
   {{end}}
 
   <div class="docs{{if .StatusCode}} docs--error{{end}}">
-    {{if .Nav}}
+    {{if and .Nav (not .HideNav)}}
     <aside class="sidebar">
       <nav aria-label="Section">
         {{template "navtree" .Nav}}
@@ -1486,7 +1549,15 @@
     </aside>
     {{end}}
 
-    <main>{{block "content" .}}{{end}}</main>
+    <main>
+      {{block "content" .}}{{end}}
+      {{if or .PrevPage .NextPage}}
+      <nav class="page-pager" aria-label="Page navigation">
+        {{if .PrevPage}}<a class="pager-link pager-prev" href="{{.PrevPage.Path}}"><span class="pager-label"><i data-lucide="arrow-left" aria-hidden="true"></i>Previous</span><span class="pager-title">{{.PrevPage.Title}}</span></a>{{end}}
+        {{if .NextPage}}<a class="pager-link pager-next" href="{{.NextPage.Path}}"><span class="pager-label">Next<i data-lucide="arrow-right" aria-hidden="true"></i></span><span class="pager-title">{{.NextPage.Title}}</span></a>{{end}}
+      </nav>
+      {{end}}
+    </main>
 
     <aside class="toc">
       {{if and (not .HideTOC) .Headings}}
@@ -1497,6 +1568,11 @@
         </ul>
 
         <div class="toc-tools" data-toc-tools>
+          <button type="button" class="tool-btn focus-toggle" data-focus-toggle aria-pressed="false" aria-label="Toggle focus mode" title="Focus mode (hide navigation and show only the page content)">
+            <i data-lucide="book-open" aria-hidden="true"></i>
+            <span>Reader mode</span>
+          </button>
+
           <button type="button" class="tool-btn" data-copy-markdown>
             <i data-lucide="copy" aria-hidden="true"></i>
             <span>Copy as Markdown</span>
@@ -1522,21 +1598,31 @@
 
   <footer class="site-footer">
     <div class="container">
-      <a class="brand" href="/">
-        {{if and .LogoLightURL .LogoDarkURL}}
-        <img class="brand-mark brand-mark--light" src="{{.LogoLightURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
-        <img class="brand-mark brand-mark--dark" src="{{.LogoDarkURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
-        {{else}}
-        <img class="brand-mark" src="{{or .LogoLightURL .LogoDarkURL "/logo-dark.png"}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+      <div class="footer-main">
+        <a class="brand" href="/">
+          {{if and .LogoLightURL .LogoDarkURL}}
+          <img class="brand-mark brand-mark--light" src="{{.LogoLightURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+          <img class="brand-mark brand-mark--dark" src="{{.LogoDarkURL}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+          {{else}}
+          <img class="brand-mark" src="{{or .LogoLightURL .LogoDarkURL "/logo-dark.png"}}" alt="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}" width="17" height="17" />
+          {{end}}
+          <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
+        </a>
+        {{if .FooterText}}<span class="footer-meta">{{.FooterText}}</span>{{end}}
+        <a class="footer-badge" href="https://github.com/arivictor/gomark" target="_blank" rel="noopener noreferrer">Built with GoMark</a>
+      </div>
+      <div class="footer-aside">
+        {{if .TopNav}}
+        <nav class="footer-links" aria-label="Documentation sections">
+          {{range .TopNav}}<a href="{{.Path}}">{{.Title}}</a>{{end}}
+        </nav>
         {{end}}
-        <span>{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}}</span>
-      </a>
-      {{if .FooterText}}<span class="footer-meta">{{.FooterText}}</span>{{end}}
-      {{if .SocialLinks}}
-      <nav class="social-links" aria-label="Social">
-        {{range .SocialLinks}}<a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{if .Icon}}<i data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}{{.Label}}</a>{{end}}
-      </nav>
-      {{end}}
+        {{if .SocialLinks}}
+        <nav class="social-links" aria-label="Social">
+          {{range .SocialLinks}}<a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{if .Icon}}<i data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}{{.Label}}</a>{{end}}
+        </nav>
+        {{end}}
+      </div>
     </div>
   </footer>
 
@@ -2742,11 +2828,11 @@
   <li class="navnode{{if .Open}} open{{end}}">
     {{if .Folder}}
     <div class="navrow">
-      {{if .Path}}<a class="navitem folder{{if .Children}} has-children{{end}}{{if .Active}} active{{end}}"{{if .Active}} aria-current="page"{{end}}{{if .Children}} data-nav-folder aria-label="Open {{.Title}} section" aria-controls="{{.NodeID}}" aria-expanded="{{if .Open}}true{{else}}false{{end}}"{{end}} href="{{.Path}}"><span class="label">{{.Title}}</span>{{if .Children}}<i class="chevron" data-lucide="chevron-right" aria-hidden="true"></i>{{end}}</a>{{else}}<button type="button" class="navitem folder{{if .Children}} has-children{{end}}"{{if .Children}} data-nav-folder aria-label="Toggle {{.Title}} section" aria-controls="{{.NodeID}}" aria-expanded="{{if .Open}}true{{else}}false{{end}}"{{end}}><span class="label">{{.Title}}</span>{{if .Children}}<i class="chevron" data-lucide="chevron-right" aria-hidden="true"></i>{{end}}</button>{{end}}
+      {{if .Path}}<a class="navitem folder{{if .Children}} has-children{{end}}{{if .Active}} active{{end}}"{{if .Active}} aria-current="page"{{end}}{{if .Children}} data-nav-folder aria-label="Open {{.Title}} section" aria-controls="{{.NodeID}}" aria-expanded="{{if .Open}}true{{else}}false{{end}}"{{end}} href="{{.Path}}">{{if .Icon}}<i class="nav-icon" data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}<span class="label">{{.Title}}</span>{{if .Children}}<i class="chevron" data-lucide="chevron-right" aria-hidden="true"></i>{{end}}</a>{{else}}<button type="button" class="navitem folder{{if .Children}} has-children{{end}}"{{if .Children}} data-nav-folder aria-label="Toggle {{.Title}} section" aria-controls="{{.NodeID}}" aria-expanded="{{if .Open}}true{{else}}false{{end}}"{{end}}>{{if .Icon}}<i class="nav-icon" data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}<span class="label">{{.Title}}</span>{{if .Children}}<i class="chevron" data-lucide="chevron-right" aria-hidden="true"></i>{{end}}</button>{{end}}
     </div>
     {{if .Children}}<div id="{{.NodeID}}" class="navgroup"{{if .Open}}{{else}} hidden{{end}}>{{template "navtree" .Children}}</div>{{end}}
     {{else}}
-    {{if .Path}}<a class="navitem{{if .Active}} active{{end}}"{{if .Active}} aria-current="page"{{end}} href="{{.Path}}">{{.Title}}</a>{{else}}<span class="navitem">{{.Title}}</span>{{end}}
+    {{if .Path}}<a class="navitem{{if .Active}} active{{end}}"{{if .Active}} aria-current="page"{{end}} href="{{.Path}}">{{if .Icon}}<i class="nav-icon" data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}{{.Title}}</a>{{else}}<span class="navitem">{{if .Icon}}<i class="nav-icon" data-lucide="{{.Icon}}" aria-hidden="true"></i>{{end}}{{.Title}}</span>{{end}}
     {{end}}
   </li>
   {{end}}
