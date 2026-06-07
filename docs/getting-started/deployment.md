@@ -49,6 +49,24 @@ Any static host works. Two things make the experience seamless:
    `index.html` for a directory (almost all of them) give you extensionless URLs with no
    configuration.
 
+## The 404 page
+
+`gomark build` always writes a themed `404.html` to your output directory.
+GitHub Pages and Netlify pick it up automatically by filename, but other
+static hosts (Cloudflare Pages, Render, Surge, …) need to be told to route
+unknown paths there — without that, visitors hitting a bad link see a blank or
+generic error page instead of your themed one.
+
+To cover those hosts, `gomark build` also writes a Netlify-style `_redirects`
+file alongside it:
+
+```text:title="dist/_redirects"
+/*    /404.html   404
+```
+
+This is additive: if your public-dir overlay already ships its own
+`_redirects`, GoMark leaves it alone so your rules win.
+
 ## GitHub Pages
 
 Build in CI and publish the output. Save this as `.github/workflows/pages.yml`:
