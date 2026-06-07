@@ -78,3 +78,31 @@ func TestLayoutRendersAccordionControlsForFolders(t *testing.T) {
 		t.Fatalf("expected site manifest link tag: %s", html)
 	}
 }
+
+func TestLayoutRendersFocusModeControls(t *testing.T) {
+	renderer, err := NewFileTemplateRenderer("templates/layout.html", "templates/*.html")
+	if err != nil {
+		t.Fatalf("new file template renderer: %v", err)
+	}
+
+	data := PageData{
+		Title:           "Focus Mode Test",
+		BodyHTML:        template.HTML("<p>content</p>"),
+		CurrentPath:     "/",
+		OGImageURL:      "https://localhost:8080/gomark-og-1200x630.png",
+		TwitterImageURL: "https://localhost:8080/gomark-twitter-1200x628.png",
+	}
+
+	rec := httptest.NewRecorder()
+	if err := renderer.Render(rec, "markdown", data); err != nil {
+		t.Fatalf("render markdown template: %v", err)
+	}
+
+	html := rec.Body.String()
+	if !strings.Contains(html, `class="focus-toggle" data-focus-toggle aria-pressed="false"`) {
+		t.Fatalf("expected focus mode toggle button with initial aria-pressed=false: %s", html)
+	}
+	if !strings.Contains(html, `class="focus-exit" data-focus-exit`) || !strings.Contains(html, `data-focus-exit aria-label="Exit focus mode" title="Exit focus mode (show navigation again)" hidden`) {
+		t.Fatalf("expected floating focus-exit button to start hidden: %s", html)
+	}
+}

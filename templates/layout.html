@@ -1705,11 +1705,18 @@
         applyFocusMode(readFocusPref());
 
         focusToggle.addEventListener('click', function () {
-          setFocusPref(root.getAttribute('data-focus-mode') !== 'true');
+          var enabling = root.getAttribute('data-focus-mode') !== 'true';
+          setFocusPref(enabling);
+          // The toggle button lives in the header, which focus mode hides;
+          // move focus to the floating exit control so keyboard users aren't stranded.
+          if (enabling && focusExit) {
+            focusExit.focus();
+          }
         });
         if (focusExit) {
           focusExit.addEventListener('click', function () {
             setFocusPref(false);
+            focusToggle.focus();
           });
         }
       }
