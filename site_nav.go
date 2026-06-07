@@ -178,7 +178,8 @@ func (idx *ContentIndex) Sidebar(currentRoute string, depth int) (string, []NavN
 
 // Siblings returns the "previous" and "next" entries for route, drawn from its
 // sibling pages (same parent folder), in the same order the sidebar lists them
-// (frontmatter "order", falling back to alphabetical title). Either may be nil
+// (frontmatter "order", falling back to NavTitle — nav_title when set, else
+// title — to match the sidebar). Either may be nil
 // at the ends of the list, or if the route isn't a recognized page.
 func (idx *ContentIndex) Siblings(route string) (prev, next *NavLink) {
 	cur, ok := idx.byRoute(cleanRoute(route))

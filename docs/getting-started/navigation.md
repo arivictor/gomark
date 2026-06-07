@@ -86,9 +86,10 @@ floating button lets them exit it from anywhere.
 
 Every page that has siblings (other pages in the same folder) automatically
 gets "Previous" / "Next" links at the bottom of its content, in the same order
-they appear in the sidebar — by frontmatter `order`, falling back to
-alphabetical title. There's nothing to configure; add `order` to your pages if
-you want to control the sequence.
+they appear in the sidebar — by frontmatter `order`, falling back to the same
+label used in the sidebar (`nav_title` when set, otherwise `title`). There's
+nothing to configure; add `order` to your pages if you want to control the
+sequence.
 
 ## Sidebar depth
 
