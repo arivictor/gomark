@@ -106,6 +106,7 @@ func (b *siteBuild) renderContentPage(w http.ResponseWriter, r *http.Request, ro
 	}
 
 	navTitle, nav := b.index.Sidebar(route, b.sidebarDepth)
+	prevPage, nextPage := b.index.Siblings(route)
 	baseURL := requestBaseURL(r, b.siteURL)
 
 	description := page.Description
@@ -138,10 +139,13 @@ func (b *siteBuild) renderContentPage(w http.ResponseWriter, r *http.Request, ro
 		BodyHTML:        template.HTML(page.HTML),
 		Headings:        page.Headings,
 		HideTOC:         page.HideTOC,
+		HideNav:         page.HideNav,
 		NavTitle:        navTitle,
 		Nav:             nav,
 		TopNav:          b.topNav,
 		CurrentPath:     route,
+		PrevPage:        prevPage,
+		NextPage:        nextPage,
 	}))
 }
 

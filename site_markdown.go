@@ -114,6 +114,7 @@ type RenderedPage struct {
 	Description string
 	Headings    []Heading
 	HideTOC     bool
+	HideNav     bool
 }
 
 func (s MarkdownService) LoadAndRender(slug string) (RenderedPage, error) {
@@ -152,22 +153,49 @@ func (s MarkdownService) LoadAndRender(slug string) (RenderedPage, error) {
 		Description: description,
 		Headings:    headings,
 		HideTOC:     tocHidden(meta),
+		HideNav:     navHidden(meta),
 	}, nil
 }
 
-// tocHidden reports whether frontmatter explicitly disables the on-page table of
-// contents via `toc: false` (also accepts 0/no/off).
-func tocHidden(meta map[string]string) bool {
-	raw, ok := meta["toc"]
-	if !ok {
-		return false
+// frontmatterBool interprets a frontmatter value as a boolean, recognizing the
+// usual truthy/falsy spellings ("true"/"false", "yes"/"no", "on"/"off",
+// "show"/"hide", "1"/"0"). It returns ok=false if the key is absent or the
+// value isn't recognized, so callers can fall back to other keys or defaults.
+func frontmatterBool(meta map[string]string, key string) (value bool, ok bool) {
+	raw, present := meta[key]
+	if !present {
+		return false, false
 	}
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "false", "0", "no", "off", "hide", "none":
-		return true
+		return false, true
+	case "true", "1", "yes", "on", "show":
+		return true, true
 	default:
-		return false
+		return false, false
 	}
+}
+
+// tocHidden reports whether frontmatter disables the on-page table of contents,
+// via either `toc: false` or `show_toc: false` (the latter takes precedence,
+// letting a page override a folder/site default explicitly either way).
+func tocHidden(meta map[string]string) bool {
+	if show, ok := frontmatterBool(meta, "show_toc"); ok {
+		return !show
+	}
+	if show, ok := frontmatterBool(meta, "toc"); ok {
+		return !show
+	}
+	return false
+}
+
+// navHidden reports whether frontmatter hides the sidebar navigation for this
+// page via `show_nav: false` (also accepts 0/no/off/hide/none).
+func navHidden(meta map[string]string) bool {
+	if show, ok := frontmatterBool(meta, "show_nav"); ok {
+		return !show
+	}
+	return false
 }
 
 // tocDepth returns the maximum heading level to include in the TOC from

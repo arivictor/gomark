@@ -81,6 +81,25 @@ func TestTOCFrontmatterControls(t *testing.T) {
 	if tocHidden(nil) {
 		t.Fatalf("expected default (no key) to keep the TOC")
 	}
+	if !tocHidden(map[string]string{"show_toc": "false"}) {
+		t.Fatalf("expected show_toc:false to hide the TOC")
+	}
+	if tocHidden(map[string]string{"show_toc": "true"}) {
+		t.Fatalf("expected show_toc:true to keep the TOC")
+	}
+	if !tocHidden(map[string]string{"toc": "true", "show_toc": "false"}) {
+		t.Fatalf("expected show_toc to take precedence over toc")
+	}
+
+	if navHidden(nil) {
+		t.Fatalf("expected default (no key) to keep the sidebar nav")
+	}
+	if !navHidden(map[string]string{"show_nav": "false"}) {
+		t.Fatalf("expected show_nav:false to hide the sidebar nav")
+	}
+	if navHidden(map[string]string{"show_nav": "true"}) {
+		t.Fatalf("expected show_nav:true to keep the sidebar nav")
+	}
 	if got := tocDepth(map[string]string{"toc_depth": "2"}); got != 2 {
 		t.Fatalf("expected toc_depth 2, got %d", got)
 	}

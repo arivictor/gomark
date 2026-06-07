@@ -296,6 +296,103 @@ func navLinkTitlesInOrder(links []NavLink) []string {
 	return titles
 }
 
+func TestSiblingsOrderedByFrontmatterOrder(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "guide/index.md", "---\ntitle: Guide\n---\n")
+	writeMarkdown(t, contentDir, "guide/second.md", "---\ntitle: Second\norder: 2\n---\n")
+	writeMarkdown(t, contentDir, "guide/first.md", "---\ntitle: First\norder: 1\n---\n")
+	writeMarkdown(t, contentDir, "guide/third.md", "---\ntitle: Third\norder: 3\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	prev, next := idx.Siblings("/guide/second")
+	if prev == nil || prev.Title != "First" {
+		t.Fatalf("expected previous sibling First, got %v", prev)
+	}
+	if next == nil || next.Title != "Third" {
+		t.Fatalf("expected next sibling Third, got %v", next)
+	}
+
+	if prev, _ := idx.Siblings("/guide/first"); prev != nil {
+		t.Fatalf("expected no previous sibling for the first page, got %v", prev)
+	}
+	if _, next := idx.Siblings("/guide/third"); next != nil {
+		t.Fatalf("expected no next sibling for the last page, got %v", next)
+	}
+}
+
+func TestSiblingsFallBackToAlphabeticalOrder(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "apple.md", "---\ntitle: Apple\n---\n")
+	writeMarkdown(t, contentDir, "banana.md", "---\ntitle: Banana\n---\n")
+	writeMarkdown(t, contentDir, "cherry.md", "---\ntitle: Cherry\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	prev, next := idx.Siblings("/banana")
+	if prev == nil || prev.Title != "Apple" {
+		t.Fatalf("expected previous sibling Apple, got %v", prev)
+	}
+	if next == nil || next.Title != "Cherry" {
+		t.Fatalf("expected next sibling Cherry, got %v", next)
+	}
+}
+
+func TestSiblingsReturnsNilForUnknownOrIndexRoutes(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "index.md", "---\ntitle: Home\n---\n")
+	writeMarkdown(t, contentDir, "guide/index.md", "---\ntitle: Guide\n---\n")
+	writeMarkdown(t, contentDir, "guide/page.md", "---\ntitle: Page\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	if prev, next := idx.Siblings("/does-not-exist"); prev != nil || next != nil {
+		t.Fatalf("expected nil siblings for unknown route, got prev=%v next=%v", prev, next)
+	}
+	if prev, next := idx.Siblings("/guide"); prev != nil || next != nil {
+		t.Fatalf("expected nil siblings for an index/folder route, got prev=%v next=%v", prev, next)
+	}
+}
+
+func TestNavNodeIconFromFrontmatter(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "index.md", "---\ntitle: Home\n---\n")
+	writeMarkdown(t, contentDir, "rocket.md", "---\ntitle: Rocket\nicon: rocket\n---\n")
+	writeMarkdown(t, contentDir, "guide/index.md", "---\ntitle: Guide\nicon: book\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, nodes := idx.Sidebar("/", 3)
+
+	page, ok := findNavNode(nodes, "Rocket")
+	if !ok {
+		t.Fatalf("expected Rocket page in sidebar")
+	}
+	if page.Icon != "rocket" {
+		t.Fatalf("expected page icon %q, got %q", "rocket", page.Icon)
+	}
+
+	folder, ok := findNavNode(nodes, "Guide")
+	if !ok {
+		t.Fatalf("expected Guide folder in sidebar")
+	}
+	if folder.Icon != "book" {
+		t.Fatalf("expected folder icon %q from its index.md, got %q", "book", folder.Icon)
+	}
+}
+
 func equalStrings(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

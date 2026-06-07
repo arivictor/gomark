@@ -91,6 +91,7 @@ func TestLayoutRendersFocusModeControls(t *testing.T) {
 		CurrentPath:     "/",
 		OGImageURL:      "https://localhost:8080/gomark-og-1200x630.png",
 		TwitterImageURL: "https://localhost:8080/gomark-twitter-1200x628.png",
+		Headings:        []Heading{{Level: 2, Text: "Section", ID: "section"}},
 	}
 
 	rec := httptest.NewRecorder()
@@ -99,7 +100,7 @@ func TestLayoutRendersFocusModeControls(t *testing.T) {
 	}
 
 	html := rec.Body.String()
-	if !strings.Contains(html, `class="focus-toggle" data-focus-toggle aria-pressed="false"`) {
+	if !strings.Contains(html, `class="tool-btn focus-toggle" data-focus-toggle aria-pressed="false"`) {
 		t.Fatalf("expected focus mode toggle button with initial aria-pressed=false: %s", html)
 	}
 	if !strings.Contains(html, `class="focus-exit" data-focus-exit`) || !strings.Contains(html, `data-focus-exit aria-label="Exit focus mode" title="Exit focus mode (show navigation again)" hidden`) {
