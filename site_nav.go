@@ -188,6 +188,12 @@ func (idx *ContentIndex) Siblings(route string) (prev, next *NavLink) {
 
 	prefix := cur.Parts[:len(cur.Parts)-1]
 	siblings := idx.childPages(prefix)
+	sort.SliceStable(siblings, func(i, j int) bool {
+		if siblings[i].Order != siblings[j].Order {
+			return siblings[i].Order < siblings[j].Order
+		}
+		return siblings[i].NavTitle < siblings[j].NavTitle
+	})
 
 	for i, p := range siblings {
 		if p.Route != cur.Route {

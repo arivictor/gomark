@@ -324,6 +324,36 @@ func TestSiblingsOrderedByFrontmatterOrder(t *testing.T) {
 	}
 }
 
+func TestSiblingsMatchSidebarOrderWhenNavTitleDiffers(t *testing.T) {
+	contentDir := t.TempDir()
+	writeMarkdown(t, contentDir, "guide/index.md", "---\ntitle: Guide\n---\n")
+	// Title-based alphabetical order would be Bravo, Alpha, Charlie, but
+	// nav_title (used by both the sidebar and Siblings) sorts Alpha, Bravo, Charlie.
+	writeMarkdown(t, contentDir, "guide/bravo.md", "---\ntitle: Bravo\nnav_title: Alpha\n---\n")
+	writeMarkdown(t, contentDir, "guide/alpha.md", "---\ntitle: Alpha\nnav_title: Bravo\n---\n")
+	writeMarkdown(t, contentDir, "guide/charlie.md", "---\ntitle: Charlie\nnav_title: Charlie\n---\n")
+
+	idx, err := BuildContentIndex(contentDir)
+	if err != nil {
+		t.Fatalf("build content index: %v", err)
+	}
+
+	_, sidebar := idx.Sidebar("/guide/bravo", 3)
+	guide, ok := findNavNode(sidebar, "Guide")
+	if !ok {
+		t.Fatalf("expected Guide folder in sidebar")
+	}
+	wantOrder := navTitlesInOrder(guide.Children)
+
+	prev, next := idx.Siblings("/guide/bravo")
+	if prev != nil {
+		t.Fatalf("expected nav_title:Alpha (guide/bravo.md) to be first (matching sidebar order %v), got prev=%v", wantOrder, prev)
+	}
+	if next == nil || next.Title != "Bravo" {
+		t.Fatalf("expected next sibling nav_title:Bravo (matching sidebar order %v), got %v", wantOrder, next)
+	}
+}
+
 func TestSiblingsFallBackToAlphabeticalOrder(t *testing.T) {
 	contentDir := t.TempDir()
 	writeMarkdown(t, contentDir, "apple.md", "---\ntitle: Apple\n---\n")
