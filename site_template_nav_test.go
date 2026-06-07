@@ -103,7 +103,7 @@ func TestLayoutRendersFocusModeControls(t *testing.T) {
 	if !strings.Contains(html, `class="tool-btn focus-toggle" data-focus-toggle aria-pressed="false"`) {
 		t.Fatalf("expected focus mode toggle button with initial aria-pressed=false: %s", html)
 	}
-	if !strings.Contains(html, `class="focus-exit" data-focus-exit`) || !strings.Contains(html, `data-focus-exit aria-label="Exit focus mode" title="Exit focus mode (show navigation again)" hidden`) {
+	if !strings.Contains(html, `class="focus-exit" data-focus-exit`) || !strings.Contains(html, `data-focus-exit aria-label="Exit Reader Mode" title="Exit Reader Mode (show navigation again)" hidden`) {
 		t.Fatalf("expected floating focus-exit button to start hidden: %s", html)
 	}
 }

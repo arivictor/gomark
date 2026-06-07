@@ -1,6 +1,8 @@
 title: GoMark
 url: https://gomark.dev
+footer: © 2026 Example, Inc.
 lang: en
+theme_color: "#0070f3"
 
 logo:
   light: /logo-light.png
