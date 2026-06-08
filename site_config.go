@@ -339,11 +339,17 @@ func (a *App) siteTitle() string {
 }
 
 func (a *App) logoLight() string {
-	return strings.TrimSpace(a.LogoLight)
+	if v := strings.TrimSpace(a.LogoLight); v != "" {
+		return v
+	}
+	return "/logo/gomark-glyph-black.svg"
 }
 
 func (a *App) logoDark() string {
-	return strings.TrimSpace(a.LogoDark)
+	if v := strings.TrimSpace(a.LogoDark); v != "" {
+		return v
+	}
+	return "/logo/gomark-glyph-white-512.png"
 }
 
 // publicDir resolves the on-disk asset-overlay directory, falling back to the

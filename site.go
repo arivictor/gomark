@@ -13,8 +13,8 @@ import (
 
 const defaultSiteName = "GoMark"
 const defaultSiteURL = ""
-const defaultOGImagePath = "/gomark-og-1200x630.png"
-const defaultTwitterImagePath = "/gomark-twitter-1200x628.png"
+const defaultOGImagePath = "/social/gomark-og-1200x630.png"
+const defaultTwitterImagePath = "/social/gomark-twitter-1200x628.png"
 
 type SiteOption func(*Site)
 
