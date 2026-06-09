@@ -145,7 +145,7 @@ func TestCopyFSCopiesEmbeddedPublicAssets(t *testing.T) {
 	if err := copyFS(dst, pub); err != nil {
 		t.Fatalf("copyFS: %v", err)
 	}
-	for _, rel := range []string{"favicon.ico", "wasm_exec.js", filepath.Join("vendor", "lucide.min.js")} {
+	for _, rel := range []string{filepath.Join("favicon", "favicon.ico"), "wasm_exec.js", filepath.Join("vendor", "lucide.min.js")} {
 		if _, err := os.Stat(filepath.Join(dst, rel)); err != nil {
 			t.Fatalf("expected copied asset %s: %v", rel, err)
 		}

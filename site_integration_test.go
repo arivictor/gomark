@@ -71,7 +71,7 @@ func TestServeStaticIntegration(t *testing.T) {
 		{"/robots.txt", http.StatusOK},
 		{"/api/search?q=welcome", http.StatusOK},
 		{"/runner.wasm", http.StatusOK},
-		{"/favicon.ico", http.StatusOK},
+		{"/favicon/favicon.ico", http.StatusOK},
 		{"/nope", http.StatusNotFound},
 		{"/about/", http.StatusFound}, // trailing slash canonicalization
 	}

@@ -162,7 +162,7 @@ func TestCopyFSFileSucceeds(t *testing.T) {
 		t.Fatalf("publicFS: %v", err)
 	}
 	target := filepath.Join(t.TempDir(), "nested", "favicon.ico")
-	if err := copyFSFile(pub, "favicon.ico", target); err != nil {
+	if err := copyFSFile(pub, filepath.Join("favicon", "favicon.ico"), target); err != nil {
 		t.Fatalf("copy: %v", err)
 	}
 	if _, err := os.Stat(target); err != nil {

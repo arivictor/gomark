@@ -127,7 +127,7 @@ func TestLiveServerServeRoutes(t *testing.T) {
 		{"/robots.txt", http.StatusOK},
 		{"/api/search?q=home", http.StatusOK},
 		{"/runner.wasm", http.StatusOK},
-		{"/favicon.ico", http.StatusOK}, // static asset from embedded public
+		{"/favicon/favicon.ico", http.StatusOK}, // static asset from embedded public
 		{"/nonexistent", http.StatusNotFound},
 		{"/about/", http.StatusFound}, // trailing slash redirect
 	}
