@@ -22,6 +22,7 @@ url: https://docs.example.com
 lang: en
 theme_color: "#0070f3"
 footer: © 2026 Example, Inc.
+favicon: /favicon.png       # overrides the bundled favicon
 
 logo:
   light: /logo-light.png
@@ -79,8 +80,7 @@ my-docs/
   gomark.yaml          # build.public_dir: public
   content/
   public/
-    favicon.ico        # overrides the bundled favicon
-    favicon-32x32.png
+    favicon.png        # referenced by favicon: /favicon.png
     og-image.png       # referenced by seo.og_image: /og-image.png
     logo-light.png     # referenced by logo.light: /logo-light.png
     logo-dark.png
@@ -88,8 +88,23 @@ my-docs/
 
 Reference the files by their root-relative path (`/og-image.png`, matching how
 they sit at the top of `public_dir`). Without a `public_dir`, only GoMark's
-bundled assets exist, so a custom `og_image`/`logo` path that has no matching
-bundled file will 404.
+bundled assets exist, so a custom `favicon`/`og_image`/`logo` path that has no
+matching bundled file will 404.
+
+### Favicon
+
+The `favicon:` setting points the `<link rel="icon">` tags at a single URL of
+your choosing, replacing the bundled favicon set. Drop the file in your
+`public_dir` and reference it by root-relative path:
+
+```yaml
+favicon: /favicon.png
+```
+
+Alternatively, you can override the bundled favicons *in place* — without setting
+`favicon:` — by placing files at the exact paths the default theme expects inside
+your `public_dir`: `favicon/favicon.ico`, `favicon/favicon-32.png`,
+`favicon/favicon-16.png`, and `favicon/apple-touch-icon.png`.
 
 ## Precedence
 

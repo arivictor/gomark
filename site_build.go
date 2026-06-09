@@ -19,6 +19,7 @@ func (b *siteBuild) errorResponder(logger *log.Logger) HTMLErrorResponder {
 		ThemeColor:       b.themeColor,
 		LogoLight:        b.logoLight,
 		LogoDark:         b.logoDark,
+		Favicon:          b.favicon,
 		SiteURL:          b.siteURL,
 		OGImagePath:      b.ogImagePath,
 		TwitterImagePath: b.twitterImagePath,
@@ -54,6 +55,7 @@ type siteBuild struct {
 	description      string
 	logoLight        string
 	logoDark         string
+	favicon          string
 	ogImagePath      string
 	twitterImagePath string
 	twitterSite      string
@@ -141,6 +143,7 @@ func (a *App) buildSite(preRender bool) (*siteBuild, error) {
 		description:      strings.TrimSpace(a.Description),
 		logoLight:        a.logoLight(),
 		logoDark:         a.logoDark(),
+		favicon:          a.favicon(),
 		ogImagePath:      a.ogImagePath(),
 		twitterImagePath: a.twitterImagePath(),
 		twitterSite:      strings.TrimSpace(a.TwitterSite),

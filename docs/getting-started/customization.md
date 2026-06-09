@@ -161,3 +161,14 @@ Out of the box, GoMark serves bundled `favicon.ico` and PNG variants, an Apple
 touch icon, a web manifest, and default Open Graph / Twitter images. Override the
 images by setting `seo.og_image` / `seo.twitter_image` to your own files served
 from your site root.
+
+Override the favicon by setting `favicon:` to your own file (or, from the
+library, `WithSiteFavicon`):
+
+```yaml
+favicon: /favicon.png
+```
+
+This replaces the bundled `<link rel="icon">` tags with a single link to your
+file. Serve the file from your `public_dir` so it exists at that path. See
+[Configuration → Static assets](configuration.md) for details.

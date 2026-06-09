@@ -33,6 +33,7 @@ type HTMLErrorResponder struct {
 	ThemeColor       string
 	LogoLight        string
 	LogoDark         string
+	Favicon          string
 	SiteURL          string
 	OGImagePath      string
 	TwitterImagePath string
@@ -90,6 +91,7 @@ func (r HTMLErrorResponder) Handle(w http.ResponseWriter, req *http.Request, err
 		ThemeColor:   strings.TrimSpace(r.ThemeColor),
 		LogoLightURL: strings.TrimSpace(r.LogoLight),
 		LogoDarkURL:  strings.TrimSpace(r.LogoDark),
+		FaviconURL:   strings.TrimSpace(r.Favicon),
 		CanonicalURL: joinAbsoluteURL(
 			requestBaseURL(req, r.SiteURL),
 			req.URL.Path,

@@ -28,6 +28,7 @@ type PageData struct {
 	ThemeColor      string
 	LogoLightURL    string
 	LogoDarkURL     string
+	FaviconURL      string
 	CanonicalURL    string
 	OGImageURL      string
 	TwitterImageURL string

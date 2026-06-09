@@ -27,6 +27,7 @@ type FileConfig struct {
 	Lang       string          `yaml:"lang"`
 	ThemeColor string          `yaml:"theme_color"`
 	Footer     string          `yaml:"footer"`
+	Favicon    string          `yaml:"favicon"`
 	Logo       LogoConfig      `yaml:"logo"`
 	SEO        SEOConfig       `yaml:"seo"`
 	Build      BuildConfig     `yaml:"build"`
@@ -154,6 +155,9 @@ func (c *FileConfig) Options() []SiteOption {
 	}
 	if c.Footer != "" {
 		add(WithSiteFooter(c.Footer))
+	}
+	if c.Favicon != "" {
+		add(WithSiteFavicon(c.Favicon))
 	}
 	if c.Logo.Light != "" {
 		add(WithSiteLogoLight(c.Logo.Light))

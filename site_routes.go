@@ -122,6 +122,7 @@ func (b *siteBuild) renderContentPage(w http.ResponseWriter, r *http.Request, ro
 		ThemeColor:      b.themeColor,
 		LogoLightURL:    b.logoLight,
 		LogoDarkURL:     b.logoDark,
+		FaviconURL:      b.favicon,
 		CanonicalURL:    joinAbsoluteURL(baseURL, route),
 		OGImageURL:      joinAbsoluteURL(baseURL, b.ogImagePath),
 		TwitterImageURL: joinAbsoluteURL(baseURL, b.twitterImagePath),

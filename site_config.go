@@ -21,6 +21,10 @@ type App struct {
 	// when neither is set the bundled logo is used.
 	LogoLight string
 	LogoDark  string
+	// Favicon is an optional URL for the site favicon. When set it overrides the
+	// bundled favicon links (a single <link rel="icon"> plus apple-touch-icon
+	// pointing at this URL); when empty the bundled favicon set is used.
+	Favicon string
 	// SEO image metadata.
 	OGImagePath      string
 	TwitterImagePath string
@@ -111,6 +115,15 @@ func WithSiteLogoLight(logoURL string) SiteOption {
 func WithSiteLogoDark(logoURL string) SiteOption {
 	return func(s *Site) {
 		s.App.LogoDark = strings.TrimSpace(logoURL)
+	}
+}
+
+// WithSiteFavicon sets a custom favicon URL, overriding the bundled favicon
+// links. The URL may point at an asset supplied via the public dir or any
+// absolute URL.
+func WithSiteFavicon(faviconURL string) SiteOption {
+	return func(s *Site) {
+		s.App.Favicon = strings.TrimSpace(faviconURL)
 	}
 }
 
@@ -359,6 +372,12 @@ func (a *App) publicDir() string {
 		return d
 	}
 	return strings.TrimSpace(os.Getenv("PUBLIC_DIR"))
+}
+
+// favicon returns the configured custom favicon URL, or "" when the bundled
+// favicon set should be used.
+func (a *App) favicon() string {
+	return strings.TrimSpace(a.Favicon)
 }
 
 func (a *App) lang() string {

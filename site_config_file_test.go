@@ -160,6 +160,7 @@ func TestFileConfigOptionsApply(t *testing.T) {
 		Title:      "Docs",
 		Lang:       "de",
 		ThemeColor: "#111",
+		Favicon:    "/favicon.png",
 		Logo:       LogoConfig{Light: "/l.png", Dark: "/d.png"},
 		SEO:        SEOConfig{TwitterSite: "@x", ImageAlt: "Alt"},
 		Build:      BuildConfig{SidebarDepth: 4, Runner: &runner, PublicDir: "assets"},
@@ -174,6 +175,9 @@ func TestFileConfigOptionsApply(t *testing.T) {
 	}
 	if a.LogoLight != "/l.png" || a.LogoDark != "/d.png" {
 		t.Fatalf("logos not applied: %+v", a)
+	}
+	if a.Favicon != "/favicon.png" {
+		t.Fatalf("favicon not applied: %q", a.Favicon)
 	}
 	if a.TwitterSite != "@x" || a.imageAlt() != "Alt" {
 		t.Fatalf("seo not applied: %+v", a)
@@ -199,8 +203,9 @@ func TestExportWithConfigRendersMetadataAndDropsSitemap(t *testing.T) {
 
 	noSitemap := false
 	cfg := &FileConfig{
-		Title: "Acme Docs",
-		URL:   "https://docs.acme.test",
+		Title:   "Acme Docs",
+		URL:     "https://docs.acme.test",
+		Favicon: "/acme-favicon.png",
 		SEO: SEOConfig{
 			Description: "Acme product documentation.",
 			TwitterSite: "@acme",
@@ -224,11 +229,17 @@ func TestExportWithConfigRendersMetadataAndDropsSitemap(t *testing.T) {
 		`data-domain="docs.acme.test"`,
 		`href="https://github.com/acme"`,
 		`href="https://x.com/acme"`,
+		`<link rel="icon" href="/acme-favicon.png" />`,
+		`<link rel="apple-touch-icon" href="/acme-favicon.png" />`,
 	}
 	for _, want := range wants {
 		if !strings.Contains(html, want) {
 			t.Fatalf("rendered html missing %q\n---\n%s", want, html)
 		}
+	}
+	// The custom favicon replaces the bundled favicon set.
+	if strings.Contains(html, "/favicon/favicon.ico") {
+		t.Fatalf("custom favicon should replace bundled links\n---\n%s", html)
 	}
 
 	if _, err := os.Stat(filepath.Join(out, "sitemap.xml")); !os.IsNotExist(err) {
