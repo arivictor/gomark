@@ -77,10 +77,7 @@ toc_depth: 2      # only show H2s (default: 3, i.e. H2-H4)
 ```
 
 `show_toc` takes precedence if both `show_toc` and `toc` are set, so you can
-use whichever name reads better in your content. The reader-mode ("focus
-mode") toggle lives at the top of the TOC tools — it hides the header,
-sidebar, and TOC so readers can concentrate on the page content, and a
-floating button lets them exit it from anywhere.
+use whichever name reads better in your content.
 
 ## Suggested next/previous pages
 
