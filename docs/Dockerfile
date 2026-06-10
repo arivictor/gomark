@@ -10,7 +10,7 @@ WORKDIR /src
 
 # Install the gomark CLI in its own layer so it can be cached across source
 # changes.
-RUN go install github.com/arivictor/gomark/cmd/gomark@v0.1.26
+RUN go install github.com/arivictor/gomark/cmd/gomark@v0.1.27
 
 COPY . .
 
