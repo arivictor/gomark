@@ -101,7 +101,7 @@ func TestNormalizeLinkTargetVariants(t *testing.T) {
 		"mailto:a@b.com":  "mailto:a@b.com",
 		"http://x.test":   "http://x.test",
 		"#Section-Header": "#section-header",
-		"/go/about":       "/about", // /go/ prefix stripped
+		"/go/about":       "/go/about", // absolute paths preserved as-is
 		"./relative.md":   "/relative",
 		"a\\b\\c":         "/a/b/c", // backslashes normalized to slashes
 		"/":               "/",
