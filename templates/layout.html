@@ -536,6 +536,9 @@
       align-items: center;
       gap: 8px;
     }
+    .nav-tree .navitem.folder.has-children .nav-icon {
+      margin-right: 0;
+    }
     .nav-tree .navitem.folder .label {
       min-width: 0;
       flex: 1 1 auto;
@@ -556,7 +559,8 @@
       border: 0;
       background: transparent;
       text-align: left;
-      font: inherit;
+      font-family: inherit;
+      line-height: inherit;
       cursor: pointer;
     }
     .nav-tree .navitem.active { color: var(--heading); font-weight: 500; }
@@ -1503,12 +1507,14 @@
     </main>
 
     <aside class="toc">
-      {{if and (not .HideTOC) .Headings}}
+      {{if not .HideTOC}}
       <nav aria-label="On this page">
+        {{if .Headings}}
         <div class="toc-title">On this page</div>
         <ul>
           {{range .Headings}}<li><a class="lvl-{{.Level}}" href="#{{.ID}}">{{.Text}}</a></li>{{end}}
         </ul>
+        {{end}}
 
         <div class="toc-tools" data-toc-tools>
           <button type="button" class="tool-btn" data-copy-markdown>
@@ -2585,9 +2591,9 @@
         }
 
         trigger.addEventListener('click', function (event) {
-          var targetId = trigger.getAttribute('aria-controls');
-          if (!targetId) { return; }
-          var panel = document.getElementById(targetId);
+          if (!trigger.getAttribute('aria-controls')) { return; }
+          var node = trigger.closest('.navnode');
+          var panel = node && node.querySelector(':scope > .navgroup');
           if (!panel) { return; }
 
           function setOpenState(open) {
