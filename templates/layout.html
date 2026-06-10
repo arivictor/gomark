@@ -397,63 +397,6 @@
       outline-offset: 1px;
     }
 
-    /* Focus / reader mode toggle (lives in the TOC tools, above "Copy as Markdown") */
-    .toc-tools .tool-btn.focus-toggle[aria-pressed="true"] {
-      color: var(--accent);
-    }
-    /* Floating control to leave focus mode, since the toggle lives in the (now hidden) TOC */
-    .focus-exit {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 60;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--heading);
-      font-family: inherit;
-      font-size: 13px;
-      line-height: 1;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      transition: color 0.15s ease, border-color 0.15s ease;
-    }
-    .focus-exit:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-    .focus-exit svg {
-      width: 14px;
-      height: 14px;
-    }
-    .focus-exit:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-    .focus-exit[hidden] {
-      display: none !important;
-    }
-
-    /* In focus mode, hide everything except the main body text. */
-    html[data-focus-mode="true"] .site-header,
-    html[data-focus-mode="true"] .mobile-nav,
-    html[data-focus-mode="true"] .sidebar,
-    html[data-focus-mode="true"] .toc,
-    html[data-focus-mode="true"] .site-footer,
-    html[data-focus-mode="true"] .scroll-progress {
-      display: none !important;
-    }
-    html[data-focus-mode="true"] .docs {
-      padding-top: 32px;
-    }
-    html[data-focus-mode="true"] main {
-      margin: 0 auto;
-    }
-
     /* ---------- Docs layout (sidebar · content · toc) ---------- */
     .docs {
       flex: 1 0 auto;
@@ -1481,11 +1424,6 @@
     <div class="scroll-progress__bar" data-scroll-progress></div>
   </div>
 
-  <button type="button" class="focus-exit" data-focus-exit aria-label="Exit Reader Mode" title="Exit Reader Mode (show navigation again)" hidden>
-    <i data-lucide="x" aria-hidden="true"></i>
-    <span>Exit Reader Mode</span>
-  </button>
-
   <header class="site-header">
     <div class="container">
       <a class="brand" href="/" aria-label="{{if .SiteName}}{{.SiteName}}{{else}}GoMark{{end}} home">
@@ -1573,11 +1511,6 @@
         </ul>
 
         <div class="toc-tools" data-toc-tools>
-          <button type="button" class="tool-btn focus-toggle" data-focus-toggle aria-pressed="false" aria-label="Toggle focus mode" title="Focus mode (hide navigation and show only the page content)">
-            <i data-lucide="book-open" aria-hidden="true"></i>
-            <span>Reader mode</span>
-          </button>
-
           <button type="button" class="tool-btn" data-copy-markdown>
             <i data-lucide="copy" aria-hidden="true"></i>
             <span>Copy as Markdown</span>
@@ -1762,51 +1695,6 @@
           darkQuery.addEventListener('change', onSystemChange);
         } else if (darkQuery.addListener) {
           darkQuery.addListener(onSystemChange);
-        }
-      }
-
-      var focusToggle = document.querySelector('[data-focus-toggle]');
-      var focusExit = document.querySelector('[data-focus-exit]');
-      if (focusToggle) {
-        function readFocusPref() {
-          try {
-            return localStorage.getItem('focus-mode') === 'true';
-          } catch (err) {
-            return false;
-          }
-        }
-
-        function applyFocusMode(enabled) {
-          root.setAttribute('data-focus-mode', enabled ? 'true' : 'false');
-          focusToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-          if (focusExit) { focusExit.hidden = !enabled; }
-        }
-
-        function setFocusPref(enabled) {
-          try {
-            localStorage.setItem('focus-mode', enabled ? 'true' : 'false');
-          } catch (err) {
-            // Ignore storage errors; focus mode still applies for the current page.
-          }
-          applyFocusMode(enabled);
-        }
-
-        applyFocusMode(readFocusPref());
-
-        focusToggle.addEventListener('click', function () {
-          var enabling = root.getAttribute('data-focus-mode') !== 'true';
-          setFocusPref(enabling);
-          // The toggle button lives in the header, which focus mode hides;
-          // move focus to the floating exit control so keyboard users aren't stranded.
-          if (enabling && focusExit) {
-            focusExit.focus();
-          }
-        });
-        if (focusExit) {
-          focusExit.addEventListener('click', function () {
-            setFocusPref(false);
-            focusToggle.focus();
-          });
         }
       }
 
