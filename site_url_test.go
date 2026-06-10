@@ -8,11 +8,11 @@ import (
 
 func TestBuildRoutePath(t *testing.T) {
 	cases := map[string]string{
-		"":           "/",
-		"  ":         "/",
-		"/go/about/": "/go/about",
-		"guide":      "/guide",
-		"a/b/c":      "/a/b/c",
+		"":              "/",
+		"  ":            "/",
+		"/guide/about/": "/guide/about",
+		"guide":         "/guide",
+		"a/b/c":         "/a/b/c",
 	}
 	for in, want := range cases {
 		if got := buildRoutePath(in); got != want {

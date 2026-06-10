@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// buildRoutePath mounts the content dir at the site root: the dir name does not
-// appear in the URL, so "go/about" -> "/go/about" and "" -> "/".
+// buildRoutePath turns a content slug into an absolute route, so "guide/about"
+// -> "/guide/about" and "" -> "/".
 func buildRoutePath(serviceSlug string) string {
 	slug := strings.Trim(strings.TrimSpace(serviceSlug), "/")
 	if slug == "" {

@@ -61,7 +61,7 @@ func TestStdlibMarkdownRendererKeepsInlineEmphasisInListItems(t *testing.T) {
 
 func TestStdlibMarkdownRendererRendersBoldAroundLink(t *testing.T) {
 	renderer := StdlibMarkdownRenderer{}
-	output, _ := renderer.Render("**Start with [Factory Method](/go/patterns/creational/factory-method)**")
+	output, _ := renderer.Render("**Start with [Factory Method](/patterns/creational/factory-method)**")
 
 	if !strings.Contains(output, "<strong>Start with <a href=\"/patterns/creational/factory-method\">Factory Method</a></strong>") {
 		t.Fatalf("expected bold wrapper around link, got: %s", output)
@@ -70,7 +70,7 @@ func TestStdlibMarkdownRendererRendersBoldAroundLink(t *testing.T) {
 
 func TestStdlibMarkdownRendererRendersItalicAroundLink(t *testing.T) {
 	renderer := StdlibMarkdownRenderer{}
-	output, _ := renderer.Render("*Start with [Factory Method](/go/patterns/creational/factory-method)*")
+	output, _ := renderer.Render("*Start with [Factory Method](/patterns/creational/factory-method)*")
 
 	if !strings.Contains(output, "<em>Start with <a href=\"/patterns/creational/factory-method\">Factory Method</a></em>") {
 		t.Fatalf("expected italic wrapper around link, got: %s", output)

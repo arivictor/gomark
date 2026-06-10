@@ -1121,10 +1121,6 @@ func normalizeLinkTarget(raw string) string {
 		return href
 	}
 
-	if strings.HasPrefix(href, "/go/") {
-		href = strings.TrimPrefix(href, "/go")
-	}
-
 	if strings.HasPrefix(href, "#") {
 		return "#" + slugify(strings.TrimPrefix(href, "#"))
 	}
